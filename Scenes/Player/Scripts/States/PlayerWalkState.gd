@@ -1,6 +1,9 @@
 extends State
 class_name PlayerWalking
 
+## カクカク移動用：位置をこのピクセル単位でスナップする（32=1キャラ、16=半キャラ）
+const GRID_SIZE := 32
+
 @export var movespeed := int(350)
 @export var dash_max := int(500)
 var dashspeed := float(100)
@@ -33,9 +36,18 @@ func Move(input_dir : Vector2):
 
 	player.velocity = input_dir * movespeed + dash_direction * dashspeed 
 	player.move_and_slide()
+	# カクカク移動：位置をグリッドにスナップ
+	_snap_to_grid()
 
 	if(input_dir.length() <= 0):
 		Transition("Idle")
+
+func _snap_to_grid():
+	var g := player.global_position
+	player.global_position = Vector2(
+		round(g.x / GRID_SIZE) * GRID_SIZE,
+		round(g.y / GRID_SIZE) * GRID_SIZE
+	)
 
 func start_dash(input_dir : Vector2):
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0.3, -1)
