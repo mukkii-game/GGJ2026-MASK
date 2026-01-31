@@ -8,18 +8,21 @@
 [ext_resource type="PackedScene" uid="uid://ckp2r52hlcfxn" path="res://Scenes/NPC's/Npc_OfficeWorker/npc_officeworker_scene.tscn" id="5_wxx7c"]
 [ext_resource type="PackedScene" uid="uid://bvt7e871e6jeg" path="res://Scenes/NPC's/Enemy/Enemy.tscn" id="6_insxp"]
 [ext_resource type="PackedScene" uid="uid://b6xb8nhlqtuhf" path="res://Scenes/ScoreTracker.tscn" id="7_hbxrs"]
-[ext_resource type="AudioStream" uid="uid://b1lr5ey8e6pu3" path="res://Art/Audio/BasementOgg.ogg" id="8_u2hwu"]
+[ext_resource type="AudioStream" path="res://Art/Audio/Maskman_theme.ogg" id="8_u2hwu"]
 [ext_resource type="PackedScene" uid="uid://b4l1gom0wsk8p" path="res://Scenes/Interactables/area_exit.tscn" id="10_eko0k"]
 [ext_resource type="PackedScene" uid="uid://48vtm5vekhaq" path="res://Scenes/QuestUpdate.tscn" id="10_qjwpn"]
 [ext_resource type="PackedScene" uid="uid://c5btk4icxp61c" path="res://Scenes/Levels/VictoryScreen.tscn" id="11_h37ha"]
 [ext_resource type="Script" path="res://Scripts/QuestGeneral/Quest.gd" id="11_oc6f3"]
 [ext_resource type="PackedScene" uid="uid://ceoo6gamb4olk" path="res://Scenes/Interactables/Area_Blocker.tscn" id="11_xe2ch"]
+[ext_resource type="Script" path="res://Scripts/BGMFromOffset.gd" id="12_bgm"]
 
 [node name="Basement01" type="Node2D"]
 
 [node name="SceneSettings" parent="." instance=ExtResource("1_4stwf")]
 
 [node name="Scene" type="Node" parent="."]
+script = ExtResource("12_bgm")
+start_offset_sec = 11.0
 
 [node name="Area2D" parent="Scene" instance=ExtResource("5_wxx7c")]
 position = Vector2(154, -48)
@@ -63,7 +66,7 @@ tile_set = ExtResource("2_wbjck")
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="Scene"]
 stream = ExtResource("8_u2hwu")
 volume_db = -3.0
-autoplay = true
+autoplay = false
 
 [node name="Quests" type="Node" parent="Scene"]
 

@@ -2,12 +2,18 @@ extends Node
 
 #This class preloads all of our sound effects so that they can be played at a momets notice
 #region Preloaded Sounds
+## BGM（メインフロア・地下室などで使用）
+const BGM = preload("res://Art/Audio/Maskman_theme.ogg")
 const PLAYER_ATTACK_HIT = preload("res://Art/Audio/Effects/AttackHit.ogg")
 const PLAYER_ATTACK_SWING = preload("res://Art/Audio/Effects/AttackSwing.ogg")
 const ENEMY_HIT = preload("res://Art/Audio/Effects/Enemy_hit.ogg")
 const BLOODY_HIT = preload("res://Art/Audio/Effects/bloody_hit.ogg")
 const COIN_PICK = preload("res://Art/Audio/Effects/coin_pick.ogg")
 const QUEST_SOUND = preload("res://Art/Audio/Effects/QuestSound.ogg")
+## ジャンプSE（専用ファイルがなければ AttackSwing を流用）
+const JUMP = preload("res://Art/Audio/Effects/AttackSwing.ogg")
+## ロープ跳ね返り「ぼよん」音（専用がなければ AttackSwing を流用）
+const ROPE_BOUNCE = preload("res://Art/Audio/Effects/AttackSwing.ogg")
 #endregion
 
 var audio_players = []

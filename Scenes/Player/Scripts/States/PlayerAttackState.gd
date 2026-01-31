@@ -17,10 +17,12 @@ func Enter():
 
 #Read which attack to use from our two attack nodes
 func DetermineAttack():
-	if(Input.is_action_just_pressed("Punch")):
+	if Input.is_action_just_pressed("AttackPunch"):
 		current_attack = attacks[0]
-	elif(Input.is_action_just_pressed("Kick")):
+	elif Input.is_action_just_pressed("AttackKick"):
 		current_attack = attacks[1]
+	else:
+		current_attack = attacks[0]
 
 #Hitbox is turned on/off through the animationplayer, it an enemy is standing inside of it once that happens they take damage
 #Both hitboxes call back to this function through signals

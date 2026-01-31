@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://dei3j88yw6omf"]
+[gd_scene load_steps=19 format=3 uid="uid://dei3j88yw6omf"]
 
 [ext_resource type="PackedScene" uid="uid://bvg5dny32iw0x" path="res://Scenes/Player/Player.tscn" id="1_v023b"]
 [ext_resource type="PackedScene" uid="uid://bvt7e871e6jeg" path="res://Scenes/NPC's/Enemy/Enemy.tscn" id="2_gsqk0"]
@@ -12,11 +12,12 @@
 [ext_resource type="PackedScene" uid="uid://b4l1gom0wsk8p" path="res://Scenes/Interactables/area_exit.tscn" id="8_s7mva"]
 [ext_resource type="PackedScene" uid="uid://bt5yicfpmnlwk" path="res://Scenes/Levels/Basement01.tscn" id="10_hj57s"]
 [ext_resource type="PackedScene" uid="uid://b6xb8nhlqtuhf" path="res://Scenes/ScoreTracker.tscn" id="11_6cy1t"]
-[ext_resource type="AudioStream" uid="uid://bia7rrlxphfg2" path="res://Art/Audio/corridorsOgg.ogg" id="12_87j7f"]
+[ext_resource type="AudioStream" path="res://Art/Audio/Maskman_theme.ogg" id="12_87j7f"]
 [ext_resource type="PackedScene" uid="uid://48vtm5vekhaq" path="res://Scenes/QuestUpdate.tscn" id="13_fd737"]
 [ext_resource type="Script" uid="uid://6mkfx5smohn0" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
 [ext_resource type="PackedScene" path="res://Scenes/Levels/ArenaMat.tscn" id="15_arena"]
-[ext_resource type="PackedScene" uid="uid://c2audience01" path="res://Scenes/Levels/Audience.tscn" id="16_audience"]
+[ext_resource type="PackedScene" path="res://Scenes/Levels/Audience.tscn" id="16_audience"]
+[ext_resource type="Script" uid="uid://ds6h70ol1ht80" path="res://Scripts/BGMFromOffset.gd" id="17_bgm"]
 
 [node name="Scene_Root" type="Node2D"]
 texture_filter = 1
@@ -30,17 +31,32 @@ position = Vector2(640, 360)
 
 [node name="NPCs" type="Node" parent="."]
 
-[node name="Enemy" parent="NPCs" instance=ExtResource("2_gsqk0")]
-position = Vector2(420, 180)
+[node name="EnemyBounce" parent="NPCs" instance=ExtResource("2_gsqk0")]
+modulate = Color(0.35, 1, 0.35, 1)
+position = Vector2(400, 200)
+behavior_type = 0
 
-[node name="Enemy2" parent="NPCs" instance=ExtResource("2_gsqk0")]
-position = Vector2(860, 220)
+[node name="EnemyWander" parent="NPCs" instance=ExtResource("2_gsqk0")]
+modulate = Color(1, 1, 0.4, 1)
+position = Vector2(520, 400)
+behavior_type = 1
+
+[node name="EnemyChase" parent="NPCs" instance=ExtResource("2_gsqk0")]
+modulate = Color(1, 0.45, 0.35, 1)
+position = Vector2(760, 250)
+
+[node name="EnemyCharge" parent="NPCs" instance=ExtResource("2_gsqk0")]
+modulate = Color(0.85, 0.4, 1, 1)
+position = Vector2(500, 500)
+behavior_type = 3
 
 [node name="NPC" parent="NPCs" instance=ExtResource("8_30ow3")]
-position = Vector2(400, 480)
+visible = false
+position = Vector2(-500, -500)
 
 [node name="NPC2" parent="NPCs" instance=ExtResource("8_30ow3")]
-position = Vector2(820, 320)
+visible = false
+position = Vector2(-500, -500)
 line1 = ["Hello! Everything is fine! Nothing to see here! "]
 
 [node name="Pickups" type="Node" parent="."]
@@ -64,6 +80,7 @@ amplitude = 12.0
 [node name="SceneSettings" parent="." instance=ExtResource("4_8uhxl")]
 
 [node name="Scene" type="Node" parent="."]
+script = ExtResource("17_bgm")
 
 [node name="Welcome Label" type="Label" parent="Scene"]
 texture_filter = 1
@@ -71,12 +88,11 @@ offset_left = -59.0
 offset_top = -141.0
 offset_right = 209.0
 offset_bottom = -48.0
-text = "Welcome to the top-down project!
-WASD - Move
+text = "WASD - Move
 SPACE - Dash
-
-LMB - Punch
-RMB - Spinning kick"
+LMB - Auto run (bounce off ropes)
+RMB / G - Grid move toggle
+J - Punch  K - Kick"
 label_settings = ExtResource("7_tuycv")
 
 [node name="WindowLights2" type="Node" parent="Scene"]
@@ -140,6 +156,5 @@ quest_objective = Array[String](["Expore the corridoors", "Find a way past the e
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="Scene"]
 stream = ExtResource("12_87j7f")
 volume_db = -1.0
-autoplay = true
 
 [node name="Score_UI" parent="." instance=ExtResource("11_6cy1t")]

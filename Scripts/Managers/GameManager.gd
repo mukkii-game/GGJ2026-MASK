@@ -2,6 +2,9 @@ extends Node
 
 var money = 0
 
+## グリッドモード（G/右クリックでトグル）。true=カクカク移動・マットグレー・観客青
+var use_grid_mode: bool = false
+
 #NOTE This class is our game manager and handles the players money and loading scenes
 #These functions can be called globally from anywhere
 

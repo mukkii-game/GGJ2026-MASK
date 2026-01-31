@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=3 uid="uid://bvg5dny32iw0x"]
+[gd_scene load_steps=54 format=3 uid="uid://bvg5dny32iw0x"]
 
 [ext_resource type="Texture2D" uid="uid://b4rhu7tb8453t" path="res://Scenes/Player/Sprite/Player_Idle1.png" id="1_8ujai"]
 [ext_resource type="Texture2D" uid="uid://cgwb0bq0pw036" path="res://Scenes/Player/Sprite/Player_attack1.png" id="1_8w3ed"]
@@ -17,9 +17,9 @@
 [ext_resource type="Texture2D" uid="uid://ypfqnkd3bveh" path="res://Scenes/Player/Sprite/Player_Death1.png" id="11_es3h3"]
 [ext_resource type="Texture2D" uid="uid://csfbbp0qhifhd" path="res://Scenes/Player/Sprite/Player_Death2.png" id="12_6533w"]
 [ext_resource type="Texture2D" uid="uid://1kv3u1upp4p6" path="res://Scenes/Player/Sprite/Player_Death3.png" id="13_5tvst"]
-[ext_resource type="Texture2D" uid="uid://1f765f0dmf76" path="res://Scenes/Player/Sprite/Player_walk1.png" id="14_0v64p"]
+[ext_resource type="Texture2D" uid="uid://b2pc6asy6is63" path="res://Scenes/Player/Sprite/Player_walk1.png" id="14_0v64p"]
 [ext_resource type="Texture2D" uid="uid://qe62u7g8d0dn" path="res://Scenes/Player/Sprite/Player_Death4.png" id="14_mf356"]
-[ext_resource type="Texture2D" uid="uid://bunnpmn3orp7m" path="res://Scenes/Player/Sprite/Player_walk2.png" id="15_1pdxl"]
+[ext_resource type="Texture2D" uid="uid://0qql7btajxh1" path="res://Scenes/Player/Sprite/Player_walk2.png" id="15_1pdxl"]
 [ext_resource type="Texture2D" uid="uid://yfjgk6manumt" path="res://Scenes/Player/Sprite/Player_MoonKick1.png" id="19_e6mmx"]
 [ext_resource type="Texture2D" uid="uid://cxelbexwa4xop" path="res://Scenes/Player/Sprite/Player_MoonKick2.png" id="20_46css"]
 [ext_resource type="Script" uid="uid://dkw60ne2xudap" path="res://Scripts/FSM/FiniteStateMachine.gd" id="21_54cjv"]
@@ -34,6 +34,9 @@
 [ext_resource type="Script" uid="uid://biuv0re7mfpnb" path="res://Scenes/Player/Scripts/States/PlayerDeathState.gd" id="30_ecf44"]
 [ext_resource type="Script" uid="uid://bvjr20a4d1yqf" path="res://Scripts/QuestGeneral/QuestTracker.gd" id="33_2eisr"]
 [ext_resource type="LabelSettings" uid="uid://1cnb4418rr7" path="res://Art/Fonts/pixelized_label_large.tres" id="34_aqkdi"]
+[ext_resource type="Script" path="res://Scripts/WindEffect.gd" id="35_wind"]
+[ext_resource type="Script" path="res://Scripts/FootShadow.gd" id="36_shadow"]
+[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerJumpState.gd" id="37_jump"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_uky13"]
 polygon = PackedVector2Array(-4, -26, -16, -26, -20, -22, -20, -4, -8, 4, -8, 20, 10, 20, 10, 4, 20, -2, 20, -20, 16, -26)
@@ -145,6 +148,9 @@ radius = 25.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_7m131"]
 radius = 32.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(64, 64)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ub6e5"]
 bg_color = Color(0.0352941, 0.0156863, 0.00784314, 0.427451)
@@ -413,6 +419,11 @@ healthbar = NodePath("Camera2D/ProgressBar")
 health = 200
 hit_particles = NodePath("hit_particle_blood")
 
+[node name="FootShadow" type="Node2D" parent="."]
+position = Vector2(0, 28)
+script = ExtResource("36_shadow")
+offset_to_feet = Vector2(0, 28)
+
 [node name="LightOccluder2D" type="LightOccluder2D" parent="."]
 occluder = SubResource("OccluderPolygon2D_uky13")
 
@@ -444,7 +455,11 @@ disabled = true
 
 [node name="BodyCollisionShape" type="CollisionShape2D" parent="."]
 position = Vector2(0, 14)
-shape = SubResource("CircleShape2D_7m131")
+shape = SubResource("RectangleShape2D_body")
+
+[node name="WindEffect" type="Node2D" parent="."]
+visible = false
+script = ExtResource("35_wind")
 
 [node name="FSM" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
 script = ExtResource("21_54cjv")
@@ -471,8 +486,13 @@ damage = 25
 
 [node name="Moving" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("29_bdbrv")
-movespeed = 140
+movespeed = 280
 animator = NodePath("../../AnimationPlayer")
+
+[node name="Jump" type="Node" parent="FSM"]
+script = ExtResource("37_jump")
+jump_initial_speed = 395.0
+gravity = 600.0
 
 [node name="Die" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("30_ecf44")

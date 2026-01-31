@@ -5,15 +5,21 @@ class_name enemy_chase_state
 @export var chase_duration := 3.0
 @export var attack_range := float(50)
 @export var move_speed := float(80)
+const STEP_SIZE := 32
+## グリッド時も通常移動速度を維持（32/80 ≈ 0.4秒に1ステップ）
+var _step_cooldown: float:
+	get: return STEP_SIZE / move_speed
 
 @export var animator : AnimationPlayer
 @onready var body = $"../.."
 
 var _chase_timer := 0.0
+var _step_timer := 0.0
 
 func Enter():
 	animator.play("Chasing")
 	_chase_timer = chase_duration
+	_step_timer = 0.0
 
 func Update(delta: float):
 	_chase_timer -= delta
@@ -25,11 +31,12 @@ func Update(delta: float):
 	if not player:
 		state_transition.emit(self, "enemy_idle_state")
 		return
-	var chase_direction = player.global_position - body.global_position
+	var chase_direction: Vector2 = player.global_position - body.global_position
 
 	if chase_direction.length() <= attack_range:
 		state_transition.emit(self, "enemy_attack_state")
 		return
 
+	# 敵の動きはカクカク/通常に依存せず常にスムーズ
 	body.velocity = chase_direction.normalized() * move_speed
 	body.move_and_slide()

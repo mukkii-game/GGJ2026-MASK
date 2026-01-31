@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://c2audience01"]
+[gd_scene load_steps=5 format=3 uid="uid://c2audience01"]
 
 [ext_resource type="Texture2D" uid="uid://dxb4tqtevo3ot" path="res://Art/Sprites/kamen_pic32.png" id="1_mask1"]
 [ext_resource type="Texture2D" uid="uid://dxb4tqtevo3ot" path="res://Art/Sprites/kamen_pic32.png" id="2_mask2"]
+[ext_resource type="Script" path="res://Scripts/Audience.gd" id="3_audience"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_audience"]
 animations = [{
@@ -19,6 +20,7 @@ animations = [{
 
 [node name="Audience" type="Node2D"]
 z_index = 10
+script = ExtResource("3_audience")
 
 [node name="Left" type="Node2D" parent="."]
 
