@@ -1,0 +1,313 @@
+[gd_scene load_steps=4 format=3 uid="uid://c2audience01"]
+
+[ext_resource type="Texture2D" uid="uid://dxb4tqtevo3ot" path="res://Art/Sprites/kamen_pic32.png" id="1_mask1"]
+[ext_resource type="Texture2D" uid="uid://dxb4tqtevo3ot" path="res://Art/Sprites/kamen_pic32.png" id="2_mask2"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_audience"]
+animations = [{
+"frames": [{
+"duration": 0.7,
+"texture": ExtResource("1_mask1")
+}, {
+"duration": 0.7,
+"texture": ExtResource("2_mask2")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 1.5
+}]
+
+[node name="Audience" type="Node2D"]
+z_index = 10
+
+[node name="Left" type="Node2D" parent="."]
+
+[node name="L1" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 56)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L2" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 56)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L3" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 56)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L4" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 136)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L5" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 136)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L6" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 136)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L7" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 216)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L8" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 216)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L9" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 216)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L10" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 296)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L11" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 296)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L12" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 296)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L13" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 376)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L14" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 376)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L15" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 376)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L16" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 456)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L17" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 456)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L18" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 456)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L19" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 536)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L20" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 536)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L21" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 536)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L22" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(70, 616)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L23" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(140, 616)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="L24" type="AnimatedSprite2D" parent="Left"]
+position = Vector2(210, 616)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="Right" type="Node2D" parent="."]
+
+[node name="R1" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 56)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R2" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 56)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R3" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 56)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R4" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 136)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R5" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 136)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R6" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 136)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R7" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 216)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R8" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 216)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R9" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 216)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R10" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 296)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R11" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 296)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R12" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 296)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R13" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 376)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R14" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 376)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R15" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 376)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R16" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 456)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R17" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 456)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R18" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 456)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R19" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 536)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R20" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 536)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R21" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 536)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R22" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1070, 616)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R23" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1140, 616)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"
+
+[node name="R24" type="AnimatedSprite2D" parent="Right"]
+position = Vector2(1210, 616)
+scale = Vector2(1, 1)
+sprite_frames = SubResource("SpriteFrames_audience")
+animation = &"idle"

@@ -1,14 +1,14 @@
 extends State
 class_name PlayerWalking
 
-## グリッドごとワープ：1ステップのピクセル数（半キャラ＝16）
-const STEP_SIZE := 16
+## グリッドごとワープ：1ステップのピクセル数（半キャラ＝32）
+const STEP_SIZE := 32
 ## 1ステップごとの間隔（秒）。小さくすると速く動く
 @export var step_cooldown := 0.12
 
-@export var movespeed := int(350)
-@export var dash_max := int(500)
-var dashspeed := float(100)
+@export var movespeed := int(1400)
+@export var dash_max := int(2000)
+var dashspeed := float(400)
 var can_dash := bool(false)
 var dash_direction := Vector2(0,0)
 var step_timer := 0.0
@@ -46,7 +46,7 @@ func Move(input_dir : Vector2, delta : float):
 			Transition("Idle")
 		return
 
-	# 通常時：グリッドONなら16pxワープ、OFFなら滑らか移動（狭い道用）
+	# 通常時：グリッドONなら32pxワープ、OFFなら滑らか移動（狭い道用）
 	if input_dir.length() > 0:
 		player.velocity = input_dir
 		var use_grid: bool = (player as PlayerMain).use_grid_movement if player is PlayerMain else false

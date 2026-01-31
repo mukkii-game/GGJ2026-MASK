@@ -17,18 +17,19 @@ func _process(_delta):
 	
 #Add anything here that needs to be initialized on the character
 func init_character():
-	healthbar.max_value = health
-	healthbar.value = health
+	if healthbar:
+		healthbar.max_value = health
+		healthbar.value = health
 
 #Flip charater sprites based on their current velocity
 func Turn():
 	#This ternary lets us flip a sprite if its drawn the wrong way
 	var direction = -1 if flipped_horizontal == true else 1
 	
-	if(velocity.x < 0):
-		sprite.scale.x = -direction
-	elif(velocity.x > 0):
-		sprite.scale.x = direction
+	if velocity.x < 0:
+		sprite.scale.x = -direction * absf(sprite.scale.x)
+	elif velocity.x > 0:
+		sprite.scale.x = direction * absf(sprite.scale.x)
 
 #region Taking Damage
 
@@ -55,7 +56,8 @@ func _take_damage(amount):
 		return
 		
 	health -= amount
-	healthbar.value = health;
+	if healthbar:
+		healthbar.value = health
 	damage_effects()
 	
 	if(health <= 0):
