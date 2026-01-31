@@ -1,11 +1,22 @@
 extends State
 class_name enemy_idle_state
 
+## 次の行動（Patrol/Wander）に移るまでの待ち時間（秒）
+@export var idle_duration := 1.5
+
 @export var animator : AnimationPlayer
+var _timer := 0.0
 
 func Enter():
 	animator.play("Idle")
-	pass
+	_timer = idle_duration
 
-func Update(_delta):
-	pass
+func Update(delta: float):
+	_timer -= delta
+	if _timer <= 0.0:
+		_timer = idle_duration
+		# 往復とランダムをランダムで切り替え
+		if randf() < 0.5:
+			state_transition.emit(self, "enemy_patrol_state")
+		else:
+			state_transition.emit(self, "enemy_wander_state")

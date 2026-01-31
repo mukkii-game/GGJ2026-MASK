@@ -36,7 +36,7 @@
 [ext_resource type="LabelSettings" uid="uid://1cnb4418rr7" path="res://Art/Fonts/pixelized_label_large.tres" id="34_aqkdi"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_uky13"]
-polygon = PackedVector2Array(-2, -13, -8, -13, -10, -11, -10, -2, -4, 2, -4, 10, 5, 10, 5, 2, 10, -1, 10, -10, 8, -13)
+polygon = PackedVector2Array(-4, -26, -16, -26, -20, -22, -20, -4, -8, 4, -8, 20, 10, 20, 10, 4, 20, -2, 20, -20, 16, -26)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_vax36"]
 animations = [{
@@ -138,12 +138,13 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wk4mn"]
+size = Vector2(20, 10)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_mkwab"]
 radius = 25.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_7m131"]
-radius = 8.06226
+radius = 32.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ub6e5"]
 bg_color = Color(0.0352941, 0.0156863, 0.00784314, 0.427451)
@@ -416,6 +417,7 @@ hit_particles = NodePath("hit_particle_blood")
 occluder = SubResource("OccluderPolygon2D_uky13")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2, 2)
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_vax36")
 animation = &"Dash"
@@ -441,7 +443,7 @@ shape = SubResource("CircleShape2D_mkwab")
 disabled = true
 
 [node name="BodyCollisionShape" type="CollisionShape2D" parent="."]
-position = Vector2(0, 7)
+position = Vector2(0, 14)
 shape = SubResource("CircleShape2D_7m131")
 
 [node name="FSM" type="Node" parent="." node_paths=PackedStringArray("initial_state")]

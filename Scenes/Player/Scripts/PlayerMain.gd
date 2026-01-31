@@ -5,12 +5,12 @@ class_name PlayerMain
 @onready var cam = $Camera2D
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
-## マット内の移動範囲（赤ロープ32pxの内側、プレイヤー半径16pxのマージン）
-const MAT_LEFT := 48
-const MAT_RIGHT := 1232
-const MAT_TOP := 48
-const MAT_BOTTOM := 672
-## カメラ固定位置（スクロールなし＝画面中心をこの座標に）
+## マット内の移動範囲（1280×720画面中央の720×720正方形内、プレイヤー半径32pxのマージン）
+const MAT_LEFT := 344
+const MAT_RIGHT := 936
+const MAT_TOP := 64
+const MAT_BOTTOM := 656
+## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
 ## false=滑らか（初期） / true=カクカク。Gキーでトグル
@@ -20,12 +20,18 @@ func _ready():
 	super()
 	if cam:
 		cam.position_smoothing_enabled = false
+		# カメラをプレイヤーから切り離してスクロールしないようにする
+		var root = get_tree().current_scene
+		if root and cam.get_parent() == self:
+			remove_child(cam)
+			root.add_child(cam)
+			cam.global_position = CAM_CENTER
 
 func _process(_delta):
 	super(_delta)
 	if Input.is_action_just_pressed("ToggleGridMove"):
 		use_grid_movement = not use_grid_movement
-	# カメラ固定：マット外を見せない（スクロールなし）
+	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
 	# マット外には出さない

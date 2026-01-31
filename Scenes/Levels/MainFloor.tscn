@@ -16,11 +16,14 @@
 [ext_resource type="PackedScene" uid="uid://48vtm5vekhaq" path="res://Scenes/QuestUpdate.tscn" id="13_fd737"]
 [ext_resource type="Script" uid="uid://6mkfx5smohn0" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
 [ext_resource type="PackedScene" path="res://Scenes/Levels/ArenaMat.tscn" id="15_arena"]
+[ext_resource type="PackedScene" uid="uid://c2audience01" path="res://Scenes/Levels/Audience.tscn" id="16_audience"]
 
 [node name="Scene_Root" type="Node2D"]
 texture_filter = 1
 
 [node name="ArenaMat" parent="." instance=ExtResource("15_arena")]
+
+[node name="Audience" parent="." instance=ExtResource("16_audience")]
 
 [node name="Player" parent="." instance=ExtResource("1_v023b")]
 position = Vector2(640, 360)
@@ -28,34 +31,34 @@ position = Vector2(640, 360)
 [node name="NPCs" type="Node" parent="."]
 
 [node name="Enemy" parent="NPCs" instance=ExtResource("2_gsqk0")]
-position = Vector2(67, 71)
+position = Vector2(420, 180)
 
 [node name="Enemy2" parent="NPCs" instance=ExtResource("2_gsqk0")]
-position = Vector2(-171, 71)
+position = Vector2(860, 220)
 
 [node name="NPC" parent="NPCs" instance=ExtResource("8_30ow3")]
-position = Vector2(83, 260)
+position = Vector2(400, 480)
 
 [node name="NPC2" parent="NPCs" instance=ExtResource("8_30ow3")]
-position = Vector2(-108, 104)
+position = Vector2(820, 320)
 line1 = ["Hello! Everything is fine! Nothing to see here! "]
 
 [node name="Pickups" type="Node" parent="."]
 
 [node name="Pickup4" parent="Pickups" instance=ExtResource("3_qfkdr")]
-position = Vector2(2, 74)
+position = Vector2(380, 280)
 amplitude = 12.0
 
 [node name="Pickup2" parent="Pickups" instance=ExtResource("3_qfkdr")]
-position = Vector2(195, 68)
+position = Vector2(520, 150)
 amplitude = 12.0
 
 [node name="Pickup3" parent="Pickups" instance=ExtResource("3_qfkdr")]
-position = Vector2(-284, 218)
+position = Vector2(720, 450)
 amplitude = 12.0
 
 [node name="Pickup5" parent="Pickups" instance=ExtResource("3_qfkdr")]
-position = Vector2(192, 255)
+position = Vector2(760, 520)
 amplitude = 12.0
 
 [node name="SceneSettings" parent="." instance=ExtResource("4_8uhxl")]

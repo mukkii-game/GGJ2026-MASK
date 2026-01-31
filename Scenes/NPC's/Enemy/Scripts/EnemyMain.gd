@@ -7,19 +7,16 @@ var player_in_range = false
 @export var attack_node : Node
 @export var chase_node : Node
 
-#After finishing an attack, we return here to determine our next action based on the players proximity
+# 攻撃後は必ずIdleに戻す（一定時間追従はChase側のタイマーで制御）
 func finished_attacking():
-	if(player_in_range == true):
-		fsm.change_state(attack_node, "enemy_chase_state")
-	else:
-		fsm.change_state(attack_node, "enemy_idle_state")
+	fsm.change_state(attack_node, "enemy_idle_state")
 
-#Register player proximity, start chasing if we are idling when the player gets close
+# プレイヤーが範囲内に入ったら一定時間追従（Chase）に切り替え
 func _on_detection_area_body_entered(body):
 	if body.is_in_group("Player"):
 		player_in_range = true
-		#We don't want this to happen from the death state, only from idle
-		if fsm.current_state.name == "enemy_idle_state": 
+		var cs = fsm.current_state.name if fsm.current_state else ""
+		if cs != "enemy_death_state" and cs != "enemy_attack_state":
 			fsm.force_change_state("enemy_chase_state")
 
 #Return to idle when player leaves our proximity
