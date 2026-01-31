@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://b4rhu7tb8453t" path="res://Scenes/Player/Sprite/Player_Idle1.png" id="1_8ujai"]
 [ext_resource type="Texture2D" uid="uid://cgwb0bq0pw036" path="res://Scenes/Player/Sprite/Player_attack1.png" id="1_8w3ed"]
-[ext_resource type="Script" path="res://Scenes/Player/Scripts/PlayerMain.gd" id="1_y5oq4"]
+[ext_resource type="Script" uid="uid://nmcek0yrypvd" path="res://Scenes/Player/Scripts/PlayerMain.gd" id="1_y5oq4"]
 [ext_resource type="Texture2D" uid="uid://rxt0tqq0by7h" path="res://Scenes/Player/Sprite/Player_attack2.png" id="2_2bwr0"]
 [ext_resource type="Texture2D" uid="uid://d1l8sveglv24y" path="res://Scenes/Player/Sprite/Player_Idle2.png" id="2_mad3e"]
 [ext_resource type="Texture2D" uid="uid://v3dbaq7ilxpe" path="res://Scenes/Player/Sprite/Player_Idle3.png" id="3_608ps"]
@@ -22,17 +22,17 @@
 [ext_resource type="Texture2D" uid="uid://bunnpmn3orp7m" path="res://Scenes/Player/Sprite/Player_walk2.png" id="15_1pdxl"]
 [ext_resource type="Texture2D" uid="uid://yfjgk6manumt" path="res://Scenes/Player/Sprite/Player_MoonKick1.png" id="19_e6mmx"]
 [ext_resource type="Texture2D" uid="uid://cxelbexwa4xop" path="res://Scenes/Player/Sprite/Player_MoonKick2.png" id="20_46css"]
-[ext_resource type="Script" path="res://Scripts/FSM/FiniteStateMachine.gd" id="21_54cjv"]
+[ext_resource type="Script" uid="uid://dkw60ne2xudap" path="res://Scripts/FSM/FiniteStateMachine.gd" id="21_54cjv"]
 [ext_resource type="PackedScene" uid="uid://b82yimbxiflml" path="res://Art/Particles/hit_particles.tscn" id="21_gooki"]
 [ext_resource type="Texture2D" uid="uid://d3sffbaa38mbk" path="res://Scenes/Player/Sprite/Player_MoonKick3.png" id="21_sg1a0"]
-[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerIdleState.gd" id="26_28u22"]
-[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerAttackState.gd" id="27_j1lrx"]
+[ext_resource type="Script" uid="uid://b7vdrieo446or" path="res://Scenes/Player/Scripts/States/PlayerIdleState.gd" id="26_28u22"]
+[ext_resource type="Script" uid="uid://ck2uu6muh37nh" path="res://Scenes/Player/Scripts/States/PlayerAttackState.gd" id="27_j1lrx"]
 [ext_resource type="Texture2D" uid="uid://dyb5iqfj3tmwj" path="res://Art/Sprites/light.png" id="27_on0bn"]
 [ext_resource type="LabelSettings" uid="uid://da8inon5cmt2r" path="res://Art/Fonts/pixelized_label.tres" id="28_5mc6f"]
-[ext_resource type="Script" path="res://Scripts/AttackData.gd" id="28_wb7jg"]
-[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerWalkState.gd" id="29_bdbrv"]
-[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerDeathState.gd" id="30_ecf44"]
-[ext_resource type="Script" path="res://Scripts/QuestGeneral/QuestTracker.gd" id="33_2eisr"]
+[ext_resource type="Script" uid="uid://jnabypoal23g" path="res://Scripts/AttackData.gd" id="28_wb7jg"]
+[ext_resource type="Script" uid="uid://cyqvahbid5dvm" path="res://Scenes/Player/Scripts/States/PlayerWalkState.gd" id="29_bdbrv"]
+[ext_resource type="Script" uid="uid://biuv0re7mfpnb" path="res://Scenes/Player/Scripts/States/PlayerDeathState.gd" id="30_ecf44"]
+[ext_resource type="Script" uid="uid://bvjr20a4d1yqf" path="res://Scripts/QuestGeneral/QuestTracker.gd" id="33_2eisr"]
 [ext_resource type="LabelSettings" uid="uid://1cnb4418rr7" path="res://Art/Fonts/pixelized_label_large.tres" id="34_aqkdi"]
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_uky13"]
@@ -393,12 +393,12 @@ tracks/1/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_gtuut"]
 _data = {
-"Attack": SubResource("Animation_jtcnw"),
-"Dash": SubResource("Animation_a1dma"),
-"Death": SubResource("Animation_fkgk5"),
-"Idle": SubResource("Animation_1i780"),
-"MoonKick": SubResource("Animation_7c1ec"),
-"Walk": SubResource("Animation_wo7cn")
+&"Attack": SubResource("Animation_jtcnw"),
+&"Dash": SubResource("Animation_a1dma"),
+&"Death": SubResource("Animation_fkgk5"),
+&"Idle": SubResource("Animation_1i780"),
+&"MoonKick": SubResource("Animation_7c1ec"),
+&"Walk": SubResource("Animation_wo7cn")
 }
 
 [node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("sprite", "healthbar", "hit_particles") groups=["Player"]]
@@ -511,14 +511,14 @@ label_settings = ExtResource("28_5mc6f")
 [node name="hit_particle_blood" type="GPUParticles2D" parent="."]
 emitting = false
 amount = 200
-process_material = SubResource("ParticleProcessMaterial_wrxbo")
 lifetime = 0.6
 one_shot = true
 explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_wrxbo")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
-"": SubResource("AnimationLibrary_gtuut")
+&"": SubResource("AnimationLibrary_gtuut")
 }
 
 [node name="QuestTracker" type="Node2D" parent="." node_paths=PackedStringArray("quest_info", "quest_announcement")]

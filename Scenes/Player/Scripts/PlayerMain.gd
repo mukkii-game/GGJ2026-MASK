@@ -4,8 +4,13 @@ class_name PlayerMain
 @onready var fsm = $FSM as FiniteStateMachine
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
-#All of our logic is either in the CharacterBase class
-#or spread out over our states in the finite-state-manager, this class is almost empty 
+## false=滑らか（初期） / true=カクカク。Gキーでトグル
+var use_grid_movement := false
+
+func _process(_delta):
+	super(_delta)
+	if Input.is_action_just_pressed("ToggleGridMove"):
+		use_grid_movement = not use_grid_movement
 
 func _die():
 	super() #calls _die() on base-class CharacterBase

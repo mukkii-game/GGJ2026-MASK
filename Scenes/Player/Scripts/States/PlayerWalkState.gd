@@ -1,14 +1,17 @@
 extends State
 class_name PlayerWalking
 
-## カクカク移動用：位置をこのピクセル単位でスナップする（32=1キャラ、16=半キャラ）
-const GRID_SIZE := 32
+## グリッドごとワープ：1ステップのピクセル数（半キャラ＝16）
+const STEP_SIZE := 16
+## 1ステップごとの間隔（秒）。小さくすると速く動く
+@export var step_cooldown := 0.12
 
 @export var movespeed := int(350)
 @export var dash_max := int(500)
 var dashspeed := float(100)
 var can_dash := bool(false)
 var dash_direction := Vector2(0,0)
+var step_timer := 0.0
 
 var player : CharacterBody2D
 @export var animator : AnimationPlayer
@@ -18,8 +21,9 @@ func Enter():
 	animator.play("Walk")
 
 func Update(delta : float):
+	step_timer -= delta
 	var input_dir = Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
-	Move(input_dir)
+	Move(input_dir, delta)
 	LessenDash(delta)
 
 	if(Input.is_action_just_pressed("Dash") && can_dash):
@@ -28,26 +32,39 @@ func Update(delta : float):
 	if Input.is_action_just_pressed("Punch") or Input.is_action_just_pressed("Kick"):
 		Transition("Attacking")
 	
-func Move(input_dir : Vector2):
+func Move(input_dir : Vector2, delta : float):
 	#Suddenly turning mid dash
 	if(dash_direction != Vector2.ZERO and dash_direction != input_dir):
 		dash_direction = Vector2.ZERO
 		dashspeed = 0
 
-	player.velocity = input_dir * movespeed + dash_direction * dashspeed 
-	player.move_and_slide()
-	# カクカク移動：位置をグリッドにスナップ
-	_snap_to_grid()
+	# ダッシュ中は従来どおり速度移動（壁は move_and_slide が止める）
+	if dashspeed > 0:
+		player.velocity = input_dir * movespeed + dash_direction * dashspeed
+		player.move_and_slide()
+		if input_dir.length() <= 0:
+			Transition("Idle")
+		return
 
-	if(input_dir.length() <= 0):
+	# 通常時：グリッドONなら16pxワープ、OFFなら滑らか移動（狭い道用）
+	if input_dir.length() > 0:
+		player.velocity = input_dir
+		var use_grid: bool = (player as PlayerMain).use_grid_movement if player is PlayerMain else false
+		if use_grid:
+			if step_timer <= 0:
+				var step := Vector2(
+					STEP_SIZE * sign(input_dir.x) if absf(input_dir.x) > 0.1 else 0,
+					STEP_SIZE * sign(input_dir.y) if absf(input_dir.y) > 0.1 else 0
+				)
+				if step != Vector2.ZERO and not player.test_move(player.global_transform, step):
+					player.global_position += step
+				step_timer = step_cooldown
+		else:
+			player.velocity = input_dir * movespeed
+			player.move_and_slide()
+	else:
+		player.velocity = Vector2.ZERO
 		Transition("Idle")
-
-func _snap_to_grid():
-	var g := player.global_position
-	player.global_position = Vector2(
-		round(g.x / GRID_SIZE) * GRID_SIZE,
-		round(g.y / GRID_SIZE) * GRID_SIZE
-	)
 
 func start_dash(input_dir : Vector2):
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0.3, -1)

@@ -14,7 +14,7 @@
 [ext_resource type="PackedScene" uid="uid://b6xb8nhlqtuhf" path="res://Scenes/ScoreTracker.tscn" id="11_6cy1t"]
 [ext_resource type="AudioStream" uid="uid://bia7rrlxphfg2" path="res://Art/Audio/corridorsOgg.ogg" id="12_87j7f"]
 [ext_resource type="PackedScene" uid="uid://48vtm5vekhaq" path="res://Scenes/QuestUpdate.tscn" id="13_fd737"]
-[ext_resource type="Script" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
+[ext_resource type="Script" uid="uid://6mkfx5smohn0" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
 
 [node name="Scene_Root" type="Node2D"]
 texture_filter = 1
