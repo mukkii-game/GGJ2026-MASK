@@ -34,6 +34,13 @@
 [ext_resource type="Script" uid="uid://biuv0re7mfpnb" path="res://Scenes/Player/Scripts/States/PlayerDeathState.gd" id="30_ecf44"]
 [ext_resource type="Script" uid="uid://bvjr20a4d1yqf" path="res://Scripts/QuestGeneral/QuestTracker.gd" id="33_2eisr"]
 [ext_resource type="LabelSettings" uid="uid://1cnb4418rr7" path="res://Art/Fonts/pixelized_label_large.tres" id="34_aqkdi"]
+<<<<<<< Updated upstream
+=======
+[ext_resource type="Script" path="res://Scripts/WindEffect.gd" id="35_wind"]
+[ext_resource type="Script" path="res://Scripts/FootShadow.gd" id="36_shadow"]
+[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerJumpState.gd" id="37_jump"]
+[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerFireDashState.gd" id="38_firedash"]
+>>>>>>> Stashed changes
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_uky13"]
 polygon = PackedVector2Array(-4, -26, -16, -26, -20, -22, -20, -4, -8, 4, -8, 20, 10, 20, 10, 4, 20, -2, 20, -20, 16, -26)
@@ -474,6 +481,17 @@ script = ExtResource("29_bdbrv")
 movespeed = 140
 animator = NodePath("../../AnimationPlayer")
 
+<<<<<<< Updated upstream
+=======
+[node name="Jump" type="Node" parent="FSM"]
+script = ExtResource("37_jump")
+jump_initial_speed = 395.0
+gravity = 600.0
+
+[node name="FireDash" type="Node" parent="FSM"]
+script = ExtResource("38_firedash")
+
+>>>>>>> Stashed changes
 [node name="Die" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("30_ecf44")
 animator = NodePath("../../AnimationPlayer")

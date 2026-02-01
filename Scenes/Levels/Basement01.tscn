@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=4 uid="uid://bt5yicfpmnlwk"]
+[gd_scene load_steps=16 format=4 uid="uid://bt5yicfpmnlwk"]
 
 [ext_resource type="PackedScene" uid="uid://cx8kkqawojm0m" path="res://Scenes/Misc/SceneSettings.tscn" id="1_4stwf"]
 [ext_resource type="TileSet" uid="uid://b3n0bklwwny1b" path="res://Art/TileMap.tres" id="2_wbjck"]
@@ -14,6 +14,11 @@
 [ext_resource type="PackedScene" uid="uid://c5btk4icxp61c" path="res://Scenes/Levels/VictoryScreen.tscn" id="11_h37ha"]
 [ext_resource type="Script" path="res://Scripts/QuestGeneral/Quest.gd" id="11_oc6f3"]
 [ext_resource type="PackedScene" uid="uid://ceoo6gamb4olk" path="res://Scenes/Interactables/Area_Blocker.tscn" id="11_xe2ch"]
+<<<<<<< Updated upstream
+=======
+[ext_resource type="Script" path="res://Scripts/BGMFromOffset.gd" id="12_bgm"]
+[ext_resource type="Script" path="res://Scripts/DebugContactOverlay.gd" id="13_debug"]
+>>>>>>> Stashed changes
 
 [node name="Basement01" type="Node2D"]
 
@@ -132,3 +137,7 @@ position = Vector2(471, 154)
 position = Vector2(-90, -18)
 
 [node name="Score_tracker_layer" parent="." instance=ExtResource("7_hbxrs")]
+
+[node name="DebugContactOverlay" type="Node2D" parent="."]
+z_index = 200
+script = ExtResource("13_debug")

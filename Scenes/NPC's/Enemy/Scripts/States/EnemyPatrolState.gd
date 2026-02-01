@@ -16,6 +16,11 @@ var _start_pos := Vector2.ZERO
 var _dir := 1.0
 var _timer := 0.0
 
+func _use_horizontal() -> bool:
+	if body is EnemyMain:
+		return not (body as EnemyMain).patrol_vertical
+	return axis_horizontal
+
 func Enter():
 	animator.play("Chasing")
 	_start_pos = body.global_position
@@ -23,25 +28,36 @@ func Enter():
 	_timer = patrol_duration
 
 func Update(delta: float):
-	if patrol_duration > 0.0:
+	if GameManager.enemies_frozen:
+		body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		return
+	if body.knockback_stun_remaining > 0:
+		body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		return
+	# 上下/左右ループの場合はIdleに戻らない（patrol_duration 無視）
+	var is_loop := body is EnemyMain and ((body as EnemyMain).behavior_type == EnemyMain.Behavior.VerticalLoop or (body as EnemyMain).behavior_type == EnemyMain.Behavior.HorizontalLoop)
+	if not is_loop and patrol_duration > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:
 			state_transition.emit(self, "enemy_idle_state")
 			return
 
+	var use_h := _use_horizontal()
 	var offset: Vector2
-	if axis_horizontal:
+	if use_h:
 		offset = Vector2((body.global_position - _start_pos).x, 0)
 	else:
 		offset = Vector2(0, (body.global_position - _start_pos).y)
 
-	var len = offset.x if axis_horizontal else offset.y
+	var len = offset.x if use_h else offset.y
 	if len >= patrol_distance:
 		_dir = -1.0
 	elif len <= -patrol_distance:
 		_dir = 1.0
 
-	if axis_horizontal:
+	if use_h:
 		body.velocity = Vector2(_dir * move_speed, 0)
 	else:
 		body.velocity = Vector2(0, _dir * move_speed)

@@ -14,37 +14,59 @@ size = Vector2(32, 720)
 
 [node name="ArenaMat" type="Node2D"]
 
+[node name="OutsideZone" type="CanvasLayer" parent="."]
+layer = -3
+
+[node name="FloorColor" type="ColorRect" parent="OutsideZone"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.55, 0.78, 0.95, 1)
+
 [node name="MatBackground" type="CanvasLayer" parent="."]
-layer = -1
+layer = -2
 
 [node name="WhiteMat" type="ColorRect" parent="MatBackground"]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 280.0
-offset_top = 0.0
+offset_top = 16.0
 offset_right = 1000.0
-offset_bottom = 720.0
+offset_bottom = 704.0
 grow_horizontal = 0
 grow_vertical = 0
 color = Color(1, 1, 1, 1)
 
+<<<<<<< Updated upstream
 [node name="RopeFrame" type="CanvasLayer" parent="."]
 layer = 1
+=======
+[node name="RopeFrameBack" type="CanvasLayer" parent="."]
+layer = -1
+>>>>>>> Stashed changes
 
-[node name="RopeTop" type="ColorRect" parent="RopeFrame"]
+[node name="RopeTop" type="ColorRect" parent="RopeFrameBack"]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 280.0
 offset_top = 0.0
 offset_right = 1000.0
-offset_bottom = 32.0
+offset_bottom = 16.0
 grow_horizontal = 0
 grow_vertical = 0
 color = Color(0.9, 0.1, 0.1, 1)
 
-[node name="RopeBottom" type="ColorRect" parent="RopeFrame"]
+[node name="RopeLeft" type="ColorRect" parent="RopeFrameBack"]
 layout_mode = 3
 anchors_preset = 0
+<<<<<<< Updated upstream
 offset_left = 280.0
 offset_top = 688.0
 offset_right = 1000.0
@@ -57,6 +79,9 @@ color = Color(0.9, 0.1, 0.1, 1)
 layout_mode = 3
 anchors_preset = 0
 offset_left = 248.0
+=======
+offset_left = 264.0
+>>>>>>> Stashed changes
 offset_top = 0.0
 offset_right = 280.0
 offset_bottom = 720.0
@@ -64,17 +89,70 @@ grow_horizontal = 0
 grow_vertical = 0
 color = Color(0.9, 0.1, 0.1, 1)
 
-[node name="RopeRight" type="ColorRect" parent="RopeFrame"]
+[node name="RopeRight" type="ColorRect" parent="RopeFrameBack"]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 1000.0
 offset_top = 0.0
-offset_right = 1032.0
+offset_right = 1016.0
 offset_bottom = 720.0
 grow_horizontal = 0
 grow_vertical = 0
 color = Color(0.9, 0.1, 0.1, 1)
 
+<<<<<<< Updated upstream
+=======
+[node name="RopeBottom" type="Node2D" parent="."]
+z_index = 10
+
+[node name="BottomRect" type="ColorRect" parent="RopeBottom"]
+offset_left = 280.0
+offset_top = 704.0
+offset_right = 1000.0
+offset_bottom = 720.0
+color = Color(0.9, 0.1, 0.1, 1)
+
+[node name="WallCollisionVisual" type="CanvasLayer" parent="."]
+layer = -1
+visible = false
+
+[node name="WallLeftRect" type="ColorRect" parent="WallCollisionVisual"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 248.0
+offset_top = 0.0
+offset_right = 264.0
+offset_bottom = 720.0
+color = Color(1, 0.2, 0.2, 0.9)
+
+[node name="WallRightRect" type="ColorRect" parent="WallCollisionVisual"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1016.0
+offset_top = 0.0
+offset_right = 1032.0
+offset_bottom = 720.0
+color = Color(1, 0.2, 0.2, 0.9)
+
+[node name="WallTopRect" type="ColorRect" parent="WallCollisionVisual"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 280.0
+offset_top = 0.0
+offset_right = 1000.0
+offset_bottom = 16.0
+color = Color(1, 0.2, 0.2, 0.9)
+
+[node name="WallBottomRect" type="ColorRect" parent="WallCollisionVisual"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 280.0
+offset_top = 704.0
+offset_right = 1000.0
+offset_bottom = 720.0
+color = Color(1, 0.2, 0.2, 0.9)
+
+>>>>>>> Stashed changes
 [node name="Walls" type="Node2D" parent="."]
 
 [node name="WallTop" type="StaticBody2D" parent="Walls"]

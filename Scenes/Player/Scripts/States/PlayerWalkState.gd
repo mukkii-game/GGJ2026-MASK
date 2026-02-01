@@ -23,7 +23,30 @@ func Enter():
 func Update(delta : float):
 	step_timer -= delta
 	var input_dir = Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
+<<<<<<< Updated upstream
 	Move(input_dir, delta)
+=======
+	# 左クリック（ジャンプボタン）：ふつうモード＝ジャンプ、カクカク＝小ダッシュ＋炎（ダッシュ中でも即遷移）
+	if Input.is_action_just_pressed("Punch") and player_main:
+		if player_main.use_grid_movement:
+			state_transition.emit(self, "FireDash")
+		else:
+			state_transition.emit(self, "Jump")
+		return
+	# 移動キーを入れると自動走行解除
+	if input_dir.length() > 0 and auto_run_direction != Vector2.ZERO:
+		auto_run_direction = Vector2.ZERO
+	# 左クリックで自動走行開始（Moving 中に押した場合・方向なしのとき）
+	if Input.is_action_just_pressed("Punch") and auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
+		var sprite = player_main.sprite if player_main else null
+		auto_run_direction = Vector2.RIGHT if (sprite and sprite.scale.x >= 0) else Vector2.LEFT
+	if Input.is_action_just_pressed("Dash") and can_dash:
+		start_dash(input_dir if input_dir.length() > 0 else auto_run_direction)
+	elif Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
+		Transition("Attacking")
+	else:
+		Move(input_dir, delta)
+>>>>>>> Stashed changes
 	LessenDash(delta)
 
 	if(Input.is_action_just_pressed("Dash") && can_dash):

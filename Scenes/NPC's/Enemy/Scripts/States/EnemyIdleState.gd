@@ -12,6 +12,12 @@ func Enter():
 	_timer = idle_duration
 
 func Update(delta: float):
+<<<<<<< Updated upstream
+=======
+	# 静止タイプは Idle のまま（遷移しない）
+	if enemy and enemy.behavior_type == EnemyMain.Behavior.Idle:
+		return
+>>>>>>> Stashed changes
 	_timer -= delta
 	if _timer <= 0.0:
 		_timer = idle_duration

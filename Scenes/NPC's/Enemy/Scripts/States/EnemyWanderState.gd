@@ -24,6 +24,14 @@ func _pick_new_target():
 	_has_target = true
 
 func Update(delta: float):
+	if GameManager.enemies_frozen:
+		body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		return
+	if body.knockback_stun_remaining > 0:
+		body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		return
 	if not _has_target:
 		return
 	var to_target = _target - body.global_position

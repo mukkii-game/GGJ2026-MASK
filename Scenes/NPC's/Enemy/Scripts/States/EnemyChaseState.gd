@@ -16,6 +16,14 @@ func Enter():
 	_chase_timer = chase_duration
 
 func Update(delta: float):
+	if GameManager.enemies_frozen:
+		body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		return
+	if body.knockback_stun_remaining > 0:
+		body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		return
 	_chase_timer -= delta
 	if _chase_timer <= 0.0:
 		state_transition.emit(self, "enemy_idle_state")

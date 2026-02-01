@@ -18,7 +18,11 @@ animations = [{
 }]
 
 [node name="Audience" type="Node2D"]
+<<<<<<< Updated upstream
 z_index = 10
+=======
+script = ExtResource("3_audience")
+>>>>>>> Stashed changes
 
 [node name="Left" type="Node2D" parent="."]
 

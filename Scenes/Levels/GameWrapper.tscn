@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3 uid="uid://c3tt8axpvobit"]
+
+[ext_resource type="PackedScene" uid="uid://dei3j88yw6omf" path="res://Scenes/Levels/MainFloor.tscn" id="1_main"]
+
+[node name="GameWrapper" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+custom_minimum_size = Vector2(1280, 1280)
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 280.0
+offset_right = 1280.0
+offset_bottom = 1000.0
+grow_horizontal = 0
+grow_vertical = 0
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+size = Vector2i(1280, 720)
+handle_input_locally = false
+
+[node name="MainFloor" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_main")]
