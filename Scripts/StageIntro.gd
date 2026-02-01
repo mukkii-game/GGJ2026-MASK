@@ -2,6 +2,7 @@ extends Control
 ## ステージ登場画面。ステージ番号、ボス顔、ボス名を表示。Intro.mp3を再生。
 
 @onready var bgm_player: AudioStreamPlayer = null
+var _can_advance := false
 
 func _ready() -> void:
 	# GameManagerのcurrent_stageを参照してステージ情報を設定
@@ -22,6 +23,13 @@ func _ready() -> void:
 	if boss_face and ResourceLoader.exists(stage_data["boss_texture"]):
 		boss_face.texture = load(stage_data["boss_texture"]) as Texture2D
 	
+	# ステージ4: ボス（iron_mask_title4）の顔にぴかぴかエフェクト
+	var face_sparkle = get_node_or_null("FaceSparkle")
+	if face_sparkle:
+		face_sparkle.visible = GameManager.current_stage == 4
+		if GameManager.current_stage == 4:
+			_start_face_sparkle(face_sparkle)
+	
 	# ボス説明表示
 	var desc_label = get_node_or_null("Description")
 	if desc_label:
@@ -34,41 +42,49 @@ func _ready() -> void:
 	if ResourceLoader.exists(intro_path):
 		bgm_player.stream = load(intro_path) as AudioStream
 		bgm_player.play()
+	
+	# 1秒間は進めない
+	get_tree().create_timer(1.0).timeout.connect(_on_advance_allowed)
 
 func _get_stage_data(stage: int) -> Dictionary:
 	match stage:
 		1:
 			return {
 				"boss_name": "雑魚マスク軍団",
-				"boss_texture": "res://Scenes/NPC's/Enemy/Sprites/Enemy01.png",
+				"boss_texture": "res://Art/Sprites/iron_mask_title1.png",
 				"description": "弱いが数が多い！\nどんどん増援が来るぞ！"
 			}
 		2:
 			return {
 				"boss_name": "マスクメロンナ",
-				"boss_texture": "res://Art/Sprites/m_man_r_l1.png",
+				"boss_texture": "res://Art/Sprites/iron_mask_title2.png",
 				"description": "すばしっこい逃げ足！\nジャンプ中は止まる！\n雑魚を召喚してくる！"
 			}
 		3:
 			return {
 				"boss_name": "ユニ帝仮面",
-				"boss_texture": "res://Art/Sprites/m_man_b_l1.png",
+				"boss_texture": "res://Art/Sprites/iron_mask_title3.png",
 				"description": "正面は無敵！反撃が痛い！\n半キャラずらしのショルダータックルで攻撃！"
 			}
 		4:
 			return {
 				"boss_name": "異論マスク",
-				"boss_texture": "res://Art/Sprites/kamen_pic32.png",
+				"boss_texture": "res://Art/Sprites/iron_mask_title4.png",
 				"description": "高HP！攻撃すると大きく吹っ飛ぶ！\nコーナージャンプ着地で大ダメージ！"
 			}
 		_:
 			return {
 				"boss_name": "Unknown Boss",
-				"boss_texture": "res://Scenes/NPC's/Enemy/Sprites/Enemy01.png",
+				"boss_texture": "res://Art/Sprites/m_man_b_l1.png",
 				"description": ""
 			}
 
+func _on_advance_allowed() -> void:
+	_can_advance = true
+
 func _input(event: InputEvent) -> void:
+	if not _can_advance:
+		return
 	if event is InputEventKey and event.pressed:
 		_start_battle()
 		var vp = get_viewport()
@@ -79,6 +95,14 @@ func _input(event: InputEvent) -> void:
 		var vp = get_viewport()
 		if vp:
 			vp.set_input_as_handled()
+
+func _start_face_sparkle(node: Control) -> void:
+	# 顔の上でぴかぴか（モジュレート＋スケールのループ）
+	var tween := create_tween().set_loops()
+	tween.tween_property(node, "modulate", Color(1, 1, 1, 0.35), 0.12)
+	tween.tween_property(node, "modulate", Color(1, 1, 1, 1), 0.12)
+	tween.tween_property(node, "scale", Vector2(1.2, 1.2), 0.08)
+	tween.tween_property(node, "scale", Vector2(1.0, 1.0), 0.08)
 
 func _start_battle() -> void:
 	# BGMを停止

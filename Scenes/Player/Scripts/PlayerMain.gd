@@ -277,7 +277,7 @@ func _body_contact(delta: float) -> void:
 				var player_push: float = 12.0
 				
 				# ステージ4: 異論マスクの超反動（150px）
-				if GameManager.current_stage == 4 and enemy.has("stage_number") and enemy.stage_number == 4:
+				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
 					knock_amount = 150.0
 				
 				# 上下方向（Y軸方向）は左右より少し弱く
@@ -310,7 +310,7 @@ func _body_contact(delta: float) -> void:
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
 			# ステージ3: ユニ帝仮面の正面無敵 + 反撃
-			var is_stage3_boss: bool = GameManager.current_stage == 3 and enemy.has("stage_number") and enemy.stage_number == 3
+			var is_stage3_boss: bool = GameManager.current_stage == 3 and "stage_number" in enemy and enemy.stage_number == 3
 			
 			if is_stage3_boss:
 				# ユニ帝仮面の正面無敵：敵にダメージなし、プレイヤーに20ダメージ + 200px大ノックバック
@@ -368,7 +368,7 @@ func _body_contact(delta: float) -> void:
 				
 				var push_amount := BODY_PUSH_PIXELS_FRONTAL
 				# ステージ4: 異論マスクの超反動（150px）
-				if GameManager.current_stage == 4 and enemy.has("stage_number") and enemy.stage_number == 4:
+				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
 					push_amount = 150.0
 				
 				# プレイヤーと敵、両方が離れる方向に押し飛ばす

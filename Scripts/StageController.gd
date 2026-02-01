@@ -52,76 +52,76 @@ func _setup_stage_params() -> void:
 	else:
 		_setup_normal_params()
 
-## テストモード：簡単バランス、シーケンス確認用
+## テストモード：一撃で死ぬ（シーケンス確認用）
 func _setup_test_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団（テスト）
+		1:  # 雑魚マスク軍団（テスト＝一撃）
 			stage_params = {
 				"initial_count": 3,
-				"max_count": 8,
-				"spawn_interval": 10.0,
-				"enemy_hp": 50,
+				"max_count": 6,
+				"spawn_interval": 12.0,
+				"enemy_hp": 5,
 				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
-		2:  # マスクメロンナ（テスト）
+		2:  # マスクメロンナ（テスト＝一撃）
 			stage_params = {
 				"initial_count": 1,
-				"max_minions": 3,
+				"max_minions": 2,
 				"spawn_interval": 20.0,
-				"boss_hp": 150,
+				"boss_hp": 5,
 				"boss_speed": 600.0,
-				"minion_hp": 50,
+				"minion_hp": 5,
 				"behavior": 4  # Flee
 			}
-		3:  # ユニ帝仮面（テスト）
+		3:  # ユニ帝仮面（テスト＝一撃）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 180,
+				"boss_hp": 5,
 				"boss_speed": 400.0,
 				"behavior": 3  # RandomRange
 			}
-		4:  # 異論マスク（テスト）
+		4:  # 異論マスク（テスト＝一撃）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 350,
+				"boss_hp": 5,
 				"boss_speed": 200.0,
 				"behavior": 3  # RandomRange
 			}
 
-## 本番モード（スタート）：SPEC準拠・個性は出るがイージー寄り
+## 本番モード（スタート）：まあまあ普通のゲームバランス・1匹だけボス・雑魚は数発で死ぬ
 func _setup_normal_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団（1面は弱め）
+		1:  # 雑魚マスク軍団（雑魚のみ・数発で死ぬ）
 			stage_params = {
-				"initial_count": 3,
-				"max_count": 5,
-				"spawn_interval": 14.0,
-				"enemy_hp": 45,
+				"initial_count": 4,
+				"max_count": 7,
+				"spawn_interval": 11.0,
+				"enemy_hp": 55,
 				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
-		2:  # マスクメロンナ（2面も弱め・逃げる・雑魚少なめ）
+		2:  # マスクメロンナ（1匹だけボス・雑魚は数発で死ぬ）
 			stage_params = {
 				"initial_count": 1,
-				"max_minions": 2,
-				"spawn_interval": 22.0,
-				"boss_hp": 140,
+				"max_minions": 3,
+				"spawn_interval": 18.0,
+				"boss_hp": 220,
 				"boss_speed": 600.0,
-				"minion_hp": 45,
+				"minion_hp": 50,
 				"behavior": 4  # Flee
 			}
-		3:  # ユニ帝仮面（正面無敵・反撃・ショルダーのみ有効）
+		3:  # ユニ帝仮面（1匹だけボス・正面無敵・ショルダーのみ）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 240,
+				"boss_hp": 260,
 				"boss_speed": 400.0,
 				"behavior": 3  # RandomRange
 			}
-		4:  # 異論マスク（高HP・超反動・コーナージャンプ特攻）
+		4:  # 異論マスク（1匹だけボス・コーナージャンプ特攻）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 350,
+				"boss_hp": 400,
 				"boss_speed": 200.0,
 				"behavior": 3  # RandomRange
 			}
@@ -224,6 +224,46 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 			else:
 				main_floor.add_child(enemy)
 				enemy.global_position = pos
+	
+	# ステージ・ボス/雑魚に応じた絵を適用（res://Art/Sprites/）
+	var tex_path := _get_enemy_texture_path(GameManager.current_stage, is_boss)
+	_apply_enemy_sprite(enemy, tex_path)
+
+## ステージ・ボス/雑魚に応じた敵スプライトパス（SPEC: zako/melon_chan/uni_chan/elon_musk）
+func _get_enemy_texture_path(stage: int, is_boss: bool) -> String:
+	match stage:
+		1:  # 雑魚マスク zako_mask
+			return "res://Art/Sprites/m_man_b_l1.png"
+		2:  # マスクメロンナ melon_chan / 雑魚はzako
+			return "res://Art/Sprites/panna_chan_l1.png" if is_boss else "res://Art/Sprites/m_man_b_l1.png"
+		3:  # ユニ帝仮面 uni_chan
+			return "res://Art/Sprites/unity_chan_l1.png"
+		4:  # 異論マスク elon_musk
+			return "res://Art/Sprites/iron_mask_title1.png"
+		_:
+			return "res://Art/Sprites/m_man_b_l1.png"
+
+## 敵のAnimatedSprite2Dに1枚テクスチャでSpriteFramesを適用
+func _apply_enemy_sprite(enemy: EnemyMain, texture_path: String) -> void:
+	if not ResourceLoader.exists(texture_path):
+		return
+	var tex := load(texture_path) as Texture2D
+	if not tex:
+		return
+	var sprite := enemy.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if not sprite:
+		return
+	var sf := SpriteFrames.new()
+	sf.add_animation("Idle")
+	sf.add_frame("Idle", tex, 1.0)
+	sf.add_animation("Walk")
+	sf.add_frame("Walk", tex, 1.0)
+	sf.add_animation("Attack")
+	sf.add_frame("Attack", tex, 1.0)
+	sf.add_animation("Death")
+	sf.add_frame("Death", tex, 1.0)
+	sprite.sprite_frames = sf
+	sprite.play("Idle")
 
 ## SubViewport内のNPCsノードを取得（敵はここに追加されている）
 func _get_npcs_node() -> Node:

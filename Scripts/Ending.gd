@@ -4,6 +4,13 @@ extends Control
 @onready var bgm_player: AudioStreamPlayer = null
 
 func _ready() -> void:
+	# 主人公（Godot）の絵を表示（SPEC: godot_man → gr_mask_l1.png）
+	var godot_face = get_node_or_null("GodotMask")
+	if godot_face:
+		var path := "res://Art/Sprites/gr_mask_l1.png"
+		if ResourceLoader.exists(path):
+			godot_face.texture = load(path) as Texture2D
+	
 	# エンディング曲を再生（なければMainTheme.mp3）
 	bgm_player = AudioStreamPlayer.new()
 	add_child(bgm_player)
