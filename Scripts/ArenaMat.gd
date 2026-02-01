@@ -1,90 +1,13 @@
 extends Node2D
-## ロープ跳ね返り時にロープを少し揺らす。グリッドモード時はマットをグレーに。
+## アリーナマット：カクカクモード時に色を変更
 
-const SWAY_PIXELS := 4.0
-const SWAY_DURATION := 0.15
-const MAT_COLOR_NORMAL := Color(1, 1, 1, 1)
-## カクカクモード時はマットをはっきり変える（暗いグレー青）
-const MAT_COLOR_GRID := Color(0.4, 0.42, 0.5, 1)
-const ROPE_BULGE := 16.0
-const PLAYER_RADIUS := 32.0
-
-func _ready() -> void:
-	_update_mat_color()
+@onready var mat_rect = get_node_or_null("MatBackground/MatColor")
 
 func _process(_delta: float) -> void:
-	_update_mat_color()
-	_update_rope_bulge()
-
-## 下ロープの基準（16ドット幅）
-const ROPE_BOTTOM_TOP := 704.0
-const ROPE_BOTTOM_BOTTOM := 720.0
-
-func _update_rope_bulge() -> void:
-	var player := get_tree().get_first_node_in_group("Player") as Node2D
-	var frame_back := get_node_or_null("RopeFrameBack") as CanvasLayer
-	var rope_bottom_node := get_node_or_null("RopeBottom")
-	if not player or not frame_back or not rope_bottom_node:
+	if not mat_rect:
 		return
-	var px: float = player.global_position.x
-	var py: float = player.global_position.y
-	var rope_left := frame_back.get_node_or_null("RopeLeft") as Control
-	var rope_right := frame_back.get_node_or_null("RopeRight") as Control
-	var rope_top := frame_back.get_node_or_null("RopeTop") as Control
-	var rope_bottom := rope_bottom_node.get_node_or_null("BottomRect") as Control
-	# 左ロープ：当たったその先（外側）に膨らむ → offset_left を減らす（16ドット幅）
-	if rope_left:
-		rope_left.offset_left = 264.0 - (ROPE_BULGE if px < 280.0 + PLAYER_RADIUS else 0.0)
-	# 右ロープ：左と対称に奥側（外側）に膨らむ → offset_right を増やす（16ドット幅）
-	if rope_right:
-		rope_right.offset_left = 1000.0
-		rope_right.offset_right = 1016.0 + (ROPE_BULGE if px > 1000.0 - PLAYER_RADIUS else 0.0)
-	# 上ロープ：手前側（下方向）にも伸ばし、触れたら膨らむ（16ドット幅）
-	if rope_top:
-		rope_top.offset_top = 0.0 - (ROPE_BULGE if py < 16.0 + PLAYER_RADIUS else 0.0)
-		rope_top.offset_bottom = 16.0 + (ROPE_BULGE if py < 16.0 + PLAYER_RADIUS else 0.0)
-	# 下ロープ：手前側（上方向）にも伸ばし、触れたら膨らむ
-	if rope_bottom:
-		rope_bottom.offset_top = ROPE_BOTTOM_TOP - (ROPE_BULGE if py > ROPE_BOTTOM_BOTTOM - PLAYER_RADIUS else 0.0)
-		rope_bottom.offset_bottom = ROPE_BOTTOM_BOTTOM + (ROPE_BULGE if py > ROPE_BOTTOM_BOTTOM - PLAYER_RADIUS else 0.0)
-
-func _update_mat_color() -> void:
-	var white_mat := get_node_or_null("MatBackground/WhiteMat") as ColorRect
-	if white_mat:
-		white_mat.color = MAT_COLOR_GRID if GameManager.use_grid_mode else MAT_COLOR_NORMAL
-
-## 跳ね返った側を指定してロープを揺らす。side: "left" | "right" | "top" | "bottom"
-func sway_rope(side: StringName) -> void:
-	var frame_back := get_node_or_null("RopeFrameBack") as CanvasLayer
-	var rope_bottom_node := get_node_or_null("RopeBottom")
-	if not frame_back or not rope_bottom_node:
-		return
-	var target: Control = null
-	var prop: NodePath = NodePath("")
-	var base_val: float = 0.0
-	match side:
-		&"left":
-			target = frame_back.get_node_or_null("RopeLeft") as Control
-			prop = NodePath("offset_left")
-			base_val = 264.0
-		&"right":
-			target = frame_back.get_node_or_null("RopeRight") as Control
-			prop = NodePath("offset_left")
-			base_val = 1000.0
-		&"top":
-			target = frame_back.get_node_or_null("RopeTop") as Control
-			prop = NodePath("offset_top")
-			base_val = 0.0
-		&"bottom":
-			target = rope_bottom_node.get_node_or_null("BottomRect") as Control
-			prop = NodePath("offset_top")
-			base_val = ROPE_BOTTOM_TOP
-		_:
-			return
-	if not target:
-		return
-	var tween := create_tween()
-	tween.set_ease(Tween.EASE_OUT)
-	tween.set_trans(Tween.TRANS_QUAD)
-	tween.tween_property(target, prop, base_val + SWAY_PIXELS, SWAY_DURATION * 0.5)
-	tween.tween_property(target, prop, base_val, SWAY_DURATION * 0.5)
+	# カクカクモード時：マットを黒に近いグレーに
+	if GameManager.use_grid_mode:
+		mat_rect.color = Color(0.15, 0.15, 0.15, 1.0)  # 黒に近いグレー
+	else:
+		mat_rect.color = Color.WHITE

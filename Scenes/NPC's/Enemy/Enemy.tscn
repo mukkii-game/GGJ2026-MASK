@@ -1,7 +1,8 @@
-[gd_scene load_steps=44 format=3 uid="uid://bvt7e871e6jeg"]
+[gd_scene load_steps=45 format=3 uid="uid://bvt7e871e6jeg"]
 
 [ext_resource type="Texture2D" uid="uid://cxs0gjq80hinu" path="res://Art/Sprites/m_man_r_l1.png" id="1_mman"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/EnemyMain.gd" id="1_db41y"]
+[ext_resource type="Script" path="res://Scripts/EnemyFootShadow.gd" id="2_shadow"]
 [ext_resource type="PackedScene" uid="uid://b82yimbxiflml" path="res://Art/Particles/hit_particles.tscn" id="21_d5isq"]
 [ext_resource type="Script" path="res://Scripts/FSM/FiniteStateMachine.gd" id="21_mb2dn"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyIdleState.gd" id="21_mks5l"]
@@ -12,6 +13,7 @@
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyDeathState.gd" id="27_m2jmx"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyPatrolState.gd" id="28_patrol"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyWanderState.gd" id="29_wander"]
+[ext_resource type="Script" path="res://Scripts/HealthBar.gd" id="30_healthbar"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_toimg"]
 animations = [{
@@ -254,13 +256,14 @@ _data = {
 
 [node name="Enemy" type="CharacterBody2D" node_paths=PackedStringArray("attack_node", "chase_node", "sprite", "healthbar", "hit_particles") groups=["Enemy"]]
 texture_filter = 1
+collision_mask = 3
 script = ExtResource("1_db41y")
 attack_node = NodePath("FSM/enemy_attack_state")
 chase_node = NodePath("FSM/enemy_chase_state")
 sprite = NodePath("AnimatedSprite2D")
 healthbar = NodePath("")
 health = 75
-flipped_horizontal = true
+flipped_horizontal = false
 hit_particles = NodePath("HitParticles")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -360,6 +363,14 @@ libraries = {
 "": SubResource("AnimationLibrary_i1jlq")
 }
 autoplay = "Idle"
+
+[node name="FootShadow" type="Node2D" parent="."]
+z_index = -10
+script = ExtResource("2_shadow")
+
+[node name="HealthBar" type="Node2D" parent="."]
+z_index = 0
+script = ExtResource("30_healthbar")
 
 [connection signal="body_entered" from="AnimatedSprite2D/HitBox" to="FSM/enemy_attack_state" method="_on_hit_box_body_entered"]
 [connection signal="body_entered" from="DetectionArea" to="." method="_on_detection_area_body_entered"]

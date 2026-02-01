@@ -27,6 +27,9 @@ func _process(delta: float) -> void:
 	if is_dead or GameManager.enemies_frozen:
 		return
 	_push_apart_from_other_enemies()
+	# 敵が絶対にロープ外に出ないようにクランプ
+	global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
+	global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
 
 ## 敵同士が重なっていたら互いにずらす（マット内にクランプ）。重なり判定は少し緩めに。
 func _push_apart_from_other_enemies() -> void:

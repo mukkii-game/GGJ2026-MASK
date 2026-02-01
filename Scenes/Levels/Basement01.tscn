@@ -14,11 +14,8 @@
 [ext_resource type="PackedScene" uid="uid://c5btk4icxp61c" path="res://Scenes/Levels/VictoryScreen.tscn" id="11_h37ha"]
 [ext_resource type="Script" path="res://Scripts/QuestGeneral/Quest.gd" id="11_oc6f3"]
 [ext_resource type="PackedScene" uid="uid://ceoo6gamb4olk" path="res://Scenes/Interactables/Area_Blocker.tscn" id="11_xe2ch"]
-<<<<<<< Updated upstream
-=======
 [ext_resource type="Script" path="res://Scripts/BGMFromOffset.gd" id="12_bgm"]
 [ext_resource type="Script" path="res://Scripts/DebugContactOverlay.gd" id="13_debug"]
->>>>>>> Stashed changes
 
 [node name="Basement01" type="Node2D"]
 

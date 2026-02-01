@@ -4,13 +4,21 @@ class_name PlayerWalking
 ## グリッドごとワープ：1ステップのピクセル数（半キャラ＝32）
 const STEP_SIZE := 32
 ## 1ステップごとの間隔（秒）。小さくすると速く動く
+<<<<<<< Updated upstream
 @export var step_cooldown := 0.12
+=======
+@export var step_cooldown := 0.08
+>>>>>>> Stashed changes
 ## ロープ跳ね返り後の待ち時間（秒）
 const ROPE_BOUNCE_DELAY := 0.5
 ## 自動走行時は通常の何倍速か
 const AUTO_RUN_SPEED_MULT := 3.0
 
+<<<<<<< Updated upstream
 @export var movespeed := int(2800)
+=======
+@export var movespeed := int(480)
+>>>>>>> Stashed changes
 @export var dash_max := int(2000)
 var dashspeed := float(400)
 var can_dash := bool(false)
@@ -76,9 +84,10 @@ func Move(input_dir : Vector2, delta : float):
 
 	# 通常時：グリッドONなら32pxワープ、OFFなら滑らか移動（狭い道用）
 	if input_dir.length() > 0:
-		player.velocity = input_dir
 		var use_grid: bool = (player as PlayerMain).use_grid_movement if player is PlayerMain else false
 		if use_grid:
+			# グリッドモード：velocityを設定して向きを変える（実際の移動はワープ）
+			player.velocity = input_dir * movespeed
 			if step_timer <= 0:
 				var step := Vector2(
 					STEP_SIZE * sign(input_dir.x) if absf(input_dir.x) > 0.1 else 0,

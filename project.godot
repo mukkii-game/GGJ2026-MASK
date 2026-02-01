@@ -16,11 +16,10 @@ config/version="1.5"
 config/tags=PackedStringArray("starterkit")
 run/main_scene="res://Scenes/Misc/TitleScreen.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
-boot_splash/use_filter=false
-boot_splash/image=""
 boot_splash/bg_color=Color(0.14, 0.14, 0.18, 1)
 boot_splash/show_image=false
 boot_splash/fullsize=false
+boot_splash/use_filter=false
 config/icon="res://Art/Icons/icon.png"
 
 [audio]

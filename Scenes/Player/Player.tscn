@@ -34,13 +34,19 @@
 [ext_resource type="Script" uid="uid://biuv0re7mfpnb" path="res://Scenes/Player/Scripts/States/PlayerDeathState.gd" id="30_ecf44"]
 [ext_resource type="Script" uid="uid://bvjr20a4d1yqf" path="res://Scripts/QuestGeneral/QuestTracker.gd" id="33_2eisr"]
 [ext_resource type="LabelSettings" uid="uid://1cnb4418rr7" path="res://Art/Fonts/pixelized_label_large.tres" id="34_aqkdi"]
-<<<<<<< Updated upstream
-=======
 [ext_resource type="Script" path="res://Scripts/WindEffect.gd" id="35_wind"]
 [ext_resource type="Script" path="res://Scripts/FootShadow.gd" id="36_shadow"]
 [ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerJumpState.gd" id="37_jump"]
 [ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerFireDashState.gd" id="38_firedash"]
->>>>>>> Stashed changes
+[ext_resource type="Script" path="res://Scripts/HealthBar.gd" id="39_healthbar"]
+[ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerRopeLaunchedState.gd" id="40_ropelaunched"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_wind"]
+direction = Vector3(-1, 0, 0)
+spread = 20.0
+initial_velocity_min = 100.0
+initial_velocity_max = 150.0
+gravity = Vector3(0, 0, 0)
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_uky13"]
 polygon = PackedVector2Array(-4, -26, -16, -26, -20, -22, -20, -4, -8, 4, -8, 20, 10, 20, 10, 4, 20, -2, 20, -20, 16, -26)
@@ -412,6 +418,7 @@ _data = {
 [node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("sprite", "healthbar", "hit_particles") groups=["Player"]]
 top_level = true
 texture_filter = 1
+collision_mask = 3
 floor_stop_on_slope = false
 floor_block_on_wall = false
 script = ExtResource("1_y5oq4")
@@ -478,11 +485,9 @@ damage = 25
 
 [node name="Moving" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("29_bdbrv")
-movespeed = 140
+movespeed = 480
 animator = NodePath("../../AnimationPlayer")
 
-<<<<<<< Updated upstream
-=======
 [node name="Jump" type="Node" parent="FSM"]
 script = ExtResource("37_jump")
 jump_initial_speed = 395.0
@@ -491,7 +496,9 @@ gravity = 600.0
 [node name="FireDash" type="Node" parent="FSM"]
 script = ExtResource("38_firedash")
 
->>>>>>> Stashed changes
+[node name="RopeLaunched" type="Node" parent="FSM"]
+script = ExtResource("40_ropelaunched")
+
 [node name="Die" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("30_ecf44")
 animator = NodePath("../../AnimationPlayer")
@@ -566,6 +573,22 @@ text = "announcement"
 label_settings = ExtResource("34_aqkdi")
 horizontal_alignment = 1
 uppercase = true
+
+[node name="FootShadow" type="Node2D" parent="."]
+z_index = -5
+script = ExtResource("36_shadow")
+
+[node name="WindEffect" type="GPUParticles2D" parent="."]
+visible = false
+emitting = false
+amount = 8
+process_material = SubResource("ParticleProcessMaterial_wind")
+lifetime = 0.3
+script = ExtResource("35_wind")
+
+[node name="HealthBar" type="Node2D" parent="."]
+z_index = 0
+script = ExtResource("39_healthbar")
 
 [connection signal="body_entered" from="AnimatedSprite2D/Hitboxes/Punch_Hitbox" to="FSM/Attacking" method="_on_hitbox_body_entered"]
 [connection signal="body_entered" from="AnimatedSprite2D/Hitboxes/Kick_Hitbox" to="FSM/Attacking" method="_on_hitbox_body_entered"]

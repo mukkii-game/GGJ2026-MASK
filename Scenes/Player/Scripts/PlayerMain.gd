@@ -5,11 +5,19 @@ class_name PlayerMain
 @onready var cam = $Camera2D
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
+<<<<<<< Updated upstream
 ## マット内の移動範囲（左右はロープにめり込むだけ・下は赤ロープに触れて跳ね返る）
 const MAT_LEFT := 296   # 体半分めり込み時 center 296 → left 264
 const MAT_RIGHT := 984  # 体半分めり込み時 center 984 → right 1016
 const MAT_TOP := 16     # 上ロープ（16ドット幅）の下端
 const MAT_BOTTOM := 704 # 下ロープ（16ドット幅）の上端
+=======
+## マット内の移動範囲（ロープに1キャラ分踏み込める）
+const MAT_LEFT := 232   # 左ロープに1キャラ分（64px）踏み込める
+const MAT_RIGHT := 1048 # 右ロープに1キャラ分（64px）踏み込める
+const MAT_TOP := -48    # 上ロープに1キャラ分（64px）踏み込める
+const MAT_BOTTOM := 768 # 下ロープに1キャラ分（64px）踏み込める
+>>>>>>> Stashed changes
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
@@ -19,6 +27,12 @@ var use_grid_movement := false
 var start_auto_run := false
 ## 自動走行中か（風エフェクト表示用）
 var is_auto_running := false
+## ロープタッチ自動移動中か
+var rope_bounce_running := false
+## ロープタッチ自動移動の方向
+var rope_bounce_direction := Vector2.ZERO
+## ロープタッチ自動移動の目標位置
+var rope_bounce_target := Vector2.ZERO
 ## 方向キー＋Punchでダッシュ（0.5秒3倍速、連打で延長）
 var dash_timer := 0.0
 const DASH_DURATION := 0.5
@@ -45,13 +59,13 @@ const BODY_CONTACT_HALF_TOLERANCE := 1.0
 const BODY_DAMAGE_DEALT := 10
 const BODY_DAMAGE_TAKEN := 8
 ## ノックバック＝キャラ1人分の幅を一瞬で移動（80、scale 1.25を考慮）
-const BODY_PUSH_PIXELS := 80.0
-## 正面衝突（両方ダメージ）時のノックバック＝キャラ約3人分・実際に移動で飛ばす
-const BODY_PUSH_PIXELS_FRONTAL := 240.0
+const BODY_PUSH_PIXELS := 60.0
+## 正面衝突（両方ダメージ）時のノックバック＝キャラ約1.5人分・実際に移動で飛ばす
+const BODY_PUSH_PIXELS_FRONTAL := 120.0
 ## 体半分以上が重なったとみなす（両軸で中心差がこの値以下＝正方形が半分以上かぶる）
 const HALF_OVERLAP_DIST := 40.0
 ## 半キャラずらし時：ノックバック量（キャラ1人分）・連続ダメージ間隔・1回あたりダメージ
-const PUSH_KNOCKBACK := 80.0
+const PUSH_KNOCKBACK := 60.0
 const PUSH_DAMAGE_INTERVAL := 0.2
 const PUSH_DAMAGE_PER_TICK := 6
 var _push_damage_timer := 0.0
@@ -81,21 +95,74 @@ func _process(_delta):
 	if Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick"):
 		GameManager.use_grid_mode = not GameManager.use_grid_mode
 		use_grid_movement = GameManager.use_grid_mode
+<<<<<<< Updated upstream
+=======
+	
+	# 何か操作したらロープバウンス停止
+	if rope_bounce_running:
+		var input := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown")
+		if input.length() > 0.1 or Input.is_action_just_pressed("Punch") or Input.is_action_just_pressed("Dash"):
+			rope_bounce_running = false
+			rope_bounce_direction = Vector2.ZERO
+	
+>>>>>>> Stashed changes
 	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
 	# ジャンプ中はYクランプ・体当たりしない
 	if not is_jumping:
 		var p := global_position
-		# 上ロープ：矯正移動（ワープではなく数フレームで下方向に押し戻す）
-		if p.y < MAT_TOP:
-			p.y = MAT_TOP
-			_rope_correction_velocity.y = ROPE_TOP_CORRECTION_SPEED
+		
+		# ロープバウンス自動移動中
+		if rope_bounce_running:
+			var move_speed := 480.0 * 2.0  # 2倍速
+			p += rope_bounce_direction * move_speed * _delta
+			# 目標到達チェック
+			if rope_bounce_direction.x > 0 and p.x >= rope_bounce_target.x:
+				p.x = rope_bounce_target.x
+				rope_bounce_running = false
+			elif rope_bounce_direction.x < 0 and p.x <= rope_bounce_target.x:
+				p.x = rope_bounce_target.x
+				rope_bounce_running = false
+			elif rope_bounce_direction.y > 0 and p.y >= rope_bounce_target.y:
+				p.y = rope_bounce_target.y
+				rope_bounce_running = false
+			elif rope_bounce_direction.y < 0 and p.y <= rope_bounce_target.y:
+				p.y = rope_bounce_target.y
+				rope_bounce_running = false
+			global_position = p
+			# ロープバウンス中は敵に当たる
+			_body_contact(_delta)
+			return
+		
+		# 通常時：ロープ接触チェック
+		# 左ロープに触れたら右へ自動移動
+		if p.x <= MAT_LEFT + 32:
+			rope_bounce_running = true
+			rope_bounce_direction = Vector2.RIGHT
+			rope_bounce_target = Vector2(MAT_RIGHT - 32, p.y)
+		# 右ロープに触れたら左へ自動移動
+		elif p.x >= MAT_RIGHT - 32:
+			rope_bounce_running = true
+			rope_bounce_direction = Vector2.LEFT
+			rope_bounce_target = Vector2(MAT_LEFT + 32, p.y)
+		# 上ロープに触れたら下へ自動移動
+		elif p.y <= MAT_TOP + 32:
+			rope_bounce_running = true
+			rope_bounce_direction = Vector2.DOWN
+			rope_bounce_target = Vector2(p.x, MAT_BOTTOM - 32)
+		# 下ロープに触れたら上へ自動移動
+		elif p.y >= MAT_BOTTOM - 32:
+			rope_bounce_running = true
+			rope_bounce_direction = Vector2.UP
+			rope_bounce_target = Vector2(p.x, MAT_TOP + 32)
+		
+		# コリジョンで管理されるようになったので、手動の境界チェックは不要
 		# 下ロープ：触れたら上に跳ね飛ばし＋ぼよん音（ダメージなし）。壁で止まるので「下端付近かつ下方向」で検出
 		if p.y >= MAT_BOTTOM - 48.0 and velocity.y > 0.0:
 			p.y = clampf(p.y - ROPE_BOTTOM_BOUNCE, MAT_TOP, MAT_BOTTOM)
 			velocity.y = 0.0
-			AudioManager.play_sound(AudioManager.ROPE_BOUNCE, 0, -2)
+			# AudioManager.play_sound(AudioManager.ROPE_BOUNCE, 0, -2)  # ROPE_BOUNCE音源がないのでコメントアウト
 		# 左右ロープ：跳ね返らない（形で触れてめり込むだけ、クランプのみ）
 		# 矯正速度を適用してからクランプ
 		_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * _delta)
@@ -116,6 +183,12 @@ func trigger_corner_post_jump() -> void:
 		return
 	on_corner_post = true
 	fsm.force_change_state("Jump")
+
+## ノックバックでロープ外に出たときに呼ばれる。反対側に放物線移動
+func trigger_rope_launch() -> void:
+	if is_dead:
+		return
+	fsm.force_change_state("RopeLaunched")
 
 ## 正方形コリジョン：2つの中心と半幅でAABBが重なるか
 func _aabb_overlap(pa: Vector2, pb: Vector2, half: float) -> bool:
@@ -145,6 +218,9 @@ func _flash_white_body_contact() -> void:
 ## 体当たり：敵と触れたら必ずダメージ＋ノックバック。正方形コリジョン（PC-88風）。半キャラずらし＝敵方向に上下左右で移動＋接している部分が幅の半分以下のときは敵だけノックバック＆ダメージ
 func _body_contact(delta: float) -> void:
 	if is_dead:
+		return
+	# ジャンプ中は敵をすり抜ける（ロープには当たる）
+	if is_jumping:
 		return
 	# 着地直後1フレームは体当たりをスキップ（ジャンプ着地で _land() が処理するので二重発火防止）
 	if _just_landed_frame:
@@ -190,17 +266,21 @@ func _body_contact(delta: float) -> void:
 			if _push_damage_timer <= 0:
 				_push_damage_timer = PUSH_DAMAGE_INTERVAL
 				enemy._take_damage(int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult))
-				# 強化時（炎ダッシュ中）はすごめの音＋エフェクト大きく
+				# 半キャラずらし：敵の方にエフェクトを出す（通常サイズ）
 				if fire_dash_damage_mult > 1.5:
 					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
-					if enemy.hit_particles:
-						enemy.hit_particles.amount = 20
-						enemy.hit_particles.emitting = true
-				var knock_amount: float = PUSH_KNOCKBACK
-				var player_push: float = 16.0
-				if to_enemy.y > 0.5:
-					knock_amount = 32.0
+				if enemy.hit_particles:
+					enemy.hit_particles.amount = 20
+					enemy.hit_particles.lifetime = 0.4  # 通常
+					enemy.hit_particles.emitting = true
+				# ノックバック量：左右と上下を統一
+				var knock_amount: float = PUSH_KNOCKBACK  # 60.0
+				var player_push: float = 12.0
+				# 上下方向（Y軸方向）は左右より少し弱く
+				if absf(to_enemy.y) >= absf(to_enemy.x):
+					knock_amount = 40.0  # 左右の2/3
 					player_push = 8.0
+				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）
 				var knock: Vector2 = _axis_knockback(to_enemy, knock_amount)
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
 				if _is_outside_mat(new_enemy_pos):
@@ -212,32 +292,50 @@ func _body_contact(delta: float) -> void:
 					enemy.velocity = Vector2.ZERO
 					enemy.knockback_stun_remaining = 0.25
 					enemy.set_invincible_for(0.5)
-				global_position += _axis_knockback(to_enemy, player_push)
-				global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+				# プレイヤーの反動は小さく（-to_enemyで敵から離れる方向）
+				var new_player_pos := global_position + _axis_knockback(-to_enemy, player_push)
+				if _is_outside_mat(new_player_pos):
+					# プレイヤーもロープ外に飛ばされた！ロープ反発
+					set_invincible_for(1.5)
+					trigger_rope_launch()
+				else:
+					global_position = new_player_pos
+					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 			break
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
 			enemy._take_damage(int(BODY_DAMAGE_DEALT * fire_dash_damage_mult))
 			_take_damage(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
-			# 強化時（炎ダッシュ中）はすごめの音＋エフェクト大きく
+			
+			# 正面衝突：血のエフェクトを2倍大きく、2倍長く
 			if fire_dash_damage_mult > 1.5:
 				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 				if enemy.hit_particles:
-					enemy.hit_particles.amount = 20
+					enemy.hit_particles.amount = 40  # 2倍
+					enemy.hit_particles.lifetime = 0.8  # 2倍長く
 					enemy.hit_particles.emitting = true
 			if fire_dash_damage_taken_mult > 1.5:
 				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
 				if hit_particles:
-					hit_particles.amount = 20
+					hit_particles.amount = 40  # 2倍
+					hit_particles.lifetime = 0.8  # 2倍長く
+					hit_particles.emitting = true
+			else:
+				# 通常の正面衝突でも血のエフェクトを強く
+				if enemy.hit_particles:
+					enemy.hit_particles.amount = 40
+					enemy.hit_particles.lifetime = 0.8
+					enemy.hit_particles.emitting = true
+				if hit_particles:
+					hit_particles.amount = 40
+					hit_particles.lifetime = 0.8
 					hit_particles.emitting = true
 			_flash_white_body_contact()
 			var push_amount := BODY_PUSH_PIXELS_FRONTAL
-			var away: Vector2
-			if global_position.y < enemy.global_position.y:
-				away = Vector2(signf(-to_enemy.x) * push_amount * 0.5, 0.0)
-			else:
-				away = _axis_knockback(-to_enemy, push_amount)
-			global_position += away
+			# プレイヤーと敵、両方が離れる方向に押し飛ばす
+			var away: Vector2 = _axis_knockback(-to_enemy, push_amount)
+			var new_player_pos := global_position + away
+			# 敵は反対方向に同じ距離押し飛ばす
 			var new_enemy_pos: Vector2 = Vector2(enemy.global_position.x - away.x, enemy.global_position.y - away.y)
 			if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
 				enemy.set_invincible_for(1.5)
@@ -247,7 +345,13 @@ func _body_contact(delta: float) -> void:
 				enemy.velocity = Vector2.ZERO
 				enemy.knockback_stun_remaining = 0.25
 				enemy.set_invincible_for(0.5)
-			global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+			# プレイヤーもロープ外に出たか確認
+			if _is_outside_mat(new_player_pos):
+				set_invincible_for(1.5)
+				trigger_rope_launch()
+			else:
+				global_position = new_player_pos
+				global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 			body_contact_cooldown = BODY_CONTACT_INTERVAL
 			set_invincible_for(0.5)
 		break
