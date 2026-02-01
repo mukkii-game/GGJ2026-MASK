@@ -74,12 +74,13 @@ animations = [{
 }]
 
 [node name="art_aset" type="Node2D"]
+position = Vector2(6, 0)
 
 [node name="mask_man" type="AnimatedSprite2D" parent="."]
 position = Vector2(211.5, 155.5)
 scale = Vector2(5.21875, 5.21875)
 sprite_frames = SubResource("SpriteFrames_rrjbm")
-animation = &"uni_chan"
+animation = &"zako_mask"
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(1592, -485)
