@@ -1,0 +1,97 @@
+[gd_scene load_steps=16 format=3 uid="uid://dw8w7bswukqhi"]
+
+[ext_resource type="Texture2D" uid="uid://b80fkfkp6nxfp" path="res://Art/Sprites/gr_mask_l2.png" id="1_uu74d"]
+[ext_resource type="Texture2D" uid="uid://b441rq20tkavn" path="res://Art/Sprites/gr_mask_l1.png" id="2_fca25"]
+[ext_resource type="Texture2D" uid="uid://b24pdgkqxn0yr" path="res://Art/Sprites/m_man_g_l1.png" id="3_pk5vm"]
+[ext_resource type="Texture2D" uid="uid://8rsqemgblops" path="res://Art/Sprites/m_man_g_l2.png" id="4_d3hwb"]
+[ext_resource type="Texture2D" uid="uid://b52jjsea2pdym" path="res://Art/Sprites/panna_chan_l1.png" id="5_e80s6"]
+[ext_resource type="Texture2D" uid="uid://d2p5s4jd12by7" path="res://Art/Sprites/panna_chan_l2.png" id="6_f4dk8"]
+[ext_resource type="Texture2D" uid="uid://b2jmfxwm7mpri" path="res://Art/Sprites/unity_chan_l1.png" id="7_e45py"]
+[ext_resource type="Texture2D" uid="uid://cmugo257jm7n6" path="res://Art/Sprites/unity_chan_l2.png" id="8_pqtoa"]
+[ext_resource type="Texture2D" uid="uid://duvve4bodwtj0" path="res://Art/Sprites/m_man_b_l1.png" id="9_751bs"]
+[ext_resource type="Texture2D" uid="uid://b21x2ude84y8t" path="res://Art/Sprites/m_man_b_l2.png" id="10_6hcxm"]
+[ext_resource type="Texture2D" uid="uid://d3snryx2ufh1h" path="res://Art/Sprites/iron_mask_title1.png" id="11_h2jv6"]
+[ext_resource type="Texture2D" uid="uid://dqm43bvo6tu4k" path="res://Art/Sprites/iron_mask_title2.png" id="12_skq1m"]
+[ext_resource type="Texture2D" uid="uid://ikexpvrbqk7l" path="res://Art/Sprites/iron_mask_title3.png" id="13_dtvj2"]
+[ext_resource type="Texture2D" uid="uid://biibis67xc5uu" path="res://Art/Sprites/iron_mask_title4.png" id="14_722eq"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_rrjbm"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_uu74d")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_fca25")
+}],
+"loop": true,
+"name": &"elon_musk",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_pk5vm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_d3hwb")
+}],
+"loop": true,
+"name": &"godot_man",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_e80s6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_f4dk8")
+}],
+"loop": true,
+"name": &"melon_chan",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_e45py")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_pqtoa")
+}],
+"loop": true,
+"name": &"uni_chan",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_751bs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_6hcxm")
+}],
+"loop": true,
+"name": &"zako_mask",
+"speed": 5.0
+}]
+
+[node name="art_aset" type="Node2D"]
+
+[node name="mask_man" type="AnimatedSprite2D" parent="."]
+position = Vector2(211.5, 155.5)
+scale = Vector2(5.21875, 5.21875)
+sprite_frames = SubResource("SpriteFrames_rrjbm")
+animation = &"uni_chan"
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(1592, -485)
+texture = ExtResource("11_h2jv6")
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D"]
+position = Vector2(101, 1016)
+texture = ExtResource("12_skq1m")
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D/Sprite2D"]
+position = Vector2(0, 1117)
+texture = ExtResource("13_dtvj2")
+
+[node name="Sprite2D" type="Sprite2D" parent="Sprite2D/Sprite2D/Sprite2D"]
+texture = ExtResource("14_722eq")
