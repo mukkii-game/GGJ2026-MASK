@@ -1,0 +1,54 @@
+extends Control
+## ステージクリア画面。倒したボスの顔と「STAGE CLEAR!」を表示。
+
+func _ready() -> void:
+	# ステージ番号表示
+	var stage_label = get_node_or_null("StageNumber")
+	if stage_label:
+		stage_label.text = "STAGE " + str(GameManager.current_stage) + " CLEAR!"
+	
+	# ボス顔画像（ステージに応じて変更）
+	var boss_face = get_node_or_null("BossFace")
+	var texture_path := ""
+	match GameManager.current_stage:
+		1:
+			texture_path = "res://Scenes/NPC's/Enemy/Sprites/Enemy01.png"
+		2:
+			texture_path = "res://Art/Sprites/m_man_r_l1.png"
+		3:
+			texture_path = "res://Art/Sprites/m_man_b_l1.png"
+		4:
+			texture_path = "res://Art/Sprites/kamen_pic32.png"
+	if boss_face and ResourceLoader.exists(texture_path):
+		boss_face.texture = load(texture_path) as Texture2D
+	
+	# 勝利メッセージ
+	var message_label = get_node_or_null("Message")
+	if message_label:
+		var message := ""
+		match GameManager.current_stage:
+			1:
+				message = "雑魚マスク軍団を倒した！"
+			2:
+				message = "マスクメロンナを追い詰めた！"
+			3:
+				message = "ユニ帝仮面の弱点を見抜いた！"
+			4:
+				message = "異論マスクをコーナー技で撃破！"
+		message_label.text = message
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed:
+		_next_stage()
+		var vp = get_viewport()
+		if vp:
+			vp.set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		_next_stage()
+		var vp = get_viewport()
+		if vp:
+			vp.set_input_as_handled()
+
+func _next_stage() -> void:
+	# 次のステージへ
+	GameManager.load_next_stage()

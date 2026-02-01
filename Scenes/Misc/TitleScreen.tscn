@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://d1631knq4k5yy"]
 
-[ext_resource type="Script" path="res://Scripts/TitleScreen.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://cskt0fu2oe6vc" path="res://Art/Icons/title_original.png" id="2_texture"]
+[ext_resource type="Script" uid="uid://dfltu8mxjqlrn" path="res://Scripts/TitleScreen.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://ccrf7bwgwpf8a" path="res://Art/Sprites/Point_pic.png" id="2_texture"]
 
 [node name="TitleScreen" type="Control"]
 layout_mode = 3
@@ -12,13 +12,75 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="TextureRect" type="TextureRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-expand_mode = 3
-stretch_mode = 0
+color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -500.0
+offset_top = -200.0
+offset_right = 500.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 144
+text = "マスク面（MASK）"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MaskIcon" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -120.0
+offset_right = 128.0
+offset_bottom = 136.0
+grow_horizontal = 2
+grow_vertical = 2
 texture = ExtResource("2_texture")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StartButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = 160.0
+offset_right = 280.0
+offset_bottom = 340.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 168
+text = "スタート"
+
+[node name="TestButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -140.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 20
+text = "テスト"

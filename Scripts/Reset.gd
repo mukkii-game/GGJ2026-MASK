@@ -4,14 +4,11 @@ extends Node
 #it handles the logic for resetting the level or quitting the game
 
 func _process(_delta):
-	if Input.is_action_just_pressed("Restart"):
+	if Input.is_action_just_pressed("Restart") or Input.is_action_just_pressed("Enter"):
 		restart()
 	if Input.is_action_just_pressed("Escape"):
 		get_tree().quit()
-	if Input.is_action_just_pressed("Enter"):
-		GameManager.load_next_level(load("res://Scenes/Levels/MainFloor.tscn")) #Hardcoded because export gave issues
 
-#When the player dies and wishes to reset, remove all of their money and reload the level
+#When the player dies and wishes to reset, go back to title
 func restart():
-	GameManager.reset_money()
-	GameManager.load_same_level()
+	GameManager.load_title()

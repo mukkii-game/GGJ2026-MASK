@@ -14,6 +14,8 @@
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyPatrolState.gd" id="28_patrol"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyWanderState.gd" id="29_wander"]
 [ext_resource type="Script" path="res://Scripts/HealthBar.gd" id="30_healthbar"]
+[ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyFleeState.gd" id="31_flee"]
+[ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyLaunchedState.gd" id="32_launched"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_toimg"]
 animations = [{
@@ -335,6 +337,14 @@ damage = 30
 [node name="enemy_death_state" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("27_m2jmx")
 animator = NodePath("../../AnimationPlayer")
+
+[node name="enemy_flee_state" type="Node" parent="FSM"]
+script = ExtResource("31_flee")
+move_speed = 600.0
+flee_distance = 200.0
+
+[node name="enemy_launched_state" type="Node" parent="FSM"]
+script = ExtResource("32_launched")
 
 [node name="ProgressBar" type="ProgressBar" parent="."]
 visible = false

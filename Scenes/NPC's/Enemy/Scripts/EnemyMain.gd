@@ -1,8 +1,8 @@
 extends CharacterBase
 class_name EnemyMain
 
-## 静止・上下ループ・左右ループ・一定範囲ランダムの4種
-enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange }
+## 静止・上下ループ・左右ループ・一定範囲ランダム・逃走の5種
+enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee }
 
 ## 敵同士が重ならないよう、かさなったらずらす用（マット内）
 const MAT_LEFT := 296.0
@@ -21,6 +21,11 @@ var patrol_vertical := false
 @export var behavior_type: Behavior = Behavior.Idle
 @export var attack_node : Node
 @export var chase_node : Node
+
+## ステージ番号（特殊処理用）
+var stage_number: int = 1
+## ボスキャラか（特殊行動用）
+var is_boss: bool = false
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -80,6 +85,8 @@ func _ready():
 			fsm.force_change_state("enemy_patrol_state")
 		Behavior.RandomRange:
 			fsm.force_change_state("enemy_wander_state")
+		Behavior.Flee:
+			fsm.force_change_state("enemy_flee_state")
 
 # 攻撃後は必ずIdleに戻す
 func finished_attacking():

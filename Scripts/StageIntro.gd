@@ -1,0 +1,88 @@
+extends Control
+## ステージ登場画面。ステージ番号、ボス顔、ボス名を表示。Intro.mp3を再生。
+
+@onready var bgm_player: AudioStreamPlayer = null
+
+func _ready() -> void:
+	# GameManagerのcurrent_stageを参照してステージ情報を設定
+	var stage_data := _get_stage_data(GameManager.current_stage)
+	
+	# ステージ番号表示
+	var stage_label = get_node_or_null("StageNumber")
+	if stage_label:
+		stage_label.text = "STAGE " + str(GameManager.current_stage)
+	
+	# ボス名表示
+	var boss_label = get_node_or_null("BossName")
+	if boss_label:
+		boss_label.text = stage_data["boss_name"]
+	
+	# ボス顔画像
+	var boss_face = get_node_or_null("BossFace")
+	if boss_face and ResourceLoader.exists(stage_data["boss_texture"]):
+		boss_face.texture = load(stage_data["boss_texture"]) as Texture2D
+	
+	# ボス説明表示
+	var desc_label = get_node_or_null("Description")
+	if desc_label:
+		desc_label.text = stage_data.get("description", "")
+	
+	# Intro.mp3を再生
+	bgm_player = AudioStreamPlayer.new()
+	add_child(bgm_player)
+	var intro_path := "res://Art/Audio/Intro.mp3"
+	if ResourceLoader.exists(intro_path):
+		bgm_player.stream = load(intro_path) as AudioStream
+		bgm_player.play()
+
+func _get_stage_data(stage: int) -> Dictionary:
+	match stage:
+		1:
+			return {
+				"boss_name": "雑魚マスク軍団",
+				"boss_texture": "res://Scenes/NPC's/Enemy/Sprites/Enemy01.png",
+				"description": "弱いが数が多い！\nどんどん増援が来るぞ！"
+			}
+		2:
+			return {
+				"boss_name": "マスクメロンナ",
+				"boss_texture": "res://Art/Sprites/m_man_r_l1.png",
+				"description": "すばしっこい逃げ足！\nジャンプ中は止まる！\n雑魚を召喚してくる！"
+			}
+		3:
+			return {
+				"boss_name": "ユニ帝仮面",
+				"boss_texture": "res://Art/Sprites/m_man_b_l1.png",
+				"description": "正面は無敵！反撃が痛い！\n半キャラずらしのショルダータックルで攻撃！"
+			}
+		4:
+			return {
+				"boss_name": "異論マスク",
+				"boss_texture": "res://Art/Sprites/kamen_pic32.png",
+				"description": "高HP！攻撃すると大きく吹っ飛ぶ！\nコーナージャンプ着地で大ダメージ！"
+			}
+		_:
+			return {
+				"boss_name": "Unknown Boss",
+				"boss_texture": "res://Scenes/NPC's/Enemy/Sprites/Enemy01.png",
+				"description": ""
+			}
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed:
+		_start_battle()
+		var vp = get_viewport()
+		if vp:
+			vp.set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		_start_battle()
+		var vp = get_viewport()
+		if vp:
+			vp.set_input_as_handled()
+
+func _start_battle() -> void:
+	# BGMを停止
+	if bgm_player:
+		bgm_player.stop()
+	# バトル開始
+	get_tree().change_scene_to_file("res://Scenes/Levels/GameWrapper.tscn")

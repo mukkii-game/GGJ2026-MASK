@@ -1,6 +1,9 @@
 extends CharacterBody2D
 class_name CharacterBase
 
+## HP0でQTEを出す場合は true（ボス撃破時）。成功で本当に死亡、失敗でHP回復
+signal defeated_for_qte(who: CharacterBase)
+
 @export var sprite : AnimatedSprite2D
 @export var healthbar : ProgressBar
 @export var health : int
@@ -9,6 +12,8 @@ class_name CharacterBase
 var max_health : int  # 初期HPを記録
 var invincible : bool = false
 var is_dead : bool = false
+## HP0で_die()の代わりにQTEを出す（ボスのみ）
+var use_qte_on_defeat: bool = false
 ## ノックバック直後はこの秒数だけ移動しない（隣の敵を押さないように）
 var knockback_stun_remaining: float = 0.0
 
@@ -76,7 +81,10 @@ func _take_damage(amount):
 		healthbar.value = health
 	damage_effects()
 	
-	if(health <= 0):
+	if health <= 0:
+		if use_qte_on_defeat:
+			defeated_for_qte.emit(self)
+			return
 		_die()
 		
 ## 指定秒数だけ無敵にする（体当たり・ロープ跳ね返り後など）

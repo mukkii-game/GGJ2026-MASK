@@ -1,30 +1,33 @@
 extends Control
-## タイトル画面。キーまたはクリックでゲーム開始。
-## タイトル画像は title_original.png を参照（なければ title.png → icon.png）。
-
-@export var next_scene: String = "res://Scenes/Levels/GameWrapper.tscn"
+## タイトル画面。「スタート」（本番）と「テスト」（簡単）の2つのモード。
 
 func _ready() -> void:
-	var tex_rect = get_node_or_null("TextureRect")
-	if not tex_rect:
-		return
-	var path := "res://Art/Icons/title_original.png"
-	if ResourceLoader.exists(path):
-		tex_rect.texture = load(path) as Texture2D
-	elif ResourceLoader.exists("res://Art/Icons/title.png"):
-		tex_rect.texture = load("res://Art/Icons/title.png") as Texture2D
+	# Point_pic.pngを使用（マスクのアイコン）
+	var tex_rect = get_node_or_null("MaskIcon")
+	if tex_rect:
+		var path := "res://Art/Sprites/Point_pic.png"
+		if ResourceLoader.exists(path):
+			tex_rect.texture = load(path) as Texture2D
+	
+	# ボタンのシグナル接続
+	var start_btn = get_node_or_null("StartButton")
+	if start_btn:
+		start_btn.pressed.connect(_on_start_pressed)
+	
+	var test_btn = get_node_or_null("TestButton")
+	if test_btn:
+		test_btn.pressed.connect(_on_test_pressed)
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		_start_game()
-		var vp = get_viewport()
-		if vp:
-			vp.set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed:
-		_start_game()
-		var vp = get_viewport()
-		if vp:
-			vp.set_input_as_handled()
+## 本番バランスでスタート
+func _on_start_pressed() -> void:
+	GameManager.test_mode = false
+	_start_game()
+
+## テストバランスでスタート
+func _on_test_pressed() -> void:
+	GameManager.test_mode = true
+	_start_game()
 
 func _start_game() -> void:
-	get_tree().change_scene_to_file(next_scene)
+	# ステージ1登場画面へ
+	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")

@@ -1,4 +1,8 @@
 extends Node2D
+## QTEコア。成功/失敗でシグナルを発行。ゲーム内では親が add_child して start_qte() を呼ぶ。
+
+signal qte_succeeded
+signal qte_failed
 
 @onready var player_point = $PlayerPoint
 @onready var target_zone = $TargetZone
@@ -11,6 +15,8 @@ var is_active = false
 var is_overlapping = false # これが「接触中か」を判定するフラグ
 
 var player_start_pos: Vector2
+## 親がスタートを制御する場合は true（ゲーム内ボス撃破QTE用）
+var wait_for_start: bool = false
 
 
 func _ready():
@@ -22,8 +28,9 @@ func _ready():
 	target_zone.area_exited.connect(_on_area_exited)
 	result_label.text = ""
 
-	# シーン開始と同時に毎回スタート（PlayerPoint開始とアニメ開始を同期）
-	start_qte()
+	# 単体実行時は即スタート、ゲーム内から呼ばれた場合は start_qte() を待つ
+	if not wait_for_start:
+		start_qte()
 
 
 func start_qte():
@@ -49,8 +56,15 @@ func _process(delta):
 	# ポイントを右へ移動
 	player_point.position.x += speed * delta
 
-	# スペースキー（ui_accept）が押された瞬間の判定
-	if Input.is_action_just_pressed("ui_accept"):
+	# いずれかのボタンが押された瞬間の判定（スペース・パンチ・キック・Enterなど）
+	var qte_pressed := (
+		Input.is_action_just_pressed("ui_accept") or
+		Input.is_action_just_pressed("Punch") or
+		Input.is_action_just_pressed("Kick") or
+		Input.is_action_just_pressed("Dash") or
+		Input.is_action_just_pressed("Enter")
+	)
+	if qte_pressed:
 		if is_overlapping:
 			success_game()
 		else:
@@ -73,24 +87,27 @@ func _on_area_exited(_area):
 
 func success_game():
 	is_active = false
-
-	# ★ 成功音を鳴らす
-	hit_hip.play()
-
+	if hit_hip:
+		hit_hip.play()
 	anim.stop()
 	result_label.text = "SUCCESS!"
+	qte_succeeded.emit()
 	exit_sequence()
-
 
 
 func fail_game():
 	is_active = false
 	anim.stop()
 	result_label.text = "FAIL..."
+	qte_failed.emit()
 	exit_sequence()
 
 
 func exit_sequence():
-	# 2秒待ってからプログラムを終了
+	# 2秒待ってから閉じる（ゲーム内の場合は親が remove_child するまで表示）
 	await get_tree().create_timer(2.0).timeout
-	get_tree().quit()
+	# ゲーム内から呼ばれた場合は quit しない
+	if not wait_for_start:
+		get_tree().quit()
+	else:
+		queue_free()

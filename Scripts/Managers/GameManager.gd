@@ -7,6 +7,13 @@ var use_grid_mode: bool = false
 ## 敵を全員止める（体当たりテスト用）。true の間は敵は移動しない
 var enemies_frozen: bool = false
 
+## 現在のステージ（1〜4）
+var current_stage: int = 1
+## 各ステージのクリア状態
+var stage_cleared: Array[bool] = [false, false, false, false]
+## テストモード（true=簡単バランス、false=本番バランス）
+var test_mode: bool = false
+
 #NOTE This class is our game manager and handles the players money and loading scenes
 #These functions can be called globally from anywhere
 
@@ -21,3 +28,24 @@ func load_next_level(next_scene : PackedScene):
 
 func load_same_level():
 	get_tree().reload_current_scene()
+
+## ステージクリア処理
+func clear_stage(stage_num: int):
+	if stage_num >= 1 and stage_num <= 4:
+		stage_cleared[stage_num - 1] = true
+
+## 次のステージへ（登場画面へ遷移）
+func load_next_stage():
+	current_stage += 1
+	if current_stage <= 4:
+		# 次のステージ登場画面へ
+		get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
+	else:
+		# エンディングへ
+		get_tree().change_scene_to_file("res://Scenes/UI/Ending.tscn")
+
+## タイトルへ戻る
+func load_title():
+	current_stage = 1
+	stage_cleared = [false, false, false, false]
+	get_tree().change_scene_to_file("res://Scenes/Misc/TitleScreen.tscn")

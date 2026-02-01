@@ -254,7 +254,16 @@ func _body_contact(delta: float) -> void:
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
 				_push_damage_timer = PUSH_DAMAGE_INTERVAL
-				enemy._take_damage(int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult))
+				
+				# ダメージ計算（コーナージャンプ特攻を含む）
+				var damage: int = int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult)
+				# ステージ4: 異論マスク、コーナージャンプ特攻
+				if GameManager.current_stage == 4 and leave_post_2x_jump:
+					damage = 50  # 特攻ダメージ
+					leave_post_2x_jump = false  # 1回だけ
+				
+				enemy._take_damage(damage)
+				
 				# 半キャラずらし：敵の方にエフェクトを出す（通常サイズ）
 				if fire_dash_damage_mult > 1.5:
 					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
@@ -262,13 +271,20 @@ func _body_contact(delta: float) -> void:
 					enemy.hit_particles.amount = 20
 					enemy.hit_particles.lifetime = 0.4  # 通常
 					enemy.hit_particles.emitting = true
-				# ノックバック量：左右と上下を統一
+				
+				# ノックバック量：ステージ4では超反動
 				var knock_amount: float = PUSH_KNOCKBACK  # 60.0
 				var player_push: float = 12.0
+				
+				# ステージ4: 異論マスクの超反動（150px）
+				if GameManager.current_stage == 4 and enemy.has("stage_number") and enemy.stage_number == 4:
+					knock_amount = 150.0
+				
 				# 上下方向（Y軸方向）は左右より少し弱く
 				if absf(to_enemy.y) >= absf(to_enemy.x):
-					knock_amount = 40.0  # 左右の2/3
+					knock_amount = knock_amount * 0.67  # 左右の2/3
 					player_push = 8.0
+				
 				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）
 				var knock: Vector2 = _axis_knockback(to_enemy, knock_amount)
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
@@ -293,8 +309,37 @@ func _body_contact(delta: float) -> void:
 			break
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
-			enemy._take_damage(int(BODY_DAMAGE_DEALT * fire_dash_damage_mult))
-			_take_damage(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
+			# ステージ3: ユニ帝仮面の正面無敵 + 反撃
+			var is_stage3_boss: bool = GameManager.current_stage == 3 and enemy.has("stage_number") and enemy.stage_number == 3
+			
+			if is_stage3_boss:
+				# ユニ帝仮面の正面無敵：敵にダメージなし、プレイヤーに20ダメージ + 200px大ノックバック
+				_take_damage(20)
+				_flash_white_body_contact()
+				
+				# プレイヤーを大きく吹っ飛ばす（200px）
+				var away: Vector2 = _axis_knockback(-to_enemy, 200.0)
+				var new_player_pos := global_position + away
+				if _is_outside_mat(new_player_pos):
+					set_invincible_for(1.5)
+					trigger_rope_launch()
+				else:
+					global_position = new_player_pos
+					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+				
+				body_contact_cooldown = BODY_CONTACT_INTERVAL
+				set_invincible_for(0.5)
+			else:
+				# 通常の正面衝突
+				var damage_to_enemy: int = int(BODY_DAMAGE_DEALT * fire_dash_damage_mult)
+				
+				# ステージ4: 異論マスク、コーナージャンプ特攻
+				if GameManager.current_stage == 4 and leave_post_2x_jump:
+					damage_to_enemy = 50
+					leave_post_2x_jump = false
+				
+				enemy._take_damage(damage_to_enemy)
+				_take_damage(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
 			
 			# 正面衝突：血のエフェクトを2倍大きく、2倍長く
 			if fire_dash_damage_mult > 1.5:
@@ -319,30 +364,35 @@ func _body_contact(delta: float) -> void:
 					hit_particles.amount = 40
 					hit_particles.lifetime = 0.8
 					hit_particles.emitting = true
-			_flash_white_body_contact()
-			var push_amount := BODY_PUSH_PIXELS_FRONTAL
-			# プレイヤーと敵、両方が離れる方向に押し飛ばす
-			var away: Vector2 = _axis_knockback(-to_enemy, push_amount)
-			var new_player_pos := global_position + away
-			# 敵は反対方向に同じ距離押し飛ばす
-			var new_enemy_pos: Vector2 = Vector2(enemy.global_position.x - away.x, enemy.global_position.y - away.y)
-			if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
-				enemy.set_invincible_for(1.5)
-				enemy.trigger_rope_launch()
-			else:
-				enemy.global_position = new_enemy_pos
-				enemy.velocity = Vector2.ZERO
-				enemy.knockback_stun_remaining = 0.25
-				enemy.set_invincible_for(0.5)
-			# プレイヤーもロープ外に出たか確認
-			if _is_outside_mat(new_player_pos):
-				set_invincible_for(1.5)
-				trigger_rope_launch()
-			else:
-				global_position = new_player_pos
-				global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
-			body_contact_cooldown = BODY_CONTACT_INTERVAL
-			set_invincible_for(0.5)
+				_flash_white_body_contact()
+				
+				var push_amount := BODY_PUSH_PIXELS_FRONTAL
+				# ステージ4: 異論マスクの超反動（150px）
+				if GameManager.current_stage == 4 and enemy.has("stage_number") and enemy.stage_number == 4:
+					push_amount = 150.0
+				
+				# プレイヤーと敵、両方が離れる方向に押し飛ばす
+				var away: Vector2 = _axis_knockback(-to_enemy, push_amount)
+				var new_player_pos := global_position + away
+				# 敵は反対方向に同じ距離押し飛ばす
+				var new_enemy_pos: Vector2 = Vector2(enemy.global_position.x - away.x, enemy.global_position.y - away.y)
+				if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
+					enemy.set_invincible_for(1.5)
+					enemy.trigger_rope_launch()
+				else:
+					enemy.global_position = new_enemy_pos
+					enemy.velocity = Vector2.ZERO
+					enemy.knockback_stun_remaining = 0.25
+					enemy.set_invincible_for(0.5)
+				# プレイヤーもロープ外に出たか確認
+				if _is_outside_mat(new_player_pos):
+					set_invincible_for(1.5)
+					trigger_rope_launch()
+				else:
+					global_position = new_player_pos
+					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+				body_contact_cooldown = BODY_CONTACT_INTERVAL
+				set_invincible_for(0.5)
 		break
 
 func _is_outside_mat(pos: Vector2) -> bool:

@@ -22,13 +22,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "You died!
+text = "GAME OVER
 
 Press:
-'R' to restart level
+'Enter' to return to Title
 or
-'Escape' to quit
-or
-'E' to return to first level"
+'Escape' to quit"
 label_settings = ExtResource("2_k8myw")
 horizontal_alignment = 1
