@@ -5,27 +5,38 @@ class_name PlayerWalking
 const STEP_SIZE := 32
 ## 1ステップごとの間隔（秒）。小さくすると速く動く
 @export var step_cooldown := 0.12
+## ロープ跳ね返り後の待ち時間（秒）
+const ROPE_BOUNCE_DELAY := 0.5
+## 自動走行時は通常の何倍速か
+const AUTO_RUN_SPEED_MULT := 3.0
 
-@export var movespeed := int(1400)
+@export var movespeed := int(2800)
 @export var dash_max := int(2000)
 var dashspeed := float(400)
 var can_dash := bool(false)
 var dash_direction := Vector2(0,0)
 var step_timer := 0.0
+## 左クリック自動走行：向き。ZEROで解除
+var auto_run_direction := Vector2.ZERO
+var auto_run_bounce_timer := 0.0
 
 var player : CharacterBody2D
+var player_main : PlayerMain
 @export var animator : AnimationPlayer
 
 func Enter():
 	player = get_tree().get_first_node_in_group("Player")
+	player_main = player as PlayerMain
 	animator.play("Walk")
+	if player_main and player_main.start_auto_run:
+		player_main.start_auto_run = false
+		var sprite = player_main.sprite
+		auto_run_direction = Vector2.RIGHT if (sprite and sprite.scale.x >= 0) else Vector2.LEFT
 
 func Update(delta : float):
 	step_timer -= delta
+	auto_run_bounce_timer -= delta
 	var input_dir = Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
-<<<<<<< Updated upstream
-	Move(input_dir, delta)
-=======
 	# 左クリック（ジャンプボタン）：ふつうモード＝ジャンプ、カクカク＝小ダッシュ＋炎（ダッシュ中でも即遷移）
 	if Input.is_action_just_pressed("Punch") and player_main:
 		if player_main.use_grid_movement:
@@ -38,22 +49,16 @@ func Update(delta : float):
 		auto_run_direction = Vector2.ZERO
 	# 左クリックで自動走行開始（Moving 中に押した場合・方向なしのとき）
 	if Input.is_action_just_pressed("Punch") and auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
-		var sprite = player_main.sprite if player_main else null
-		auto_run_direction = Vector2.RIGHT if (sprite and sprite.scale.x >= 0) else Vector2.LEFT
+		player_main.start_auto_run = true
+		state_transition.emit(self, "Moving")
+		return
 	if Input.is_action_just_pressed("Dash") and can_dash:
 		start_dash(input_dir if input_dir.length() > 0 else auto_run_direction)
 	elif Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
 		Transition("Attacking")
 	else:
 		Move(input_dir, delta)
->>>>>>> Stashed changes
 	LessenDash(delta)
-
-	if(Input.is_action_just_pressed("Dash") && can_dash):
-		start_dash(input_dir)
-		
-	if Input.is_action_just_pressed("Punch") or Input.is_action_just_pressed("Kick"):
-		Transition("Attacking")
 	
 func Move(input_dir : Vector2, delta : float):
 	#Suddenly turning mid dash

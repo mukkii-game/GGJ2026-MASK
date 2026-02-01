@@ -6,18 +6,19 @@ class_name enemy_idle_state
 
 @export var animator : AnimationPlayer
 var _timer := 0.0
+@onready var enemy = $"../.." as EnemyMain
 
 func Enter():
 	animator.play("Idle")
 	_timer = idle_duration
 
 func Update(delta: float):
-<<<<<<< Updated upstream
-=======
+	# 敵全員凍結モード時は動かない
+	if GameManager.enemies_frozen:
+		return
 	# 静止タイプは Idle のまま（遷移しない）
 	if enemy and enemy.behavior_type == EnemyMain.Behavior.Idle:
 		return
->>>>>>> Stashed changes
 	_timer -= delta
 	if _timer <= 0.0:
 		_timer = idle_duration

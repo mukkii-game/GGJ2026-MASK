@@ -1,15 +1,6 @@
 extends CharacterBase
 class_name EnemyMain
 
-<<<<<<< Updated upstream
-@onready var fsm = $FSM as FiniteStateMachine
-var player_in_range = false
-
-@export var attack_node : Node
-@export var chase_node : Node
-
-# 攻撃後は必ずIdleに戻す（一定時間追従はChase側のタイマーで制御）
-=======
 ## 静止・上下ループ・左右ループ・一定範囲ランダムの4種
 enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange }
 
@@ -33,7 +24,7 @@ var patrol_vertical := false
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	if is_dead:
+	if is_dead or GameManager.enemies_frozen:
 		return
 	_push_apart_from_other_enemies()
 
@@ -88,28 +79,23 @@ func _ready():
 			fsm.force_change_state("enemy_wander_state")
 
 # 攻撃後は必ずIdleに戻す
->>>>>>> Stashed changes
 func finished_attacking():
+	charge_damage_mult = 1.0
 	fsm.change_state(attack_node, "enemy_idle_state")
 
-<<<<<<< Updated upstream
-# プレイヤーが範囲内に入ったら一定時間追従（Chase）に切り替え
-func _on_detection_area_body_entered(body):
-	if body.is_in_group("Player"):
-		player_in_range = true
-		var cs = fsm.current_state.name if fsm.current_state else ""
-		if cs != "enemy_death_state" and cs != "enemy_attack_state":
-			fsm.force_change_state("enemy_chase_state")
-=======
 func _on_detection_area_body_entered(_body: Node2D) -> void:
 	pass
 
 func _on_detection_area_body_exited(_body: Node2D) -> void:
 	pass
->>>>>>> Stashed changes
 
 func _die():
 	super() #calls _die() on base-class CharacterBase
 	fsm.force_change_state("enemy_death_state")
-	
-	
+
+## ロープまでノックされたときに呼ぶ。大きくジャンプして画面内のどこかに着地する
+func trigger_rope_launch() -> void:
+	if is_dead:
+		return
+	fsm.force_change_state("enemy_launched_state")
+

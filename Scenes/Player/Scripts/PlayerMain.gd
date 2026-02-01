@@ -5,26 +5,16 @@ class_name PlayerMain
 @onready var cam = $Camera2D
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
-<<<<<<< Updated upstream
-## マット内の移動範囲（1280×720画面中央の720×720正方形内、プレイヤー半径32pxのマージン）
-const MAT_LEFT := 344
-const MAT_RIGHT := 936
-const MAT_TOP := 64
-const MAT_BOTTOM := 656
-=======
 ## マット内の移動範囲（左右はロープにめり込むだけ・下は赤ロープに触れて跳ね返る）
 const MAT_LEFT := 296   # 体半分めり込み時 center 296 → left 264
 const MAT_RIGHT := 984  # 体半分めり込み時 center 984 → right 1016
 const MAT_TOP := 16     # 上ロープ（16ドット幅）の下端
 const MAT_BOTTOM := 704 # 下ロープ（16ドット幅）の上端
->>>>>>> Stashed changes
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
 ## false=滑らか（初期） / true=カクカク。Gキーでトグル
 var use_grid_movement := false
-<<<<<<< Updated upstream
-=======
 ## 左クリックで自動走行開始時に Moving に渡すフラグ
 var start_auto_run := false
 ## 自動走行中か（風エフェクト表示用）
@@ -70,10 +60,10 @@ var _rope_correction_velocity := Vector2.ZERO
 const ROPE_TOP_CORRECTION_SPEED := 120.0
 const ROPE_TOP_CORRECTION_DECAY := 400.0
 const ROPE_BOTTOM_BOUNCE := 256
->>>>>>> Stashed changes
 
 func _ready():
 	super()
+	use_grid_movement = GameManager.use_grid_mode
 	if cam:
 		cam.position_smoothing_enabled = false
 		# カメラをプレイヤーから切り離してスクロールしないようにする（SubViewport内のときはゲームルートに追加）
@@ -88,16 +78,12 @@ func _ready():
 
 func _process(_delta):
 	super(_delta)
-	if Input.is_action_just_pressed("ToggleGridMove"):
-		use_grid_movement = not use_grid_movement
+	if Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick"):
+		GameManager.use_grid_mode = not GameManager.use_grid_mode
+		use_grid_movement = GameManager.use_grid_mode
 	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
-<<<<<<< Updated upstream
-	# マット外には出さない
-	var p := global_position
-	global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
-=======
 	# ジャンプ中はYクランプ・体当たりしない
 	if not is_jumping:
 		var p := global_position
@@ -268,7 +254,6 @@ func _body_contact(delta: float) -> void:
 
 func _is_outside_mat(pos: Vector2) -> bool:
 	return pos.x < MAT_LEFT or pos.x > MAT_RIGHT or pos.y < MAT_TOP or pos.y > MAT_BOTTOM
->>>>>>> Stashed changes
 
 func _die():
 	super() #calls _die() on base-class CharacterBase

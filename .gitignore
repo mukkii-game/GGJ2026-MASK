@@ -20,4 +20,8 @@ data_*/
 # Editor settings
 .vscode/
 
+# Godot 4 auto-generated files
+*.import
+*.uid
+
 # Godot 4 auto-generated script IDs

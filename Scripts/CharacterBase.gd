@@ -43,16 +43,6 @@ func damage_effects():
 	if(hit_particles):
 		hit_particles.emitting = true
 
-<<<<<<< Updated upstream
-#After we are done flashing red, we can take damage again
-func after_damage_iframes():
-	invincible = true
-	var tween = create_tween()
-	tween.tween_property(self, "modulate", Color.DARK_RED, 0.1)
-	tween.tween_property(self, "modulate", Color.WHITE, 0.1)
-	tween.tween_property(self, "modulate", Color.RED, 0.1)
-	tween.tween_property(self, "modulate", Color.WHITE, 0.1)
-=======
 #After we are done flashing red, we can take damage again（ピカピカ明るめ・大きめ・少し長く）
 func after_damage_iframes():
 	invincible = true
@@ -70,7 +60,6 @@ func after_damage_iframes():
 	tween.chain().tween_property(target, "modulate", Color.WHITE, 0.1)
 	tween.chain().tween_property(target, "modulate", Color(1.25, 0.65, 0.65, 1.0), 0.08)
 	tween.chain().tween_property(target, "modulate", Color.WHITE, 0.12)
->>>>>>> Stashed changes
 	await tween.finished
 	if target and is_instance_valid(target):
 		target.modulate = Color.WHITE
