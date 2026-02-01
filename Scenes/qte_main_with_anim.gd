@@ -3,7 +3,7 @@ extends Node2D
 @onready var player_point = $PlayerPoint
 @onready var target_zone = $TargetZone
 @onready var result_label = $ResultLabel
-@onready var anim: AnimationPlayer = $QTE_AnimationPlayer # ←ノード名が違う場合はここを修正
+@onready var anim: AnimationPlayer = $QTEAnimationPlayer
 @onready var hit_hip: AudioStreamPlayer2D = $hit_hip
 
 var speed = 500.0
