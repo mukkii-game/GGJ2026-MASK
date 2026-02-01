@@ -4,21 +4,13 @@ class_name PlayerWalking
 ## グリッドごとワープ：1ステップのピクセル数（半キャラ＝32）
 const STEP_SIZE := 32
 ## 1ステップごとの間隔（秒）。小さくすると速く動く
-<<<<<<< Updated upstream
-@export var step_cooldown := 0.12
-=======
 @export var step_cooldown := 0.08
->>>>>>> Stashed changes
 ## ロープ跳ね返り後の待ち時間（秒）
 const ROPE_BOUNCE_DELAY := 0.5
 ## 自動走行時は通常の何倍速か
 const AUTO_RUN_SPEED_MULT := 3.0
 
-<<<<<<< Updated upstream
-@export var movespeed := int(2800)
-=======
 @export var movespeed := int(480)
->>>>>>> Stashed changes
 @export var dash_max := int(2000)
 var dashspeed := float(400)
 var can_dash := bool(false)

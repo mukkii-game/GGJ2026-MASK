@@ -5,19 +5,11 @@ class_name PlayerMain
 @onready var cam = $Camera2D
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
-<<<<<<< Updated upstream
-## マット内の移動範囲（左右はロープにめり込むだけ・下は赤ロープに触れて跳ね返る）
-const MAT_LEFT := 296   # 体半分めり込み時 center 296 → left 264
-const MAT_RIGHT := 984  # 体半分めり込み時 center 984 → right 1016
-const MAT_TOP := 16     # 上ロープ（16ドット幅）の下端
-const MAT_BOTTOM := 704 # 下ロープ（16ドット幅）の上端
-=======
 ## マット内の移動範囲（ロープに1キャラ分踏み込める）
 const MAT_LEFT := 232   # 左ロープに1キャラ分（64px）踏み込める
 const MAT_RIGHT := 1048 # 右ロープに1キャラ分（64px）踏み込める
 const MAT_TOP := -48    # 上ロープに1キャラ分（64px）踏み込める
 const MAT_BOTTOM := 768 # 下ロープに1キャラ分（64px）踏み込める
->>>>>>> Stashed changes
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
@@ -95,8 +87,6 @@ func _process(_delta):
 	if Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick"):
 		GameManager.use_grid_mode = not GameManager.use_grid_mode
 		use_grid_movement = GameManager.use_grid_mode
-<<<<<<< Updated upstream
-=======
 	
 	# 何か操作したらロープバウンス停止
 	if rope_bounce_running:
@@ -105,7 +95,6 @@ func _process(_delta):
 			rope_bounce_running = false
 			rope_bounce_direction = Vector2.ZERO
 	
->>>>>>> Stashed changes
 	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
