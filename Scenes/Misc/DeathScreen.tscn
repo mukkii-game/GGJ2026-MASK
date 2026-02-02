@@ -1,7 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://h61y6jpdtysp"]
+[gd_scene load_steps=4 format=3 uid="uid://h61y6jpdtysp"]
 
 [ext_resource type="Script" path="res://Scripts/Reset.gd" id="1_y2wu1"]
-[ext_resource type="LabelSettings" uid="uid://1cnb4418rr7" path="res://Art/Fonts/pixelized_label_large.tres" id="2_k8myw"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0, 0, 0, 0.75)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 20.0
+content_margin_right = 20.0
+content_margin_top = 16.0
+content_margin_bottom = 16.0
 
 [node name="DeathScreen" type="CanvasLayer"]
 layer = 2
@@ -14,19 +24,48 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
-[node name="Label" type="Label" parent="Control"]
+[node name="Panel" type="PanelContainer" parent="Control"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
+anchors_preset = 3
+anchor_left = 0.0
+anchor_top = 0.5
+anchor_right = 0.5
 anchor_bottom = 1.0
-grow_horizontal = 2
+offset_left = 20.0
+offset_top = -20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBox" type="VBoxContainer" parent="Control/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Label" type="Label" parent="Control/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 28
 text = "GAME OVER
 
-Press:
-'Enter' to return to Title
-or
-'Escape' to quit"
-label_settings = ExtResource("2_k8myw")
+コンティニュー: クリック / Enter / スペース
+タイトルへ: Esc"
 horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="Control/Panel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="ContinueButton" type="Button" parent="Control/Panel/VBox/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "コンティニュー"
+
+[node name="TitleButton" type="Button" parent="Control/Panel/VBox/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "タイトルへ戻る"

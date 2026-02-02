@@ -32,6 +32,10 @@ func Update(delta: float):
 		body.velocity = Vector2.ZERO
 		body.move_and_slide()
 		return
+	# プレイヤーが範囲内なら接近・攻撃（チェース）へ
+	if body is EnemyMain and (body as EnemyMain).player_in_range:
+		state_transition.emit(self, "enemy_chase_state")
+		return
 	if not _has_target:
 		return
 	var to_target = _target - body.global_position

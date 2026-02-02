@@ -5,11 +5,19 @@ class_name enemy_attack_state
 @onready var enemy = $"../.."
 @onready var hit_particles = $"../../AnimatedSprite2D/HitParticles"
 @export var animator : AnimationPlayer
+## 気合モード風の赤（攻撃中）
+const ATTACK_MODULATE := Color(1.18, 0.55, 0.55, 1.0)
 
 func Enter():
+	if enemy.sprite:
+		enemy.sprite.modulate = ATTACK_MODULATE
 	animator.play(attack.anim)
 	await animator.animation_finished
 	enemy.finished_attacking()
+
+func Exit():
+	if enemy.sprite:
+		enemy.sprite.modulate = Color.WHITE
 	
 #During attack animation, Hitbox is activated and tries to find the player
 func _on_hit_box_body_entered(body):

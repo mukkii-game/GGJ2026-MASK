@@ -1,14 +1,37 @@
 extends Node
+## ゲームオーバー画面。コンティニュー（再挑戦）かタイトルへ戻るかを選べる。
 
-#NOTE this class is attached to the death_screen and victory_screen scene that shows up when the player dies
-#it handles the logic for resetting the level or quitting the game
+func _ready() -> void:
+	var continue_btn = get_node_or_null("Control/Panel/VBox/HBox/ContinueButton")
+	if continue_btn:
+		continue_btn.pressed.connect(_on_continue)
+	var title_btn = get_node_or_null("Control/Panel/VBox/HBox/TitleButton")
+	if title_btn:
+		title_btn.pressed.connect(_on_title)
 
-func _process(_delta):
-	if Input.is_action_just_pressed("Restart") or Input.is_action_just_pressed("Enter"):
-		restart()
-	if Input.is_action_just_pressed("Escape"):
-		get_tree().quit()
+func _input(event: InputEvent) -> void:
+	var vp := get_viewport()
+	if event.is_action_pressed("Escape"):
+		_on_title()
+		if vp:
+			vp.set_input_as_handled()
+		return
+	# Esc以外：キー・クリック・パッドでコンティニュー（ボタン押下と重複するが load_same_level は冪等に扱う）
+	if event is InputEventKey and event.pressed:
+		_on_continue()
+		if vp:
+			vp.set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		_on_continue()
+		if vp:
+			vp.set_input_as_handled()
+	elif event is InputEventJoypadButton and event.pressed:
+		_on_continue()
+		if vp:
+			vp.set_input_as_handled()
 
-#When the player dies and wishes to reset, go back to title
-func restart():
+func _on_continue() -> void:
+	GameManager.load_same_level()
+
+func _on_title() -> void:
 	GameManager.load_title()

@@ -21,6 +21,16 @@ func _use_horizontal() -> bool:
 		return not (body as EnemyMain).patrol_vertical
 	return axis_horizontal
 
+func _get_patrol_distance() -> float:
+	if body is EnemyMain and (body as EnemyMain).patrol_distance_override > 0.0:
+		return (body as EnemyMain).patrol_distance_override
+	return patrol_distance
+
+func _get_patrol_speed() -> float:
+	if body is EnemyMain and (body as EnemyMain).patrol_speed_override > 0.0:
+		return (body as EnemyMain).patrol_speed_override
+	return move_speed
+
 func Enter():
 	animator.play("Chasing")
 	_start_pos = body.global_position
@@ -36,6 +46,10 @@ func Update(delta: float):
 		body.velocity = Vector2.ZERO
 		body.move_and_slide()
 		return
+	# プレイヤーが範囲内なら接近・攻撃（チェース）へ
+	if body is EnemyMain and (body as EnemyMain).player_in_range:
+		state_transition.emit(self, "enemy_chase_state")
+		return
 	# 上下/左右ループの場合はIdleに戻らない（patrol_duration 無視）
 	var is_loop := body is EnemyMain and ((body as EnemyMain).behavior_type == EnemyMain.Behavior.VerticalLoop or (body as EnemyMain).behavior_type == EnemyMain.Behavior.HorizontalLoop)
 	if not is_loop and patrol_duration > 0.0:
@@ -45,20 +59,36 @@ func Update(delta: float):
 			return
 
 	var use_h := _use_horizontal()
-	var offset: Vector2
-	if use_h:
-		offset = Vector2((body.global_position - _start_pos).x, 0)
+	var dist := _get_patrol_distance()
+	var spd := _get_patrol_speed()
+	# ロープ間往復：マット端の手前で反転（端に張り付かないようマージンを使う）
+	const ROPE_MARGIN := 32.0
+	if body is EnemyMain:
+		var en := body as EnemyMain
+		if use_h:
+			if body.global_position.x >= EnemyMain.MAT_RIGHT - ROPE_MARGIN and _dir > 0:
+				_dir = -1.0
+			elif body.global_position.x <= EnemyMain.MAT_LEFT + ROPE_MARGIN and _dir < 0:
+				_dir = 1.0
+		else:
+			if body.global_position.y >= EnemyMain.MAT_BOTTOM - ROPE_MARGIN and _dir > 0:
+				_dir = -1.0
+			elif body.global_position.y <= EnemyMain.MAT_TOP + ROPE_MARGIN and _dir < 0:
+				_dir = 1.0
 	else:
-		offset = Vector2(0, (body.global_position - _start_pos).y)
-
-	var len = offset.x if use_h else offset.y
-	if len >= patrol_distance:
-		_dir = -1.0
-	elif len <= -patrol_distance:
-		_dir = 1.0
+		var offset: Vector2
+		if use_h:
+			offset = Vector2((body.global_position - _start_pos).x, 0)
+		else:
+			offset = Vector2(0, (body.global_position - _start_pos).y)
+		var len = offset.x if use_h else offset.y
+		if len >= dist:
+			_dir = -1.0
+		elif len <= -dist:
+			_dir = 1.0
 
 	if use_h:
-		body.velocity = Vector2(_dir * move_speed, 0)
+		body.velocity = Vector2(_dir * spd, 0)
 	else:
-		body.velocity = Vector2(0, _dir * move_speed)
+		body.velocity = Vector2(0, _dir * spd)
 	body.move_and_slide()

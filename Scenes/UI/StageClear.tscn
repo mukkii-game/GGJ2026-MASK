@@ -2,38 +2,23 @@
 
 [ext_resource type="Script" path="res://Scripts/StageClear.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Art/Sprites/iron_mask_title1.png" id="2_texture"]
-[ext_resource type="Shader" path="res://Art/Shaders/mosaic_blocks.gdshader" id="3_shader"]
+[ext_resource type="Shader" path="res://Art/Shaders/blur_mosaic.gdshader" id="3_shader"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_mosaic"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_blur_mosaic"]
 shader = ExtResource("3_shader")
+shader_parameter/mosaic_block_size = 4.0
+shader_parameter/blur_radius = 0.006
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bubble"]
-bg_color = Color(1, 1, 1, 0.95)
-border_width_left = 4
-border_width_right = 4
-border_width_top = 4
-border_width_bottom = 4
-border_color = Color(0.2, 0.2, 0.3, 1)
-corner_radius_top_left = 24
-corner_radius_top_right = 24
-corner_radius_bottom_right = 24
-corner_radius_bottom_left = 24
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_text"]
+bg_color = Color(0, 0, 0, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 content_margin_left = 20.0
 content_margin_right = 20.0
 content_margin_top = 16.0
 content_margin_bottom = 16.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_speech"]
-bg_color = Color(1, 1, 1, 0.92)
-border_width_left = 3
-border_width_right = 3
-border_width_top = 3
-border_width_bottom = 3
-border_color = Color(0.15, 0.15, 0.2, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
 
 [node name="StageClear" type="Control"]
 layout_mode = 3
@@ -70,19 +55,19 @@ stretch_mode = 5
 
 [node name="FaceCover" type="Control" parent="."]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 4
 anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
+anchor_top = 0.0
+anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -200.0
-offset_right = 220.0
-offset_bottom = 200.0
-grow_horizontal = 2
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 0
 grow_vertical = 2
 
-[node name="MosaicRect" type="ColorRect" parent="FaceCover"]
+[node name="BlurMosaicRect" type="TextureRect" parent="FaceCover"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -93,111 +78,45 @@ offset_right = 0.0
 offset_bottom = 0.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.2, 0.2, 0.25, 0.92)
-material = SubResource("ShaderMaterial_mosaic")
+texture = ExtResource("2_texture")
+expand_mode = 1
+stretch_mode = 5
+material = SubResource("ShaderMaterial_blur_mosaic")
 
-[node name="CannotShowBubble" type="PanelContainer" parent="FaceCover"]
+[node name="TextPanel" type="PanelContainer" parent="FaceCover"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -260.0
-offset_top = -70.0
-offset_right = 260.0
-offset_bottom = 70.0
-grow_horizontal = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_bubble")
+theme_override_styles/panel = SubResource("StyleBoxFlat_text")
 
-[node name="CannotShowLabel" type="Label" parent="FaceCover/CannotShowBubble"]
+[node name="VBox" type="VBoxContainer" parent="FaceCover/TextPanel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 56
-text = "見せられないよ！"
-horizontal_alignment = 1
-vertical_alignment = 1
+theme_override_constants/separation = 20
 
-[node name="StageNumberBubble" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -420.0
-offset_top = -340.0
-offset_right = 420.0
-offset_bottom = -220.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_speech")
-
-[node name="StageNumber" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -400.0
-offset_top = -320.0
-offset_right = 400.0
-offset_bottom = -240.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 64
+[node name="StageNumber" type="Label" parent="FaceCover/TextPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 text = "STAGE 1 CLEAR!"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="MessageBubble" type="Panel" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -440.0
-offset_top = 80.0
-offset_right = 440.0
-offset_bottom = 200.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_speech")
-
-[node name="Message" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -400.0
-offset_top = 100.0
-offset_right = 400.0
-offset_bottom = 180.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 52
-text = "雑魚マスク軍団を倒した！"
+[node name="Message" type="Label" parent="FaceCover/TextPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+text = "雑魚マスク軍団のマスクを剥いだ！"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="PressNext" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = 220.0
-offset_right = 300.0
-offset_bottom = 280.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 28
+[node name="PressNext" type="Label" parent="FaceCover/TextPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 text = "Press Enter to Continue"
 horizontal_alignment = 1
-vertical_alignment = 1

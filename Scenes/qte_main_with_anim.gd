@@ -5,6 +5,7 @@ signal qte_succeeded
 signal qte_failed
 
 @onready var player_point = $PlayerPoint
+@onready var run_sprite: Sprite2D = $PlayerPoint/CollisionShape2D/sprite
 @onready var target_zone = $TargetZone
 @onready var result_label = $ResultLabel
 @onready var anim: AnimationPlayer = $QTEAnimationPlayer
@@ -13,6 +14,11 @@ signal qte_failed
 var speed = 500.0
 var is_active = false
 var is_overlapping = false # これが「接触中か」を判定するフラグ
+## QTE右走り用2パターン（m_man_g_l1 / m_man_g_l2）
+var _tex_l1: Texture2D
+var _tex_l2: Texture2D
+var _pattern_timer := 0.0
+const PATTERN_INTERVAL := 0.12
 
 var player_start_pos: Vector2
 ## 親がスタートを制御する場合は true（ゲーム内ボス撃破QTE用）
@@ -22,6 +28,13 @@ var wait_for_start: bool = false
 func _ready():
 	# PlayerPointの開始位置を記録
 	player_start_pos = player_point.position
+	# 右走り用2パターン読み込み（m_man_g_l1 / m_man_g_l2）
+	if ResourceLoader.exists("res://Art/Sprites/m_man_g_l1.png"):
+		_tex_l1 = load("res://Art/Sprites/m_man_g_l1.png") as Texture2D
+	if ResourceLoader.exists("res://Art/Sprites/m_man_g_l2.png"):
+		_tex_l2 = load("res://Art/Sprites/m_man_g_l2.png") as Texture2D
+	if not _tex_l2:
+		_tex_l2 = _tex_l1
 
 	# 接触イベント（シグナル）の接続
 	target_zone.area_entered.connect(_on_area_entered)
@@ -36,10 +49,17 @@ func _ready():
 func start_qte():
 	# PlayerPointを開始位置に戻す
 	player_point.position = player_start_pos
+	if run_sprite and _tex_l1:
+		run_sprite.texture = _tex_l1
 
 	# 状態リセット
+	_pattern_timer = 0.0
 	is_overlapping = false
 	result_label.text = ""
+	result_label.remove_theme_font_size_override("font_size")
+	result_label.remove_theme_color_override("font_color")
+	result_label.remove_theme_color_override("font_outline_color")
+	result_label.remove_theme_constant_override("outline_size")
 
 	# QTEを有効化（_processが動き出す）
 	is_active = true
@@ -55,6 +75,13 @@ func _process(delta):
 
 	# ポイントを右へ移動
 	player_point.position.x += speed * delta
+
+	# 右走り2パターンアニメ（l1/l2切り替え）
+	_pattern_timer += delta
+	if _pattern_timer >= PATTERN_INTERVAL:
+		_pattern_timer = 0.0
+		if run_sprite and _tex_l1 and _tex_l2:
+			run_sprite.texture = _tex_l2 if run_sprite.texture == _tex_l1 else _tex_l1
 
 	# いずれかのボタンが押された瞬間の判定（スペース・パンチ・キック・Enterなど）
 	var qte_pressed := (
@@ -90,7 +117,7 @@ func success_game():
 	if hit_hip:
 		hit_hip.play()
 	anim.stop()
-	result_label.text = "SUCCESS!"
+	_show_result("SUCCESS!", true)
 	qte_succeeded.emit()
 	exit_sequence()
 
@@ -98,9 +125,18 @@ func success_game():
 func fail_game():
 	is_active = false
 	anim.stop()
-	result_label.text = "FAIL..."
+	_show_result("FAIL...", false)
 	qte_failed.emit()
 	exit_sequence()
+
+
+func _show_result(text: String, is_success: bool) -> void:
+	result_label.text = text
+	# バーンと出す：でかい赤くて太い文字
+	result_label.add_theme_font_size_override("font_size", 120)
+	result_label.add_theme_color_override("font_color", Color(1.0, 0.15, 0.15, 1.0))
+	result_label.add_theme_color_override("font_outline_color", Color(0.4, 0.0, 0.0, 1.0))
+	result_label.add_theme_constant_override("outline_size", 12)
 
 
 func exit_sequence():

@@ -1,7 +1,8 @@
 [gd_scene load_steps=12 format=3 uid="uid://e7ib44d01uvp"]
 
 [ext_resource type="Script" uid="uid://e052xdqbvwhn" path="res://Scenes/qte_main_with_anim.gd" id="1_2dxxf"]
-[ext_resource type="Texture2D" uid="uid://cxs0gjq80hinu" path="res://Art/Sprites/m_man_r_l1.png" id="1_ubf7m"]
+[ext_resource type="Texture2D" path="res://Art/Sprites/m_man_g_l1.png" id="1_ubf7m"]
+[ext_resource type="Texture2D" path="res://Art/Sprites/m_man_g_l2.png" id="1_ubf7m_l2"]
 [ext_resource type="Texture2D" uid="uid://cdwjcc3c31fx0" path="res://Art/Sprites/k_hip.png" id="2_mn84s"]
 [ext_resource type="Texture2D" uid="uid://ct508uuath2l4" path="res://Art/Sprites/k_hand.png" id="3_2dxxf"]
 [ext_resource type="AudioStream" uid="uid://c1i4gri7v4ure" path="res://Art/Audio/Effects/kill_mask2.wav" id="5_2dxxf"]

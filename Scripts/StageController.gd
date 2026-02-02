@@ -45,6 +45,10 @@ func _ready() -> void:
 	await get_tree().create_timer(0.1).timeout
 	_spawn_initial_enemies()
 	initial_spawn_done = true
+	# 出現時に雑魚と重なってダメージを食わないよう、プレイヤーに短時間無敵
+	var player := _get_player()
+	if player and player.has_method("set_invincible_for"):
+		player.set_invincible_for(2.0)
 
 func _setup_stage_params() -> void:
 	if GameManager.test_mode:
@@ -60,7 +64,7 @@ func _setup_test_params() -> void:
 				"initial_count": 3,
 				"max_count": 6,
 				"spawn_interval": 12.0,
-				"enemy_hp": 5,
+				"enemy_hp": 2,
 				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
@@ -69,27 +73,33 @@ func _setup_test_params() -> void:
 				"initial_count": 1,
 				"max_minions": 2,
 				"spawn_interval": 20.0,
-				"boss_hp": 5,
+				"boss_hp": 2,
 				"boss_speed": 600.0,
-				"minion_hp": 5,
+				"minion_hp": 2,
 				"behavior": 4  # Flee
 			}
 		3:  # ユニ帝仮面（テスト＝一撃）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 5,
+				"max_count": 4,
+				"spawn_interval": 14.0,
+				"boss_hp": 2,
 				"boss_speed": 400.0,
+				"enemy_hp": 2,
 				"behavior": 3  # RandomRange
 			}
 		4:  # 異論マスク（テスト＝一撃）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 5,
+				"max_count": 4,
+				"spawn_interval": 14.0,
+				"boss_hp": 2,
 				"boss_speed": 200.0,
+				"enemy_hp": 2,
 				"behavior": 3  # RandomRange
 			}
 
-## 本番モード（スタート）：まあまあ普通のゲームバランス・1匹だけボス・雑魚は数発で死ぬ
+## 本番モード（スタート）：全ステージで雑魚を定期的に落とす・敵HPは半分
 func _setup_normal_params() -> void:
 	match GameManager.current_stage:
 		1:  # 雑魚マスク軍団（雑魚のみ・数発で死ぬ）
@@ -97,32 +107,38 @@ func _setup_normal_params() -> void:
 				"initial_count": 4,
 				"max_count": 7,
 				"spawn_interval": 11.0,
-				"enemy_hp": 55,
+				"enemy_hp": 27,
 				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
-		2:  # マスクメロンナ（1匹だけボス・雑魚は数発で死ぬ）
+		2:  # マスクメロンナ（足速く・近づくと距離取り・被弾で超高速離脱）
 			stage_params = {
 				"initial_count": 1,
 				"max_minions": 3,
 				"spawn_interval": 18.0,
-				"boss_hp": 220,
-				"boss_speed": 600.0,
-				"minion_hp": 50,
+				"boss_hp": 110,
+				"boss_speed": 750.0,
+				"minion_hp": 25,
 				"behavior": 4  # Flee
 			}
-		3:  # ユニ帝仮面（1匹だけボス・正面無敵・ショルダーのみ）
+		3:  # ユニ帝仮面（ボスはランダム移動・雑魚／ときどきロープ往復）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 260,
+				"max_count": 4,
+				"spawn_interval": 14.0,
+				"boss_hp": 130,
 				"boss_speed": 400.0,
+				"enemy_hp": 25,
 				"behavior": 3  # RandomRange
 			}
-		4:  # 異論マスク（1匹だけボス・コーナージャンプ特攻）
+		4:  # 異論マスク（同上）
 			stage_params = {
 				"initial_count": 1,
-				"boss_hp": 400,
+				"max_count": 4,
+				"spawn_interval": 14.0,
+				"boss_hp": 200,
 				"boss_speed": 200.0,
+				"enemy_hp": 25,
 				"behavior": 3  # RandomRange
 			}
 
@@ -130,13 +146,12 @@ func _process(delta: float) -> void:
 	if stage_cleared:
 		return
 	
-	# ステージ1,2の増援システム
-	if GameManager.current_stage == 1 or GameManager.current_stage == 2:
-		spawn_timer += delta
-		var interval: float = stage_params.get("spawn_interval", 10.0)
-		if spawn_timer >= interval:
-			spawn_timer = 0.0
-			_spawn_reinforcement()
+	# 全ステージで雑魚を定期的に落とす
+	spawn_timer += delta
+	var interval: float = stage_params.get("spawn_interval", 10.0)
+	if spawn_timer >= interval:
+		spawn_timer = 0.0
+		_spawn_reinforcement()
 	
 	# クリア判定
 	_check_stage_clear()
@@ -149,16 +164,19 @@ func _spawn_initial_enemies() -> void:
 		var pos: Vector2 = spawn_points[i % spawn_points.size()]
 		_spawn_enemy_at(pos, has_boss_stage and i == 0)
 
-## 増援
+## 増援（雑魚を定期的に落とす）
 func _spawn_reinforcement() -> void:
 	var npcs = _get_npcs_node()
 	var current_count := npcs.get_child_count() if npcs else 0
 	var max_count: int = 0
 	
-	if GameManager.current_stage == 1:
-		max_count = stage_params.get("max_count", 8)
-	elif GameManager.current_stage == 2:
-		max_count = 1 + stage_params.get("max_minions", 5)
+	match GameManager.current_stage:
+		1:
+			max_count = stage_params.get("max_count", 8)
+		2:
+			max_count = 1 + stage_params.get("max_minions", 5)
+		3, 4:
+			max_count = stage_params.get("max_count", 4)
 	
 	if current_count < max_count:
 		var random_point := spawn_points[randi() % spawn_points.size()]
@@ -174,37 +192,51 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	
 	# ステージごとのパラメータ設定
 	match GameManager.current_stage:
-		1:  # 雑魚マスク
+		1:  # 雑魚マスク（いままでどおり＋ときどきロープ往復）
 			enemy.health = stage_params.get("enemy_hp", 30)
-			enemy.behavior_type = stage_params.get("behavior", 3)
 			enemy.stage_number = 1
 			enemy.is_boss = false
 			enemy.use_qte_on_defeat = false
+			_set_zako_behavior(enemy, pos)
 		2:  # マスクメロンナ
 			if is_boss:
 				enemy.health = stage_params.get("boss_hp", 100)
-				enemy.behavior_type = 4  # Flee（逃げる）
+				enemy.behavior_type = 4  # Flee
 				enemy.stage_number = 2
 				enemy.is_boss = true
 				enemy.use_qte_on_defeat = true
 			else:
 				enemy.health = stage_params.get("minion_hp", 30)
-				enemy.behavior_type = 3
 				enemy.stage_number = 2
 				enemy.is_boss = false
 				enemy.use_qte_on_defeat = false
-		3:  # ユニ帝仮面
-			enemy.health = stage_params.get("boss_hp", 120)
-			enemy.behavior_type = stage_params.get("behavior", 3)
-			enemy.stage_number = 3
-			enemy.is_boss = true
-			enemy.use_qte_on_defeat = true
-		4:  # 異論マスク
-			enemy.health = stage_params.get("boss_hp", 250)
-			enemy.behavior_type = stage_params.get("behavior", 3)
-			enemy.stage_number = 4
-			enemy.is_boss = true
-			enemy.use_qte_on_defeat = true
+				_set_zako_behavior(enemy, pos)
+		3:  # ユニ帝仮面（ボスはRandomRange・雑魚／ときどきロープ往復）
+			if is_boss:
+				enemy.health = stage_params.get("boss_hp", 120)
+				enemy.stage_number = 3
+				enemy.is_boss = true
+				enemy.use_qte_on_defeat = true
+				enemy.behavior_type = stage_params.get("behavior", 3)
+			else:
+				enemy.health = stage_params.get("enemy_hp", 25)
+				enemy.stage_number = 3
+				enemy.is_boss = false
+				enemy.use_qte_on_defeat = false
+				_set_zako_behavior(enemy, pos)
+		4:  # 異論マスク（同上・バトル中は iron_mask_title4 は使わない＝前後用）
+			if is_boss:
+				enemy.health = stage_params.get("boss_hp", 250)
+				enemy.stage_number = 4
+				enemy.is_boss = true
+				enemy.use_qte_on_defeat = true
+				enemy.behavior_type = stage_params.get("behavior", 3)
+			else:
+				enemy.health = stage_params.get("enemy_hp", 25)
+				enemy.stage_number = 4
+				enemy.is_boss = false
+				enemy.use_qte_on_defeat = false
+				_set_zako_behavior(enemy, pos)
 	
 	enemy.scale = Vector2(1.25, 1.25)
 	
@@ -229,6 +261,20 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	var tex_path := _get_enemy_texture_path(GameManager.current_stage, is_boss)
 	_apply_enemy_sprite(enemy, tex_path)
 
+## 雑魚：いままでどおり or ときどき上下/左右ロープ間を死ぬまで往復（プレイヤーより少し遅い速度）
+const ROPE_PATROL_DISTANCE := 344.0  # マット半幅
+const ROPE_PATROL_SPEED := 260.0     # プレイヤーより少し速い
+
+func _set_zako_behavior(enemy: EnemyMain, _pos: Vector2) -> void:
+	if randf() < 0.35:  # 35%でロープ往復
+		enemy.behavior_type = 1 if randi() % 2 == 0 else 2  # VerticalLoop or HorizontalLoop
+		enemy.patrol_distance_override = ROPE_PATROL_DISTANCE
+		enemy.patrol_speed_override = ROPE_PATROL_SPEED
+	else:
+		enemy.behavior_type = stage_params.get("behavior", 3)
+		enemy.patrol_distance_override = 0.0
+		enemy.patrol_speed_override = 0.0
+
 ## ステージ・ボス/雑魚に応じた敵スプライトパス（SPEC: zako/melon_chan/uni_chan/elon_musk）
 func _get_enemy_texture_path(stage: int, is_boss: bool) -> String:
 	match stage:
@@ -236,32 +282,51 @@ func _get_enemy_texture_path(stage: int, is_boss: bool) -> String:
 			return "res://Art/Sprites/m_man_b_l1.png"
 		2:  # マスクメロンナ melon_chan / 雑魚はzako
 			return "res://Art/Sprites/panna_chan_l1.png" if is_boss else "res://Art/Sprites/m_man_b_l1.png"
-		3:  # ユニ帝仮面 uni_chan
-			return "res://Art/Sprites/unity_chan_l1.png"
-		4:  # 異論マスク elon_musk
-			return "res://Art/Sprites/iron_mask_title1.png"
+		3:  # ユニ帝仮面 uni_chan / 雑魚はzako
+			return "res://Art/Sprites/unity_chan_l1.png" if is_boss else "res://Art/Sprites/m_man_b_l1.png"
+		4:  # 異論マスク（バトル用スプライト。iron_mask_title4.png は登場/クリア画面専用なので使わない）
+			return "res://Art/Sprites/m_man_b_l1.png"
 		_:
 			return "res://Art/Sprites/m_man_b_l1.png"
 
-## 敵のAnimatedSprite2Dに1枚テクスチャでSpriteFramesを適用
+## 敵のAnimatedSprite2Dにl1/l2の2パターンでSpriteFramesを適用
 func _apply_enemy_sprite(enemy: EnemyMain, texture_path: String) -> void:
 	if not ResourceLoader.exists(texture_path):
 		return
-	var tex := load(texture_path) as Texture2D
-	if not tex:
+	var tex_l1 := load(texture_path) as Texture2D
+	if not tex_l1:
 		return
+	var tex_l2: Texture2D = null
+	var l2_path := texture_path.replace("_l1.png", "_l2.png")
+	if ResourceLoader.exists(l2_path):
+		tex_l2 = load(l2_path) as Texture2D
+	if not tex_l2:
+		tex_l2 = tex_l1
 	var sprite := enemy.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	if not sprite:
 		return
 	var sf := SpriteFrames.new()
+	var dur := 0.5
 	sf.add_animation("Idle")
-	sf.add_frame("Idle", tex, 1.0)
+	sf.add_frame("Idle", tex_l1, dur)
+	sf.add_frame("Idle", tex_l2, dur)
 	sf.add_animation("Walk")
-	sf.add_frame("Walk", tex, 1.0)
+	sf.add_frame("Walk", tex_l1, dur)
+	sf.add_frame("Walk", tex_l2, dur)
 	sf.add_animation("Attack")
-	sf.add_frame("Attack", tex, 1.0)
+	sf.add_frame("Attack", tex_l1, dur)
+	sf.add_frame("Attack", tex_l2, dur)
 	sf.add_animation("Death")
-	sf.add_frame("Death", tex, 1.0)
+	sf.add_frame("Death", tex_l1, 1.0)
+	sf.add_frame("Death", tex_l2, 1.0)
+	sf.set_animation_loop("Idle", true)
+	sf.set_animation_loop("Walk", true)
+	sf.set_animation_loop("Attack", false)
+	sf.set_animation_loop("Death", false)
+	sf.set_animation_speed("Idle", 5.0)
+	sf.set_animation_speed("Walk", 5.0)
+	sf.set_animation_speed("Attack", 4.0)
+	sf.set_animation_speed("Death", 5.0)
 	sprite.sprite_frames = sf
 	sprite.play("Idle")
 
@@ -274,6 +339,16 @@ func _get_npcs_node() -> Node:
 	if not main_floor:
 		return null
 	return main_floor.get_node_or_null("NPCs")
+
+## SubViewport内のプレイヤーを取得（出現時無敵用）
+func _get_player() -> CharacterBase:
+	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+	if not subvp:
+		return null
+	var main_floor := subvp.get_child(0)
+	if not main_floor:
+		return null
+	return main_floor.get_node_or_null("Player") as CharacterBase
 
 ## 生存している敵の数を取得（SubViewport内のNPCsの子を直接数える）
 func _get_alive_enemy_count() -> int:
@@ -323,8 +398,8 @@ func _on_qte_succeeded() -> void:
 	qte_node = null
 	stage_cleared = true
 	
-	# 画面フラッシュ＋ファンファーレでクリア画面へ
-	await _play_clear_flash_and_fanfare()
+	# 画面フラッシュ＋ファンファーレを再生し、awaitを使わずタイマーでクリア画面へ（ステージ3後フリーズ対策）
+	_play_clear_flash_and_fanfare()
 	_on_stage_clear()
 
 func _on_qte_failed() -> void:
@@ -338,7 +413,7 @@ func _on_qte_failed() -> void:
 	current_qte_boss = null
 	# qte_node は2秒後に自分で queue_free
 
-## QTE成功時：画面フラッシュ＋ファンファーレ再生
+## QTE成功時：画面フラッシュ＋ファンファーレ再生（awaitなし・遷移は_on_stage_clearのタイマーで）
 func _play_clear_flash_and_fanfare() -> void:
 	var root := get_tree().current_scene
 	if not root:
@@ -359,8 +434,10 @@ func _play_clear_flash_and_fanfare() -> void:
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(flash)
 	
-	# ファンファーレ再生（QuestSound or coin_pick を代用）
-	var fanfare_path := "res://Art/Audio/Effects/QuestSound.ogg"
+	# クリア時：勝利っぽいBGM（clear_fanfare.ogg があれば使用、なければ QuestSound）
+	var fanfare_path := "res://Art/Audio/Effects/clear_fanfare.ogg"
+	if not ResourceLoader.exists(fanfare_path):
+		fanfare_path = "res://Art/Audio/Effects/QuestSound.ogg"
 	if not ResourceLoader.exists(fanfare_path):
 		fanfare_path = "res://Art/Audio/Effects/coin_pick.ogg"
 	if ResourceLoader.exists(fanfare_path):
@@ -369,15 +446,15 @@ func _play_clear_flash_and_fanfare() -> void:
 		root.add_child(se)
 		se.play()
 	
-	# フラッシュ：白に一瞬→フェードアウト
+	# フラッシュ：白に一瞬→フェードアウト（コールバックで削除、awaitしない）
 	var tween := flash.create_tween()
 	tween.tween_property(flash, "color", Color(1, 1, 1, 1), 0.15)
 	tween.tween_property(flash, "color", Color(1, 1, 1, 0), 0.5)
 	tween.tween_callback(flash.queue_free)
-	await tween.finished
 
-## ステージクリア
+## ステージクリア（タイマーコールバックで遷移。フラッシュ約0.65秒＋余裕で1.2秒後に遷移）
 func _on_stage_clear() -> void:
-	await get_tree().create_timer(1.0).timeout
-	GameManager.clear_stage(GameManager.current_stage)
-	get_tree().change_scene_to_file("res://Scenes/UI/StageClear.tscn")
+	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+		GameManager.clear_stage(GameManager.current_stage)
+		get_tree().change_scene_to_file("res://Scenes/UI/StageClear.tscn")
+	)

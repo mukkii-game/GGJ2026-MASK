@@ -4,7 +4,7 @@ extends Control
 @onready var bgm_player: AudioStreamPlayer = null
 
 func _ready() -> void:
-	# 主人公（Godot）の絵を表示（SPEC: godot_man → gr_mask_l1.png）
+	# 主人公（よめんのぼす / godot_man）の絵を表示（gr_mask_l1.png）
 	var godot_face = get_node_or_null("GodotMask")
 	if godot_face:
 		var path := "res://Art/Sprites/gr_mask_l1.png"
@@ -28,16 +28,20 @@ func _ready() -> void:
 		btn.pressed.connect(_back_to_title)
 
 func _input(event: InputEvent) -> void:
+	var vp := get_viewport()
 	# なんか入力で終了（キー・マウス・ジョイパッドなど）
 	if event is InputEventKey and event.pressed:
 		_back_to_title()
-		get_viewport().set_input_as_handled()
+		if vp:
+			vp.set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed:
 		_back_to_title()
-		get_viewport().set_input_as_handled()
+		if vp:
+			vp.set_input_as_handled()
 	elif event is InputEventJoypadButton and event.pressed:
 		_back_to_title()
-		get_viewport().set_input_as_handled()
+		if vp:
+			vp.set_input_as_handled()
 
 func _back_to_title() -> void:
 	if bgm_player:

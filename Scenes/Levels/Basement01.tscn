@@ -1,10 +1,9 @@
-[gd_scene load_steps=16 format=4 uid="uid://bt5yicfpmnlwk"]
+[gd_scene load_steps=15 format=4 uid="uid://bt5yicfpmnlwk"]
 
 [ext_resource type="PackedScene" uid="uid://cx8kkqawojm0m" path="res://Scenes/Misc/SceneSettings.tscn" id="1_4stwf"]
 [ext_resource type="TileSet" uid="uid://b3n0bklwwny1b" path="res://Art/TileMap.tres" id="2_wbjck"]
 [ext_resource type="PackedScene" uid="uid://bvg5dny32iw0x" path="res://Scenes/Player/Player.tscn" id="3_ppqb8"]
 [ext_resource type="Texture2D" uid="uid://dyb5iqfj3tmwj" path="res://Art/Sprites/light.png" id="4_4dura"]
-[ext_resource type="PackedScene" uid="uid://bblpsy4fvi76f" path="res://Scenes/Interactables/Coin.tscn" id="4_hswsu"]
 [ext_resource type="PackedScene" uid="uid://ckp2r52hlcfxn" path="res://Scenes/NPC's/Npc_OfficeWorker/npc_officeworker_scene.tscn" id="5_wxx7c"]
 [ext_resource type="PackedScene" uid="uid://bvt7e871e6jeg" path="res://Scenes/NPC's/Enemy/Enemy.tscn" id="6_insxp"]
 [ext_resource type="PackedScene" uid="uid://b6xb8nhlqtuhf" path="res://Scenes/ScoreTracker.tscn" id="7_hbxrs"]
@@ -109,26 +108,6 @@ position = Vector2(877, 114)
 
 [node name="Enemy5" parent="NPCs" instance=ExtResource("6_insxp")]
 position = Vector2(547, -46)
-
-[node name="Pickups" type="Node" parent="."]
-
-[node name="Sprite2D" parent="Pickups" instance=ExtResource("4_hswsu")]
-position = Vector2(157, -7)
-
-[node name="Sprite2D2" parent="Pickups" instance=ExtResource("4_hswsu")]
-position = Vector2(444, -50)
-
-[node name="Sprite2D3" parent="Pickups" instance=ExtResource("4_hswsu")]
-position = Vector2(721, -5)
-
-[node name="Sprite2D4" parent="Pickups" instance=ExtResource("4_hswsu")]
-position = Vector2(416, 152)
-
-[node name="Pickup" parent="Pickups" instance=ExtResource("4_hswsu")]
-position = Vector2(441, 150)
-
-[node name="Pickup2" parent="Pickups" instance=ExtResource("4_hswsu")]
-position = Vector2(471, 154)
 
 [node name="Player" parent="." instance=ExtResource("3_ppqb8")]
 position = Vector2(-90, -18)

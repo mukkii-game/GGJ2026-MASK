@@ -16,6 +16,10 @@ func Update(delta: float):
 	# 敵全員凍結モード時は動かない
 	if GameManager.enemies_frozen:
 		return
+	# プレイヤーが範囲内なら接近・攻撃（チェース）へ
+	if enemy and enemy.player_in_range:
+		state_transition.emit(self, "enemy_chase_state")
+		return
 	# 静止タイプは Idle のまま（遷移しない）
 	if enemy and enemy.behavior_type == EnemyMain.Behavior.Idle:
 		return

@@ -1,6 +1,7 @@
 [gd_scene load_steps=45 format=3 uid="uid://bvt7e871e6jeg"]
 
 [ext_resource type="Texture2D" uid="uid://cxs0gjq80hinu" path="res://Art/Sprites/m_man_r_l1.png" id="1_mman"]
+[ext_resource type="Texture2D" path="res://Art/Sprites/m_man_r_l2.png" id="1_mman_l2"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/EnemyMain.gd" id="1_db41y"]
 [ext_resource type="Script" path="res://Scripts/EnemyFootShadow.gd" id="2_shadow"]
 [ext_resource type="PackedScene" uid="uid://b82yimbxiflml" path="res://Art/Particles/hit_particles.tscn" id="21_d5isq"]
@@ -20,8 +21,11 @@
 [sub_resource type="SpriteFrames" id="SpriteFrames_toimg"]
 animations = [{
 "frames": [{
-"duration": 1.0,
+"duration": 0.5,
 "texture": ExtResource("1_mman")
+}, {
+"duration": 0.5,
+"texture": ExtResource("1_mman_l2")
 }],
 "loop": false,
 "name": &"Attack",
@@ -32,23 +36,29 @@ animations = [{
 "texture": ExtResource("1_mman")
 }, {
 "duration": 1.0,
-"texture": ExtResource("1_mman")
+"texture": ExtResource("1_mman_l2")
 }],
 "loop": false,
 "name": &"Death",
 "speed": 5.0
 }, {
 "frames": [{
-"duration": 1.0,
+"duration": 0.5,
 "texture": ExtResource("1_mman")
+}, {
+"duration": 0.5,
+"texture": ExtResource("1_mman_l2")
 }],
 "loop": true,
 "name": &"Idle",
 "speed": 5.0
 }, {
 "frames": [{
-"duration": 1.0,
+"duration": 0.5,
 "texture": ExtResource("1_mman")
+}, {
+"duration": 0.5,
+"texture": ExtResource("1_mman_l2")
 }],
 "loop": true,
 "name": &"Walk",
@@ -121,7 +131,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0, 0.3, 0.5, 0.65, 0.8, 1, 1.1, 1.25, 1.95),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 1, 2, 3, 4, 5, 6, 7, 7]
+"values": [0, 1, 0, 1, 0, 1, 0, 1, 1]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -204,7 +214,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.5),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 1, 2, 3, 4, 5]
+"values": [0, 1, 1, 1, 1, 1]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -245,7 +255,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0, 0.3, 0.6, 0.9),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
-"values": [0, 1, 2, 3]
+"values": [0, 1, 0, 1]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_i1jlq"]

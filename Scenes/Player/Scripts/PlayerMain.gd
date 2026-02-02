@@ -66,6 +66,9 @@ var _rope_correction_velocity := Vector2.ZERO
 const ROPE_TOP_CORRECTION_SPEED := 120.0
 const ROPE_TOP_CORRECTION_DECAY := 400.0
 const ROPE_BOTTOM_BOUNCE := 256
+## 敵と接したあとこの秒数だけモーション2倍速
+var _enemy_contact_timer: float = 0.0
+const ENEMY_CONTACT_SPEED_SEC := 2.0
 
 func _ready():
 	super()
@@ -82,12 +85,37 @@ func _ready():
 			cam_root.add_child(cam)
 			cam.global_position = CAM_CENTER
 
-func _process(_delta):
-	super(_delta)
+func _process(delta: float):
+	super(delta)
+	# 敵との接触タイマー（接している間は2秒にリセット、離れたら減衰）
+	var in_contact := false
+	for node in get_tree().get_nodes_in_group("Enemy"):
+		var e := node as CharacterBase
+		if not e or e.is_dead:
+			continue
+		if global_position.distance_to(e.global_position) < BODY_CONTACT_HALF * 2.0:
+			in_contact = true
+			break
+	if in_contact:
+		_enemy_contact_timer = ENEMY_CONTACT_SPEED_SEC
+	else:
+		_enemy_contact_timer = maxf(0.0, _enemy_contact_timer - delta)
+	# アニメ速度：止まっている/歩いている＝通常、敵と接した直後数秒＝2倍速、飛んでいるとき＝4倍速
+	if sprite:
+		var flying := is_jumping
+		if fsm and fsm.current_state:
+			var state_name: StringName = fsm.current_state.name
+			flying = flying or state_name == "RopeLaunched" or state_name == "FireDash"
+		if flying:
+			sprite.speed_scale = 4.0
+		elif _enemy_contact_timer > 0.0:
+			sprite.speed_scale = 2.0
+		else:
+			sprite.speed_scale = 1.0
 	if Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick"):
 		GameManager.use_grid_mode = not GameManager.use_grid_mode
 		use_grid_movement = GameManager.use_grid_mode
-	
+
 	# 何か操作したらロープバウンス停止
 	if rope_bounce_running:
 		var input := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown")
@@ -105,7 +133,7 @@ func _process(_delta):
 		# ロープバウンス自動移動中
 		if rope_bounce_running:
 			var move_speed := 480.0 * 2.0  # 2倍速
-			p += rope_bounce_direction * move_speed * _delta
+			p += rope_bounce_direction * move_speed * delta
 			# 目標到達チェック
 			if rope_bounce_direction.x > 0 and p.x >= rope_bounce_target.x:
 				p.x = rope_bounce_target.x
@@ -121,7 +149,7 @@ func _process(_delta):
 				rope_bounce_running = false
 			global_position = p
 			# ロープバウンス中は敵に当たる
-			_body_contact(_delta)
+			_body_contact(delta)
 			return
 		
 		# 通常時：ロープ接触チェック
@@ -154,13 +182,13 @@ func _process(_delta):
 			# AudioManager.play_sound(AudioManager.ROPE_BOUNCE, 0, -2)  # ROPE_BOUNCE音源がないのでコメントアウト
 		# 左右ロープ：跳ね返らない（形で触れてめり込むだけ、クランプのみ）
 		# 矯正速度を適用してからクランプ
-		_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * _delta)
-		p += _rope_correction_velocity * _delta
+		_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * delta)
+		p += _rope_correction_velocity * delta
 		global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
 		var we = get_node_or_null("WindEffect")
 		if we:
 			we.visible = is_auto_running
-		_body_contact(_delta)
+		_body_contact(delta)
 	else:
 		# ジャンプ中はXだけマット内に
 		var p := global_position

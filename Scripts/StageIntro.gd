@@ -30,17 +30,18 @@ func _ready() -> void:
 		if GameManager.current_stage == 4:
 			_start_face_sparkle(face_sparkle)
 	
-	# ボス説明表示
-	var desc_label = get_node_or_null("Description")
+	# ボス説明表示（DescriptionPanel 内の Description に設定、1秒後にパネル表示）
+	var desc_label = get_node_or_null("DescriptionPanel/Description")
 	if desc_label:
 		desc_label.text = stage_data.get("description", "")
 	
-	# Intro.mp3を再生
+	# Intro.mp3を再生。終了時にプロレス風ゴングを1回長めに鳴らす
 	bgm_player = AudioStreamPlayer.new()
 	add_child(bgm_player)
 	var intro_path := "res://Art/Audio/Intro.mp3"
 	if ResourceLoader.exists(intro_path):
 		bgm_player.stream = load(intro_path) as AudioStream
+		bgm_player.finished.connect(_on_intro_finished)
 		bgm_player.play()
 	
 	# 1秒間は進めない
@@ -56,13 +57,13 @@ func _get_stage_data(stage: int) -> Dictionary:
 			}
 		2:
 			return {
-				"boss_name": "マスクメロンナ",
+				"boss_name": "マスクメロンナちゃん",
 				"boss_texture": "res://Art/Sprites/iron_mask_title2.png",
 				"description": "すばしっこい逃げ足！\nジャンプ中は止まる！\n雑魚を召喚してくる！"
 			}
 		3:
 			return {
-				"boss_name": "ユニ帝仮面",
+				"boss_name": "うに帝仮面",
 				"boss_texture": "res://Art/Sprites/iron_mask_title3.png",
 				"description": "正面は無敵！反撃が痛い！\n半キャラずらしのショルダータックルで攻撃！"
 			}
@@ -81,6 +82,26 @@ func _get_stage_data(stage: int) -> Dictionary:
 
 func _on_advance_allowed() -> void:
 	_can_advance = true
+	var desc_panel = get_node_or_null("DescriptionPanel")
+	if desc_panel:
+		desc_panel.visible = true
+
+## Intro終了時：カーンというプロレス風ゴングを1回長めに再生
+func _on_intro_finished() -> void:
+	var path_ogg := "res://Art/Audio/Effects/gong.ogg"
+	var path_wav := "res://Art/Audio/Effects/gong.wav"
+	var stream: AudioStream = null
+	if ResourceLoader.exists(path_ogg):
+		stream = load(path_ogg) as AudioStream
+	elif ResourceLoader.exists(path_wav):
+		stream = load(path_wav) as AudioStream
+	if stream == null:
+		return
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	add_child(player)
+	player.finished.connect(player.queue_free)
+	player.play()
 
 func _input(event: InputEvent) -> void:
 	if not _can_advance:

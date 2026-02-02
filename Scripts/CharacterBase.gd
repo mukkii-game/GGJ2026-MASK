@@ -3,6 +3,8 @@ class_name CharacterBase
 
 ## HP0でQTEを出す場合は true（ボス撃破時）。成功で本当に死亡、失敗でHP回復
 signal defeated_for_qte(who: CharacterBase)
+## ダメージを受けた瞬間（ボス用：被弾で超高速離脱など）
+signal took_damage(amount: int)
 
 @export var sprite : AnimatedSprite2D
 @export var healthbar : ProgressBar
@@ -79,6 +81,7 @@ func _take_damage(amount):
 	health -= amount
 	if healthbar:
 		healthbar.value = health
+	took_damage.emit(amount)
 	damage_effects()
 	
 	if health <= 0:
