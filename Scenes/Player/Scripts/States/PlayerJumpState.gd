@@ -104,7 +104,16 @@ func Update(delta: float) -> void:
 	if not player or not player_main:
 		return
 	# 実座標：歩きの速度で移動。ロープは超えられない（クランプのみ）
-	var input_dir := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
+	var mv_left := "MoveLeft"
+	var mv_right := "MoveRight"
+	var mv_up := "MoveUp"
+	var mv_down := "MoveDown"
+	if player_main.is_player_two:
+		mv_left = "Move2Left"
+		mv_right = "Move2Right"
+		mv_up = "Move2Up"
+		mv_down = "Move2Down"
+	var input_dir := Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()
 	if player_main.use_grid_movement:
 		input_dir = Vector2.ZERO
 	var move := input_dir * WALK_SPEED_JUMP * delta

@@ -45,10 +45,10 @@ func _ready() -> void:
 	await get_tree().create_timer(0.1).timeout
 	_spawn_initial_enemies()
 	initial_spawn_done = true
-	# 出現時に雑魚と重なってダメージを食わないよう、プレイヤーに短時間無敵
-	var player := _get_player()
-	if player and player.has_method("set_invincible_for"):
-		player.set_invincible_for(2.0)
+	# 出現時に雑魚と重なってダメージを食わないよう、全プレイヤーに短時間無敵
+	for node in get_tree().get_nodes_in_group("Player"):
+		if node and node.has_method("set_invincible_for"):
+			node.set_invincible_for(2.0)
 
 func _setup_stage_params() -> void:
 	if GameManager.test_mode:
@@ -61,7 +61,7 @@ func _setup_test_params() -> void:
 	match GameManager.current_stage:
 		1:  # 雑魚マスク軍団（テスト＝一撃）
 			stage_params = {
-				"initial_count": 3,
+				"initial_count": 2,
 				"max_count": 6,
 				"spawn_interval": 12.0,
 				"enemy_hp": 2,
@@ -104,7 +104,7 @@ func _setup_normal_params() -> void:
 	match GameManager.current_stage:
 		1:  # 雑魚マスク軍団（雑魚のみ・数発で死ぬ）
 			stage_params = {
-				"initial_count": 4,
+				"initial_count": 2,
 				"max_count": 7,
 				"spawn_interval": 11.0,
 				"enemy_hp": 27,

@@ -89,6 +89,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "テスト"
 
+[node name="TwoPlayerButton" type="Button" parent="ButtonsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "二人用"
+
 [node name="OperationPanel" type="VBoxContainer" parent="."]
 visible = false
 layout_mode = 1
@@ -110,16 +115,16 @@ theme_override_font_sizes/font_size = 22
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 22
-text = "WASD / 矢印キー　　移動＆体当たり"
+text = "1P: WASD　　移動＆体当たり（バトル時のみ） / 2P: 矢印キー"
 
 [node name="Op2" type="Label" parent="OperationPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 22
-text = "左クリック / Nキー　　ジャンプ／気合"
+text = "1P: Nキー　　ジャンプ／気合 / 2P: 左クリック"
 
 [node name="Op3" type="Label" parent="OperationPanel"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 22
-text = "右クリック / Mキー　　モード切替"
+text = "1P: Mキー　　モード切替 / 2P: 右クリック"

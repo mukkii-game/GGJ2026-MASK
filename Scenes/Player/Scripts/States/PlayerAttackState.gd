@@ -6,7 +6,12 @@ var current_attack : Attack_Data
 @export var attacks : Array[Attack_Data]
 @onready var hit_particles = $"../../AnimatedSprite2D/HitParticles"
 
+var player_main: PlayerMain
+
 func Enter():
+	# 自分のプレイヤー本体をキャッシュ
+	var body = get_parent().get_parent()
+	player_main = body as PlayerMain
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0.3, 1)
 	
 	#Play the attack animation and wait for it to finish, transition from this state is handled by the animation player
@@ -17,9 +22,14 @@ func Enter():
 
 #Read which attack to use from our two attack nodes
 func DetermineAttack():
-	if(Input.is_action_just_pressed("Punch")):
+	var punch_action := "Punch"
+	var kick_action := "Kick"
+	if player_main and player_main.is_player_two:
+		punch_action = "Punch2"
+		kick_action = "Kick2"
+	if(Input.is_action_just_pressed(punch_action)):
 		current_attack = attacks[0]
-	elif(Input.is_action_just_pressed("Kick")):
+	elif(Input.is_action_just_pressed(kick_action)):
 		current_attack = attacks[1]
 
 #Hitbox is turned on/off through the animationplayer, it an enemy is standing inside of it once that happens they take damage

@@ -15,7 +15,9 @@ const MAT_BOTTOM := 704 # 下ロープの内側端
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
-## false=滑らか（初期） / true=カクカク。Gキーでトグル
+## 2Pかどうか（true=2P。入力と見た目を変える）
+@export var is_player_two: bool = false
+## false=滑らか（初期） / true=カクカク。Gキーでトグル（1Pのみがトグル可能）
 var use_grid_movement := false
 ## Nボタン/左クリックで自動走行開始時に Moving に渡すフラグ
 var start_auto_run := false
@@ -77,6 +79,13 @@ var _arena_mat: Node2D = null
 
 func _ready():
 	super()
+	# 二人用モードでないときは2Pキャラを出さない
+	if is_player_two and not GameManager.two_player_mode:
+		queue_free()
+		return
+	# 2Pは顔を赤系に
+	if is_player_two and sprite:
+		sprite.modulate = Color(1.2, 0.4, 0.4, 1.0)
 	use_grid_movement = GameManager.use_grid_mode
 	# 一旦ロープ以外の背景コリジョン（ロープ外の壁）を無効化：layer1 のみ当たる
 	collision_mask = 1
@@ -85,16 +94,21 @@ func _ready():
 	if scene_root:
 		_arena_mat = scene_root.get_node_or_null("ArenaMat")
 	if cam:
-		cam.position_smoothing_enabled = false
-		# カメラをプレイヤーから切り離してスクロールしないようにする（SubViewport内のときはゲームルートに追加）
-		var vp = get_viewport()
-		var cam_root: Node = get_tree().current_scene
-		if vp != get_tree().root and vp.get_child_count() > 0:
-			cam_root = vp.get_child(0)
-		if cam_root and cam.get_parent() == self:
-			remove_child(cam)
-			cam_root.add_child(cam)
-			cam.global_position = CAM_CENTER
+		if is_player_two:
+			# 2P側のカメラは使わない（UIは1Pカメラのみ）
+			cam.enabled = false
+			cam.visible = false
+		else:
+			cam.position_smoothing_enabled = false
+			# カメラをプレイヤーから切り離してスクロールしないようにする（SubViewport内のときはゲームルートに追加）
+			var vp = get_viewport()
+			var cam_root: Node = get_tree().current_scene
+			if vp != get_tree().root and vp.get_child_count() > 0:
+				cam_root = vp.get_child(0)
+			if cam_root and cam.get_parent() == self:
+				remove_child(cam)
+				cam_root.add_child(cam)
+				cam.global_position = CAM_CENTER
 
 func _process(delta: float):
 	super(delta)
@@ -123,14 +137,20 @@ func _process(delta: float):
 			sprite.speed_scale = 2.0
 		else:
 			sprite.speed_scale = 1.0
-	if Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick"):
+	# グリッドモードトグルは1Pのみ（2PのM/矢印ではトグルしない）
+	if not is_player_two and (Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick")):
 		GameManager.use_grid_mode = not GameManager.use_grid_mode
 		use_grid_movement = GameManager.use_grid_mode
 
 	# 何か操作したらロープバウンス停止
 	if rope_bounce_running:
-		var input := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown")
-		if input.length() > 0.1 or Input.is_action_just_pressed("Punch") or Input.is_action_just_pressed("Dash"):
+		var mv_left := "MoveLeft" if not is_player_two else "Move2Left"
+		var mv_right := "MoveRight" if not is_player_two else "Move2Right"
+		var mv_up := "MoveUp" if not is_player_two else "Move2Up"
+		var mv_down := "MoveDown" if not is_player_two else "Move2Down"
+		var jump_action := "Punch" if not is_player_two else "Punch2"
+		var input := Input.get_vector(mv_left, mv_right, mv_up, mv_down)
+		if input.length() > 0.1 or Input.is_action_just_pressed(jump_action) or Input.is_action_just_pressed("Dash"):
 			rope_bounce_running = false
 			rope_bounce_direction = Vector2.ZERO
 	
@@ -259,7 +279,11 @@ func _body_contact(delta: float) -> void:
 	if _just_landed_frame:
 		_just_landed_frame = false
 		return
-	var raw_input := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown")
+	var mv_left := "MoveLeft" if not is_player_two else "Move2Left"
+	var mv_right := "MoveRight" if not is_player_two else "Move2Right"
+	var mv_up := "MoveUp" if not is_player_two else "Move2Up"
+	var mv_down := "MoveDown" if not is_player_two else "Move2Down"
+	var raw_input := Input.get_vector(mv_left, mv_right, mv_up, mv_down)
 	var input_dir: Vector2 = raw_input.normalized() if raw_input.length() > 0.01 else Vector2.ZERO
 	body_contact_cooldown -= delta
 	_push_damage_timer -= delta

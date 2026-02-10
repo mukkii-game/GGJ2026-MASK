@@ -3,16 +3,32 @@ class_name PlayerIdle
 
 @export var animator : AnimationPlayer
 
+var player_main: PlayerMain
+
 func Enter():
 	animator.play("Idle")
-	pass
+	# 自分が所属するプレイヤーをキャッシュ
+	var body = get_parent().get_parent()
+	player_main = body as PlayerMain
 	
 func Update(_delta : float):
-	if(Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()):
+	var mv_left := "MoveLeft"
+	var mv_right := "MoveRight"
+	var mv_up := "MoveUp"
+	var mv_down := "MoveDown"
+	if player_main and player_main.is_player_two:
+		mv_left = "Move2Left"
+		mv_right = "Move2Right"
+		mv_up = "Move2Up"
+		mv_down = "Move2Down"
+	if(Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()):
 		state_transition.emit(self, "Moving")
 	# Nボタン / 左クリック：ふつうモード＝自動走行開始、カクカク＝炎ダッシュ（押し続け）
-	if Input.is_action_just_pressed("Punch"):
-		var p = get_tree().get_first_node_in_group("Player") as PlayerMain
+	var jump_action := "Punch"
+	if player_main and player_main.is_player_two:
+		jump_action = "Punch2"
+	if Input.is_action_just_pressed(jump_action):
+		var p := player_main
 		if not p:
 			return
 		if p.use_grid_movement:
@@ -23,5 +39,11 @@ func Update(_delta : float):
 			p.start_auto_run = true
 			state_transition.emit(self, "Moving")
 	# 攻撃は J（パンチ）K（キック）キー
-	if Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
+	var atk_punch := "AttackPunch"
+	var atk_kick := "AttackKick"
+	# 2Pはマウス左右クリックで攻撃ステートへ
+	if player_main and player_main.is_player_two:
+		atk_punch = "Punch2"
+		atk_kick = "Kick2"
+	if Input.is_action_just_pressed(atk_punch) or Input.is_action_just_pressed(atk_kick):
 		state_transition.emit(self, "Attacking")

@@ -37,13 +37,24 @@ func Exit() -> void:
 func Update(delta: float) -> void:
 	if not player or not player_main:
 		return
+	var hold_action := "Punch"
+	var mv_left := "MoveLeft"
+	var mv_right := "MoveRight"
+	var mv_up := "MoveUp"
+	var mv_down := "MoveDown"
+	if player_main.is_player_two:
+		hold_action = "Punch2"
+		mv_left = "Move2Left"
+		mv_right = "Move2Right"
+		mv_up = "Move2Up"
+		mv_down = "Move2Down"
 	# 押し続けている間は炎状態維持。離したらIdleへ
-	if not Input.is_action_pressed("Punch"):
+	if not Input.is_action_pressed(hold_action):
 		state_transition.emit(self, "Idle")
 		return
 	# グリッド移動（カクカクモード時の移動と同じ）
 	step_timer -= delta
-	var input_dir := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown")
+	var input_dir := Input.get_vector(mv_left, mv_right, mv_up, mv_down)
 	if input_dir.length() > 0.01 and step_timer <= 0:
 		step_timer = STEP_COOLDOWN
 		var dir: Vector2

@@ -112,6 +112,10 @@ position = Vector2(547, -46)
 [node name="Player" parent="." instance=ExtResource("3_ppqb8")]
 position = Vector2(-90, -18)
 
+[node name="Player2" parent="." instance=ExtResource("3_ppqb8")]
+position = Vector2(-50, -18)
+is_player_two = true
+
 [node name="Score_tracker_layer" parent="." instance=ExtResource("7_hbxrs")]
 
 [node name="DebugContactOverlay" type="Node2D" parent="."]

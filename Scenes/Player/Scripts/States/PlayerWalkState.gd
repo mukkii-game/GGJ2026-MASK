@@ -25,7 +25,8 @@ var player_main : PlayerMain
 @export var animator : AnimationPlayer
 
 func Enter():
-	player = get_tree().get_first_node_in_group("Player")
+	# 自分の親（FSMの親）がぶら下がっているプレイヤー本体を取得
+	player = get_parent().get_parent() as CharacterBody2D
 	player_main = player as PlayerMain
 	animator.play("Walk")
 	if player_main and player_main.start_auto_run:
@@ -38,11 +39,22 @@ func Enter():
 func Update(delta : float):
 	step_timer -= delta
 	auto_run_bounce_timer -= delta
-	var input_dir = Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
+	var mv_left := "MoveLeft"
+	var mv_right := "MoveRight"
+	var mv_up := "MoveUp"
+	var mv_down := "MoveDown"
+	var jump_action := "Punch"
+	if player_main and player_main.is_player_two:
+		mv_left = "Move2Left"
+		mv_right = "Move2Right"
+		mv_up = "Move2Up"
+		mv_down = "Move2Down"
+		jump_action = "Punch2"
+	var input_dir = Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()
 	# Nボタン / 左クリック：
 	#  - ふつうモード：一回押すと走る（向いている方向に自動走行）
 	#  - カクカク：炎ダッシュ開始（押し続けで維持）
-	if Input.is_action_just_pressed("Punch") and player_main:
+	if Input.is_action_just_pressed(jump_action) and player_main:
 		if player_main.use_grid_movement:
 			state_transition.emit(self, "FireDash")
 		else:

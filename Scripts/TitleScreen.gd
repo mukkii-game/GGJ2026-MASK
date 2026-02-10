@@ -15,6 +15,10 @@ func _ready() -> void:
 	if test_btn:
 		test_btn.pressed.connect(_on_test_pressed)
 	
+	var two_btn = get_node_or_null("ButtonsContainer/TwoPlayerButton")
+	if two_btn:
+		two_btn.pressed.connect(_on_two_player_pressed)
+	
 	# タイトル表示時：「ゴドーだ　待たせたな！」をかっこいい男声で再生＋フェードアウト
 	_play_godou_voice()
 	# 3秒後にスタート・テスト・操作説明を表示
@@ -107,12 +111,21 @@ func _play_start_jingle() -> void:
 func _on_start_pressed() -> void:
 	_play_start_jingle()
 	GameManager.test_mode = false
+	GameManager.two_player_mode = false
 	_start_game()
 
 ## テストバランスでスタート
 func _on_test_pressed() -> void:
 	_play_decision_sound()
 	GameManager.test_mode = true
+	GameManager.two_player_mode = false
+	_start_game()
+
+## 二人用モードでスタート（本番バランス）
+func _on_two_player_pressed() -> void:
+	_play_start_jingle()
+	GameManager.test_mode = false
+	GameManager.two_player_mode = true
 	_start_game()
 
 func _start_game() -> void:
