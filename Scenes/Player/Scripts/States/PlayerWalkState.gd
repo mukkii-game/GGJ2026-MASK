@@ -4,14 +4,14 @@ class_name PlayerWalking
 ## グリッドごとワープ：1ステップのピクセル数（半キャラ＝32）
 const STEP_SIZE := 32
 ## 1ステップごとの間隔（秒）。小さくすると速く動く
-@export var step_cooldown := 0.08
+@export var step_cooldown: float = 0.08
 ## ロープ跳ね返り後の待ち時間（秒）
 const ROPE_BOUNCE_DELAY := 0.5
 ## 自動走行時は通常の何倍速か
 const AUTO_RUN_SPEED_MULT := 3.0
 
-@export var movespeed := int(480)
-@export var dash_max := int(2000)
+@export var movespeed: int = 480
+@export var dash_max: int = 2000
 var dashspeed := float(400)
 var can_dash := bool(false)
 var dash_direction := Vector2(0,0)
@@ -156,3 +156,4 @@ func LessenDash(delta : float):
 func Transition(newstate : String):
 	if(dashspeed <= 0):
 		state_transition.emit(self, newstate)
+

@@ -2,7 +2,7 @@ extends State
 class_name enemy_bounce_state
 
 ## 一方向に走る速度
-@export var move_speed := 120.0
+@export var move_speed: float = 120.0
 ## ロープ跳ね返り後の待ち時間（秒）
 const ROPE_BOUNCE_DELAY := 0.5
 const STEP_SIZE := 32

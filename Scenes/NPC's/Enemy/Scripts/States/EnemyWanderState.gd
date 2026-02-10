@@ -2,8 +2,8 @@ extends State
 class_name enemy_wander_state
 
 ## ランダム移動の範囲半径（ピクセル）
-@export var wander_radius := 100.0
-@export var move_speed := 50.0
+@export var wander_radius: float = 100.0
+@export var move_speed: float = 50.0
 
 @export var animator : AnimationPlayer
 @onready var body = get_parent().get_parent() as CharacterBody2D

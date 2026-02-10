@@ -2,9 +2,9 @@ extends State
 class_name enemy_chase_state
 
 ## プレイヤーに向かう時間（秒）（ボスは長めに攻め続ける）
-@export var chase_duration := 3.0
-@export var attack_range := float(50)
-@export var move_speed := float(80)
+@export var chase_duration: float = 3.0
+@export var attack_range: float = 50.0
+@export var move_speed: float = 80.0
 
 @export var animator : AnimationPlayer
 @onready var body = $"../.."

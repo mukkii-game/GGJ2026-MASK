@@ -1,12 +1,12 @@
 extends Sprite2D
 
-@export var value = 5
+@export var value: int = 5
 
 #Movement
-var time_passed = 0
-var initial_position := Vector2.ZERO
-@export var amplitude := 3.0
-@export var frequency := 4.0
+var time_passed: float = 0.0
+var initial_position: Vector2 = Vector2.ZERO
+@export var amplitude: float = 3.0
+@export var frequency: float = 4.0
 
 func _ready():
 	initial_position = position
@@ -26,3 +26,4 @@ func _on_area_2d_body_entered(body):
 		GameManager.add_money(value)
 		AudioManager.play_sound(AudioManager.COIN_PICK, 0, -10)
 		queue_free()
+

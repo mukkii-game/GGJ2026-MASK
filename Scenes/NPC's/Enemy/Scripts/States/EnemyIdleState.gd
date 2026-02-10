@@ -2,7 +2,7 @@ extends State
 class_name enemy_idle_state
 
 ## 次の行動（Patrol/Wander）に移るまでの待ち時間（秒）
-@export var idle_duration := 1.5
+@export var idle_duration: float = 1.5
 
 @export var animator : AnimationPlayer
 var _timer := 0.0

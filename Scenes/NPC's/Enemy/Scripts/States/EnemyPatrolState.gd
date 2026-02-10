@@ -2,12 +2,12 @@ extends State
 class_name enemy_patrol_state
 
 ## 往復の距離（ピクセル）
-@export var patrol_distance := 80.0
+@export var patrol_distance: float = 80.0
 ## 左右=true, 上下=false
-@export var axis_horizontal := true
-@export var move_speed := 60.0
+@export var axis_horizontal: bool = true
+@export var move_speed: float = 60.0
 ## この秒数でIdleに戻る（0で無制限）
-@export var patrol_duration := 4.0
+@export var patrol_duration: float = 4.0
 
 @export var animator : AnimationPlayer
 @onready var body = get_parent().get_parent() as CharacterBody2D

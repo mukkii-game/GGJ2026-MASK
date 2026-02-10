@@ -15,20 +15,20 @@ var resolved: bool = false
 
 # 結果テキスト（各ステージで差し替え可能）
 @export_group("Texts")
-@export var text_perfect := "PERFECT"
-@export var text_good := "GOOD"
-@export var text_miss := "MISS"
-@export var text_timeout := "TIME OUT"
+@export var text_perfect: String = "PERFECT"
+@export var text_good: String = "GOOD"
+@export var text_miss: String = "MISS"
+@export var text_timeout: String = "TIME OUT"
 
 # 使用するアニメーション名（ステージごとに差し替え可能）
 # デフォルトでは qte_main_2.tscn に合わせて SUCCESS / FAIL を使う
 @export_group("Animations")
-@export var anim_in_name := "qte_in"
-@export var anim_loop_name := "qte_loop"
-@export var anim_perfect_name := "qte_success"
-@export var anim_good_name := "qte_success"
-@export var anim_miss_name := "qte_fail"
-@export var anim_timeout_name := "qte_fail"
+@export var anim_in_name: StringName = &"qte_in"
+@export var anim_loop_name: StringName = &"qte_loop"
+@export var anim_perfect_name: StringName = &"qte_success"
+@export var anim_good_name: StringName = &"qte_success"
+@export var anim_miss_name: StringName = &"qte_fail"
+@export var anim_timeout_name: StringName = &"qte_fail"
 
 func start_qte():
 	visible = true
@@ -51,13 +51,13 @@ func _judge_and_finish():
 	resolved = true
 	active = false
 
-	var dur := anim.current_animation_length
-	var pos := anim.current_animation_position
-	var t := 0.0
+	var dur: float = anim.current_animation_length
+	var pos: float = anim.current_animation_position
+	var t: float = 0.0
 	if dur > 0.0:
 		t = clamp(pos / dur, 0.0, 1.0)
 
-	var d := abs(t - t_target)
+	var d: float = absf(t - t_target)
 
 	if d <= perfect_window:
 		_show_result(text_perfect)
@@ -84,9 +84,7 @@ func qte_timeout():
 func _show_result(text: String):
 	result_label.text = text
 
-func _play_anim(name: String) -> void:
-	if name == "":
-		return
+func _play_anim(name: StringName) -> void:
 	if anim.has_animation(name):
 		anim.play(name)
 

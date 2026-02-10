@@ -22,6 +22,10 @@ var qte_scene: PackedScene = preload("res://Scenes/qte_core.tscn")
 var current_qte_boss: CharacterBase = null
 var qte_node: Node2D = null
 
+# デバッグ／汎用用：Qキーで呼び出すタイミングQTE（qte_main_2）
+var qte2_scene: PackedScene = preload("res://Scenes/qte_main_2.tscn")
+var qte2_node: Node2D = null
+
 func _ready() -> void:
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
 	await get_tree().process_frame
@@ -155,6 +159,40 @@ func _process(delta: float) -> void:
 	
 	# クリア判定
 	_check_stage_clear()
+
+func _input(event: InputEvent) -> void:
+	if stage_cleared:
+		return
+	# Qキー（QTE_Q アクション）でタイミングQTE（qte_main_2）を手動起動
+	if event.is_action_pressed("QTE_Q"):
+		_start_manual_qte2()
+
+func _start_manual_qte2() -> void:
+	# 既に起動中なら新しく出さない
+	if qte2_node != null:
+		return
+	# ボスQTE表示中は重ねない
+	if qte_node != null or current_qte_boss != null:
+		return
+	var root := get_tree().current_scene
+	if not root:
+		return
+	qte2_node = qte2_scene.instantiate() as Node2D
+	if not qte2_node:
+		return
+	root.add_child(qte2_node)
+	# 画面上に確実に出るように、上側に描画
+	if qte2_node.has_method("set_z_index"):
+		qte2_node.set("z_index", 1000)
+	if qte2_node.has_method("start_qte"):
+		qte2_node.start_qte()
+	if qte2_node.has_signal("finished"):
+		qte2_node.finished.connect(_on_qte2_finished)
+
+func _on_qte2_finished(_result: String) -> void:
+	if qte2_node and is_instance_valid(qte2_node):
+		qte2_node.queue_free()
+	qte2_node = null
 
 ## 初期配置（ステージ1は全員雑魚、2〜4は最初の1体がボス）
 func _spawn_initial_enemies() -> void:
