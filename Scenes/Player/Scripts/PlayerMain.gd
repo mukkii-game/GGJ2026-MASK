@@ -5,11 +5,13 @@ class_name PlayerMain
 @onready var cam = $Camera2D
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
-## マット内の移動範囲（ロープに1キャラ分踏み込める）
-const MAT_LEFT := 232   # 左ロープに1キャラ分（64px）踏み込める
-const MAT_RIGHT := 1048 # 右ロープに1キャラ分（64px）踏み込める
-const MAT_TOP := -48    # 上ロープに1キャラ分（64px）踏み込める
-const MAT_BOTTOM := 768 # 下ロープに1キャラ分（64px）踏み込める
+## マット内の移動範囲（ロープの位置ぴったりまで）
+# ArenaMat.tscn の MatColor / RopeLeft / RopeRight に合わせる
+# MatColor: left=280, right=1000, top=16, bottom=704
+const MAT_LEFT := 280   # 左ロープの内側端
+const MAT_RIGHT := 1000 # 右ロープの内側端
+const MAT_TOP := 16     # 上ロープの内側端
+const MAT_BOTTOM := 704 # 下ロープの内側端
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
@@ -70,9 +72,18 @@ const ROPE_BOTTOM_BOUNCE := 256
 var _enemy_contact_timer: float = 0.0
 const ENEMY_CONTACT_SPEED_SEC := 2.0
 
+## アリーナマット（ロープの見た目をたわませる用）
+var _arena_mat: Node2D = null
+
 func _ready():
 	super()
 	use_grid_movement = GameManager.use_grid_mode
+	# 一旦ロープ以外の背景コリジョン（ロープ外の壁）を無効化：layer1 のみ当たる
+	collision_mask = 1
+	# アリーナマット（ロープ見た目）参照を取っておく（なくても動作はする）
+	var scene_root: Node = get_tree().current_scene
+	if scene_root:
+		_arena_mat = scene_root.get_node_or_null("ArenaMat")
 	if cam:
 		cam.position_smoothing_enabled = false
 		# カメラをプレイヤーから切り離してスクロールしないようにする（SubViewport内のときはゲームルートに追加）
@@ -152,36 +163,26 @@ func _process(delta: float):
 			_body_contact(delta)
 			return
 		
-		# 通常時：ロープ接触チェック
-		# 左ロープに触れたら右へ自動移動
-		if p.x <= MAT_LEFT + 32:
+		# 通常時：ロープ接触チェック（左右のみバネる）
+		# 左ロープに触れたら右へ自動移動（ロープ位置ぴったりでバネる）
+		if p.x <= MAT_LEFT:
 			rope_bounce_running = true
 			rope_bounce_direction = Vector2.RIGHT
-			rope_bounce_target = Vector2(MAT_RIGHT - 32, p.y)
-		# 右ロープに触れたら左へ自動移動
-		elif p.x >= MAT_RIGHT - 32:
+			rope_bounce_target = Vector2(MAT_RIGHT, p.y)
+			# ロープで跳ね返ったら進行方向（右）を向く
+			_face_horizontal(rope_bounce_direction.x)
+			_notify_rope_bounce("left")
+		# 右ロープに触れたら左へ自動移動（ロープ位置ぴったりでバネる）
+		elif p.x >= MAT_RIGHT:
 			rope_bounce_running = true
 			rope_bounce_direction = Vector2.LEFT
-			rope_bounce_target = Vector2(MAT_LEFT + 32, p.y)
-		# 上ロープに触れたら下へ自動移動
-		elif p.y <= MAT_TOP + 32:
-			rope_bounce_running = true
-			rope_bounce_direction = Vector2.DOWN
-			rope_bounce_target = Vector2(p.x, MAT_BOTTOM - 32)
-		# 下ロープに触れたら上へ自動移動
-		elif p.y >= MAT_BOTTOM - 32:
-			rope_bounce_running = true
-			rope_bounce_direction = Vector2.UP
-			rope_bounce_target = Vector2(p.x, MAT_TOP + 32)
+			rope_bounce_target = Vector2(MAT_LEFT, p.y)
+			# ロープで跳ね返ったら進行方向（左）を向く
+			_face_horizontal(rope_bounce_direction.x)
+			_notify_rope_bounce("right")
 		
-		# コリジョンで管理されるようになったので、手動の境界チェックは不要
-		# 下ロープ：触れたら上に跳ね飛ばし＋ぼよん音（ダメージなし）。壁で止まるので「下端付近かつ下方向」で検出
-		if p.y >= MAT_BOTTOM - 48.0 and velocity.y > 0.0:
-			p.y = clampf(p.y - ROPE_BOTTOM_BOUNCE, MAT_TOP, MAT_BOTTOM)
-			velocity.y = 0.0
-			# AudioManager.play_sound(AudioManager.ROPE_BOUNCE, 0, -2)  # ROPE_BOUNCE音源がないのでコメントアウト
-		# 左右ロープ：跳ね返らない（形で触れてめり込むだけ、クランプのみ）
-		# 矯正速度を適用してからクランプ
+		# 上下ロープは「走らない」ので、縦方向のバウンドは行わない
+		# 左右ロープのみ：矯正速度を適用してからクランプ
 		_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * delta)
 		p += _rope_correction_velocity * delta
 		global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
@@ -193,6 +194,21 @@ func _process(delta: float):
 		# ジャンプ中はXだけマット内に
 		var p := global_position
 		global_position.x = clampf(p.x, MAT_LEFT, MAT_RIGHT)
+
+## ロープバウンドなど、X方向の進行方向に合わせてスプライトの向きを変える
+func _face_horizontal(dir_x: float) -> void:
+	if not sprite:
+		return
+	var direction := -1 if flipped_horizontal == true else 1
+	if dir_x < -0.1:
+		sprite.scale.x = -direction * absf(sprite.scale.x)
+	elif dir_x > 0.1:
+		sprite.scale.x = direction * absf(sprite.scale.x)
+
+## ロープヒットをアリーナマットに通知して、ロープ見た目をたわませる
+func _notify_rope_bounce(side: String) -> void:
+	if _arena_mat and _arena_mat.has_method("bend_rope"):
+		_arena_mat.bend_rope(side)
 
 ## コーナーポストに触れたときに呼ばれる。大ジャンプ（通常ジャンプの長い版・回転あり）を即発動
 func trigger_corner_post_jump() -> void:

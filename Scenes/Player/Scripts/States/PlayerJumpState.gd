@@ -87,8 +87,8 @@ func Exit() -> void:
 		body_shape.disabled = false
 	player.z_index = 0
 	player.rotation = 0.0
-	# コリジョンマスクを元に戻す（3 = layer 1 + layer 2）
-	player.collision_mask = 3
+	# コリジョンマスクを元に戻す（1 = layer 1 のみ・ロープ外の壁は無効のまま）
+	player.collision_mask = 1
 	if sprite_node and is_instance_valid(sprite_node):
 		# すべてのtweenを強制終了
 		var tree := sprite_node.get_tree()
