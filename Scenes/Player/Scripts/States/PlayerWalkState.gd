@@ -32,26 +32,34 @@ func Enter():
 		player_main.start_auto_run = false
 		var sprite = player_main.sprite
 		auto_run_direction = Vector2.RIGHT if (sprite and sprite.scale.x >= 0) else Vector2.LEFT
+		# 自動走行フラグ（風エフェクト用）
+		player_main.is_auto_running = true
 
 func Update(delta : float):
 	step_timer -= delta
 	auto_run_bounce_timer -= delta
 	var input_dir = Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
-	# 左クリック（ジャンプボタン）：ふつうモード＝ジャンプ、カクカク＝小ダッシュ＋炎（ダッシュ中でも即遷移）
+	# Nボタン / 左クリック：
+	#  - ふつうモード：一回押すと走る（向いている方向に自動走行）
+	#  - カクカク：炎ダッシュ開始（押し続けで維持）
 	if Input.is_action_just_pressed("Punch") and player_main:
 		if player_main.use_grid_movement:
 			state_transition.emit(self, "FireDash")
 		else:
-			state_transition.emit(self, "Jump")
+			# ふつうモード：停止中にのみ自動走行開始
+			if auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
+				player_main.start_auto_run = true
+				state_transition.emit(self, "Moving")
+			# 既に走行中の場合は特に何もしない（解除は移動キーで行う）
 		return
 	# 移動キーを入れると自動走行解除
 	if input_dir.length() > 0 and auto_run_direction != Vector2.ZERO:
 		auto_run_direction = Vector2.ZERO
-	# 左クリックで自動走行開始（Moving 中に押した場合・方向なしのとき）
-	if Input.is_action_just_pressed("Punch") and auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
-		player_main.start_auto_run = true
-		state_transition.emit(self, "Moving")
-		return
+		if player_main:
+			player_main.is_auto_running = false
+	# 自動走行中フラグ更新（風エフェクト用）
+	if player_main:
+		player_main.is_auto_running = auto_run_direction != Vector2.ZERO
 	if Input.is_action_just_pressed("Dash") and can_dash:
 		start_dash(input_dir if input_dir.length() > 0 else auto_run_direction)
 	elif Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
@@ -66,12 +74,24 @@ func Move(input_dir : Vector2, delta : float):
 		dash_direction = Vector2.ZERO
 		dashspeed = 0
 
+	# ロープバウンス自動移動中は、ここでは一切動かさない（PlayerMain 側で処理）
+	if player_main and player_main.rope_bounce_running:
+		player.velocity = Vector2.ZERO
+		return
+
 	# ダッシュ中は従来どおり速度移動（壁は move_and_slide が止める）
 	if dashspeed > 0:
 		player.velocity = input_dir * movespeed + dash_direction * dashspeed
 		player.move_and_slide()
 		if input_dir.length() <= 0:
 			Transition("Idle")
+		return
+
+	# 自動走行中：方向入力がなく auto_run_direction が有効なあいだ走り続ける
+	if auto_run_direction != Vector2.ZERO and input_dir.length() <= 0:
+		var run_speed := float(movespeed) * AUTO_RUN_SPEED_MULT
+		player.velocity = auto_run_direction.normalized() * run_speed
+		player.move_and_slide()
 		return
 
 	# 通常時：グリッドONなら32pxワープ、OFFなら滑らか移動（狭い道用）

@@ -314,6 +314,51 @@ Enemy は以下の状態（Status）を持つ。
 
 ---
 
+### B.5.1 プレイヤー自動走行（Nボタン）とロープバウンド連携
+
+**概要**
+
+- プレイヤーは **Nボタン（`Punch` アクション、初期割り当て: Nキー/左クリック）** で「自動走行モード」に入る。  
+- 自動走行中は、移動キー入力がない限り **一定方向に走り続ける**。  
+- マット端のロープに触れると、SPEC §9 のとおり **ロープで跳ね返り（反対側へ自動移動）** し、その後も自動走行が継続する。
+
+**入力仕様**
+
+- **通常（滑らか）モード時**  
+  - Idle 中に Nボタンを 1 回押す → プレイヤーの向いている左右方向に自動走行開始。  
+  - Moving 中に Nボタンを押した場合も、停止中かつ方向入力がなければ同様に自動走行開始。  
+  - **移動キー（十字キー／WASD など）を入れると、自動走行は解除される。**
+- **カクカク（グリッド）モード時**  
+  - 既存仕様どおり、Nボタン押しっぱなしで **炎ダッシュ状態（`PlayerFireDashState`）** を維持する。  
+  - このモードでは Nボタンは自動走行のトリガーにはならない。
+
+**ロープとの連携**
+
+- Player がジャンプ中でない状態でマット端（上下左右）のロープ境界に達すると、`PlayerMain.gd` 側で  
+  - `rope_bounce_running = true`  
+  - `rope_bounce_direction` / `rope_bounce_target`  
+  を設定し、**ロープバウンド用の自動移動**が開始される。  
+- ロープバウンド中は `PlayerWalkState.gd` 側では移動を行わず、`PlayerMain.gd` の処理に任せる。  
+- ロープバウンド終了後、`auto_run_direction` が有効であればそのまま自動走行を継続する。  
+- プレイヤーが移動入力または Nボタン以外の操作を行った場合、  
+  - ロープバウンドは既存どおり停止し、  
+  - 自動走行も「移動キー入力」によって解除される。
+
+**触るファイル**
+
+- `Scenes/Player/Scripts/PlayerMain.gd`  
+  - 変数 `start_auto_run`, `is_auto_running`, `rope_bounce_running` などを管理。  
+  - `is_auto_running` は `WindEffect` ノードの可視状態制御に使用。
+- `Scenes/Player/Scripts/States/PlayerIdleState.gd`  
+  - Nボタン押下時に、通常モードでは `start_auto_run = true` を立てて `"Moving"` ステートへ遷移。  
+  - グリッドモードでは `FireDash` へ遷移（従来どおり）。
+- `Scenes/Player/Scripts/States/PlayerWalkState.gd`  
+  - `auto_run_direction` による自動走行ロジックを実装。  
+  - 移動キー入力時に自動走行を解除。  
+  - `player_main.rope_bounce_running` が true の間は、移動処理を行わず PlayerMain 側のロープバウンド処理に委譲。
+
+---
+
 ### B.6 Enemy 仕様（§7）— Status とタイプ
 
 **やること**

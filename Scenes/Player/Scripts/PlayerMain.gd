@@ -15,9 +15,9 @@ const CAM_CENTER := Vector2(640, 360)
 
 ## false=滑らか（初期） / true=カクカク。Gキーでトグル
 var use_grid_movement := false
-## 左クリックで自動走行開始時に Moving に渡すフラグ
+## Nボタン/左クリックで自動走行開始時に Moving に渡すフラグ
 var start_auto_run := false
-## 自動走行中か（風エフェクト表示用）
+## 自動走行中か（風エフェクト表示用・ロープバウンド連携）
 var is_auto_running := false
 ## ロープタッチ自動移動中か
 var rope_bounce_running := false
