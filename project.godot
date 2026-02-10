@@ -8,6 +8,10 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="マスク面"
@@ -15,10 +19,10 @@ config/description="2D Pixelart TopDown action game."
 config/version="1.5"
 config/tags=PackedStringArray("starterkit")
 run/main_scene="res://Scenes/Misc/TitleScreen.tscn"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.6", "Forward Plus")
 boot_splash/bg_color=Color(0.14, 0.14, 0.18, 1)
 boot_splash/show_image=false
-boot_splash/fullsize=false
+boot_splash/stretch_mode=0
 boot_splash/use_filter=false
 config/icon="res://Art/Icons/icon.png"
 
