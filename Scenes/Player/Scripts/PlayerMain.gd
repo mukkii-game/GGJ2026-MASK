@@ -23,8 +23,10 @@ var use_grid_movement := false
 var start_auto_run := false
 ## 自動走行中か（風エフェクト表示用・ロープバウンド連携）
 var is_auto_running := false
-## 走り（Nダッシュ）中か（前傾・足元うずまき用）
+## 走り（Nダッシュ）中か（前傾・足元うずまき・スピードライン用）
 var is_run_dashing := false
+## 走り中の進行方向（スピードラインの向き用。右＝(1,0)、左＝(-1,0)）
+var run_dash_direction := Vector2.ZERO
 ## ロープタッチ自動移動中か
 var rope_bounce_running := false
 ## ロープタッチ自動移動の方向
@@ -158,7 +160,7 @@ func _process(delta: float):
 		_enemy_contact_timer = ENEMY_CONTACT_SPEED_SEC
 	else:
 		_enemy_contact_timer = maxf(0.0, _enemy_contact_timer - delta)
-	# アニメ速度：止まっている/歩いている＝通常、敵と接した直後数秒＝2倍速、飛んでいるとき＝4倍速
+	# アニメ速度：走り中＝2倍速、敵接触直後＝2倍、飛んでいるとき＝4倍、それ以外＝1倍
 	if sprite:
 		var flying := is_jumping
 		if fsm and fsm.current_state:
@@ -166,6 +168,8 @@ func _process(delta: float):
 			flying = flying or state_name == "RopeLaunched" or state_name == "FireDash"
 		if flying:
 			sprite.speed_scale = 4.0
+		elif is_run_dashing:
+			sprite.speed_scale = 2.0  # 走り中はモーション2倍
 		elif _enemy_contact_timer > 0.0:
 			sprite.speed_scale = 2.0
 		else:
@@ -195,8 +199,11 @@ func _process(delta: float):
 	if fsm and fsm.current_state:
 		var state_name: StringName = fsm.current_state.name
 		flying = flying or state_name == "RopeLaunched" or state_name == "FireDash"
+	# 空中（ジャンプ・ロープ飛ばされ・炎ダッシュ）は地上より前面に描画
 	if not flying and global_position.y >= 550:
 		z_index = -10
+	elif flying:
+		z_index = 10
 	else:
 		z_index = 0
 	# ジャンプ中はYクランプ・体当たりしない

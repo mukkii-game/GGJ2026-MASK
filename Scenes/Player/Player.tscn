@@ -1,4 +1,4 @@
-[gd_scene load_steps=53 format=3 uid="uid://bvg5dny32iw0x"]
+[gd_scene load_steps=55 format=3 uid="uid://bvg5dny32iw0x"]
 
 [ext_resource type="Texture2D" path="res://Art/Sprites/m_man_g_l1.png" id="mg_l1"]
 [ext_resource type="Texture2D" path="res://Art/Sprites/m_man_g_l2.png" id="mg_l2"]
@@ -42,6 +42,8 @@
 [ext_resource type="Script" path="res://Scripts/HealthBar.gd" id="39_healthbar"]
 [ext_resource type="Script" path="res://Scenes/Player/Scripts/States/PlayerRopeLaunchedState.gd" id="40_ropelaunched"]
 [ext_resource type="Script" path="res://Scripts/FeetSpiral.gd" id="41_feetspiral"]
+[ext_resource type="Script" path="res://Scripts/SpeedLines.gd" id="42_speedlines"]
+[ext_resource type="Script" path="res://Scripts/FeetSmoke.gd" id="43_feetsmoke"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_wind"]
 direction = Vector3(-1, 0, 0)
@@ -579,6 +581,13 @@ script = ExtResource("36_shadow")
 position = Vector2(0, 14)
 z_index = -2
 script = ExtResource("41_feetspiral")
+
+[node name="FeetSmoke" type="Node2D" parent="."]
+script = ExtResource("43_feetsmoke")
+
+[node name="SpeedLines" type="Node2D" parent="."]
+z_index = -3
+script = ExtResource("42_speedlines")
 
 [node name="WindEffect" type="GPUParticles2D" parent="."]
 visible = false

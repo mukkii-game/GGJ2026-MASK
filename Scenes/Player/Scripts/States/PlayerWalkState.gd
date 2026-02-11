@@ -34,8 +34,7 @@ func Enter():
 func Exit():
 	if player_main:
 		player_main.is_run_dashing = false
-		if player_main.sprite:
-			player_main.sprite.rotation = 0.0
+		player_main.run_dash_direction = Vector2.ZERO
 	if player_main and player_main.start_auto_run:
 		player_main.start_auto_run = false
 		var sprite = player_main.sprite
@@ -98,10 +97,7 @@ func Move(input_dir : Vector2, delta : float):
 	# ダッシュ中は従来どおり速度移動（壁は move_and_slide が止める）
 	if dashspeed > 0:
 		player_main.is_run_dashing = true
-		# 前傾回転（昔の漫画風・進行方向に少し傾ける）
-		if player_main.sprite:
-			var lean := -0.14  # 前傾（ラジアン）
-			player_main.sprite.rotation = lean if dash_direction.x >= 0 else -lean
+		player_main.run_dash_direction = dash_direction
 		player.velocity = input_dir * movespeed + dash_direction * dashspeed
 		player.move_and_slide()
 		if input_dir.length() <= 0:
@@ -109,8 +105,6 @@ func Move(input_dir : Vector2, delta : float):
 		return
 	else:
 		player_main.is_run_dashing = false
-		if player_main.sprite:
-			player_main.sprite.rotation = 0.0
 
 	# 自動走行中：方向入力がなく auto_run_direction が有効なあいだ走り続ける
 	if auto_run_direction != Vector2.ZERO and input_dir.length() <= 0:
@@ -162,8 +156,7 @@ func LessenDash(delta : float):
 		dash_direction = Vector2.ZERO
 		if player_main:
 			player_main.is_run_dashing = false
-			if player_main.sprite:
-				player_main.sprite.rotation = 0.0
+			player_main.run_dash_direction = Vector2.ZERO
 
 	if(animator.current_animation == "Dash"):
 		await animator.animation_finished
