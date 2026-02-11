@@ -61,12 +61,12 @@ func _spawn_top_bottom() -> void:
 			m.set("type_index", idx % 2)
 			top.add_child(m)
 			idx += 1
-	# 下：1列だけ、ロープにかからないようロープ下側に間隔をあける（ロープはy 614〜632）
+	# 下：2列、ロープにかからないようロープ下側に間隔をあける（ロープはy 614〜635）
 	var bottom := Node2D.new()
 	bottom.name = "Bottom"
 	add_child(bottom)
 	idx = 0
-	for y in range(665, 666, 1):
+	for y in range(665, 698, 32):
 		for x in range(0, 1280, step):
 			var m := Node2D.new()
 			m.set_script(_member_script)
