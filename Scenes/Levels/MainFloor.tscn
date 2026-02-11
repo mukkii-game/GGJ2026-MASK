@@ -1,84 +1,88 @@
-[gd_scene load_steps=20 format=3 uid="uid://dei3j88yw6omf"]
+[gd_scene format=3 uid="uid://dei3j88yw6omf"]
 
 [ext_resource type="PackedScene" uid="uid://bvg5dny32iw0x" path="res://Scenes/Player/Player.tscn" id="1_v023b"]
 [ext_resource type="PackedScene" uid="uid://bvt7e871e6jeg" path="res://Scenes/NPC's/Enemy/Enemy.tscn" id="2_gsqk0"]
+[ext_resource type="Texture2D" uid="uid://cafrhvi14qrpe" path="res://Art/Sprites/cormar_top.png" id="3_rcobd"]
 [ext_resource type="PackedScene" uid="uid://cx8kkqawojm0m" path="res://Scenes/Misc/SceneSettings.tscn" id="4_8uhxl"]
-[ext_resource type="Texture2D" uid="uid://dyb5iqfj3tmwj" path="res://Art/Sprites/light.png" id="5_numcg"]
+[ext_resource type="Texture2D" uid="uid://8rncgbrie3xe" path="res://Art/Sprites/light.png" id="5_numcg"]
 [ext_resource type="TileSet" uid="uid://b3n0bklwwny1b" path="res://Art/TileMap.tres" id="7_n5jbx"]
 [ext_resource type="LabelSettings" uid="uid://da8inon5cmt2r" path="res://Art/Fonts/pixelized_label.tres" id="7_tuycv"]
-[ext_resource type="PackedScene" uid="uid://ckp2r52hlcfxn" path="res://Scenes/NPC's/Npc_OfficeWorker/npc_officeworker_scene.tscn" id="8_30ow3"]
 [ext_resource type="PackedScene" uid="uid://ceoo6gamb4olk" path="res://Scenes/Interactables/Area_Blocker.tscn" id="8_hs0w2"]
 [ext_resource type="PackedScene" uid="uid://b4l1gom0wsk8p" path="res://Scenes/Interactables/area_exit.tscn" id="8_s7mva"]
 [ext_resource type="PackedScene" uid="uid://bt5yicfpmnlwk" path="res://Scenes/Levels/Basement01.tscn" id="10_hj57s"]
 [ext_resource type="PackedScene" uid="uid://b6xb8nhlqtuhf" path="res://Scenes/ScoreTracker.tscn" id="11_6cy1t"]
-[ext_resource type="AudioStream" path="res://Art/Audio/Effects/MainTheme.mp3" id="12_87j7f"]
+[ext_resource type="AudioStream" uid="uid://cf22uboub1wvu" path="res://Art/Audio/Effects/MainTheme.mp3" id="12_87j7f"]
 [ext_resource type="PackedScene" uid="uid://48vtm5vekhaq" path="res://Scenes/QuestUpdate.tscn" id="13_fd737"]
-[ext_resource type="Script" uid="uid://6mkfx5smohn0" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
-[ext_resource type="PackedScene" path="res://Scenes/Levels/ArenaMat.tscn" id="15_arena"]
-[ext_resource type="PackedScene" path="res://Scenes/Levels/Audience.tscn" id="16_audience"]
-[ext_resource type="Script" uid="uid://ds6h70ol1ht80" path="res://Scripts/BGMFromOffset.gd" id="17_bgm"]
-[ext_resource type="Script" uid="uid://b2ltp08wy537v" path="res://Scripts/DebugContactOverlay.gd" id="18_debug"]
+[ext_resource type="Script" uid="uid://rr0wwh6rkc40" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
+[ext_resource type="PackedScene" uid="uid://cproresmat01" path="res://Scenes/Levels/ArenaMat.tscn" id="15_arena"]
+[ext_resource type="PackedScene" uid="uid://c2audience01" path="res://Scenes/Levels/Audience.tscn" id="16_audience"]
+[ext_resource type="Script" uid="uid://bivaepijd0jte" path="res://Scripts/BGMFromOffset.gd" id="17_bgm"]
+[ext_resource type="Script" uid="uid://cb0kn4cyi7ch7" path="res://Scripts/DebugContactOverlay.gd" id="18_debug"]
 [ext_resource type="PackedScene" uid="uid://cornerpost01" path="res://Scenes/Interactables/CornerPost.tscn" id="19_post"]
 
-[node name="Scene_Root" type="Node2D"]
+[node name="Scene_Root" type="Node2D" unique_id=1760463080]
 texture_filter = 1
 
-[node name="ArenaMat" parent="." instance=ExtResource("15_arena")]
+[node name="ArenaMat" parent="." unique_id=1020231022 instance=ExtResource("15_arena")]
 z_index = -200
 
-[node name="CornerPosts" type="Node2D" parent="."]
+[node name="CornerPosts" type="Node2D" parent="." unique_id=1407712536]
 
-[node name="PostTopLeft" parent="CornerPosts" instance=ExtResource("19_post")]
+[node name="PostTopLeft" parent="CornerPosts" unique_id=257922461 instance=ExtResource("19_post")]
+z_index = -10
 position = Vector2(296, 16)
-z_index = -10
 
-[node name="PostTopRight" parent="CornerPosts" instance=ExtResource("19_post")]
+[node name="PostTopRight" parent="CornerPosts" unique_id=2110927533 instance=ExtResource("19_post")]
+z_index = -10
 position = Vector2(984, 16)
-z_index = -10
 
-[node name="Audience" parent="." instance=ExtResource("16_audience")]
-z_index = -50
+[node name="Sprite2D" type="Sprite2D" parent="CornerPosts/PostTopRight" unique_id=2106960036]
+position = Vector2(-5.9999857, 0.9999995)
+scale = Vector2(1.3846154, 1.34375)
+texture = ExtResource("3_rcobd")
+flip_h = true
 
-[node name="Player" parent="." instance=ExtResource("1_v023b")]
+[node name="Audience" parent="." unique_id=222366286 instance=ExtResource("16_audience")]
+
+[node name="Player" parent="." unique_id=1291361565 instance=ExtResource("1_v023b")]
 position = Vector2(640, 360)
 scale = Vector2(1.25, 1.25)
 
-[node name="Player2" parent="." instance=ExtResource("1_v023b")]
+[node name="Player2" parent="." unique_id=1076285188 instance=ExtResource("1_v023b")]
 position = Vector2(840, 360)
 scale = Vector2(1.25, 1.25)
 is_player_two = true
 
-[node name="NPCs" type="Node" parent="."]
+[node name="NPCs" type="Node" parent="." unique_id=1564613766]
 
-[node name="EnemyBounce" parent="NPCs" instance=ExtResource("2_gsqk0")]
+[node name="EnemyBounce" parent="NPCs" unique_id=1677050120 instance=ExtResource("2_gsqk0")]
 modulate = Color(0.35, 1, 0.35, 1)
 position = Vector2(400, 200)
 scale = Vector2(1.25, 1.25)
-behavior_type = 0
 
-[node name="EnemyWander" parent="NPCs" instance=ExtResource("2_gsqk0")]
+[node name="EnemyWander" parent="NPCs" unique_id=1653571523 instance=ExtResource("2_gsqk0")]
 modulate = Color(1, 1, 0.4, 1)
 position = Vector2(520, 400)
 scale = Vector2(1.25, 1.25)
 behavior_type = 1
 
-[node name="EnemyChase" parent="NPCs" instance=ExtResource("2_gsqk0")]
+[node name="EnemyChase" parent="NPCs" unique_id=883394220 instance=ExtResource("2_gsqk0")]
 modulate = Color(1, 0.45, 0.35, 1)
 position = Vector2(760, 250)
 scale = Vector2(1.25, 1.25)
 behavior_type = 2
 
-[node name="EnemyCharge" parent="NPCs" instance=ExtResource("2_gsqk0")]
+[node name="EnemyCharge" parent="NPCs" unique_id=1785789683 instance=ExtResource("2_gsqk0")]
 modulate = Color(0.85, 0.4, 1, 1)
 position = Vector2(500, 500)
 scale = Vector2(1.25, 1.25)
 behavior_type = 3
 
-[node name="SceneSettings" parent="." instance=ExtResource("4_8uhxl")]
+[node name="SceneSettings" parent="." unique_id=1562767808 instance=ExtResource("4_8uhxl")]
 
-[node name="Scene" type="Node" parent="."]
+[node name="Scene" type="Node" parent="." unique_id=486170183]
 
-[node name="Welcome Label" type="Label" parent="Scene"]
+[node name="Welcome Label" type="Label" parent="Scene" unique_id=1848177577]
 texture_filter = 1
 offset_left = -59.0
 offset_top = -141.0
@@ -92,90 +96,89 @@ LMB - Punch
 RMB - Spinning kick"
 label_settings = ExtResource("7_tuycv")
 
-[node name="WindowLights2" type="Node" parent="Scene"]
+[node name="WindowLights2" type="Node" parent="Scene" unique_id=247902663]
 
-[node name="PointLight2D" type="PointLight2D" parent="Scene/WindowLights2"]
+[node name="PointLight2D" type="PointLight2D" parent="Scene/WindowLights2" unique_id=1391141716]
 position = Vector2(-176, 8)
 energy = 0.8
 shadow_enabled = true
 texture = ExtResource("5_numcg")
 
-[node name="PointLight2D2" type="PointLight2D" parent="Scene/WindowLights2"]
+[node name="PointLight2D2" type="PointLight2D" parent="Scene/WindowLights2" unique_id=1348965827]
 position = Vector2(-16, 8)
 energy = 0.8
 shadow_enabled = true
 texture = ExtResource("5_numcg")
 
-[node name="PointLight2D3" type="PointLight2D" parent="Scene/WindowLights2"]
+[node name="PointLight2D3" type="PointLight2D" parent="Scene/WindowLights2" unique_id=2018089602]
 position = Vector2(49, 9)
 energy = 0.8
 shadow_enabled = true
 texture = ExtResource("5_numcg")
 
-[node name="PointLight2D4" type="PointLight2D" parent="Scene/WindowLights2"]
+[node name="PointLight2D4" type="PointLight2D" parent="Scene/WindowLights2" unique_id=209407020]
 position = Vector2(176, 10)
 energy = 0.8
 shadow_enabled = true
 texture = ExtResource("5_numcg")
 
-[node name="AreaBlocker" parent="Scene" instance=ExtResource("8_hs0w2")]
+[node name="AreaBlocker" parent="Scene" unique_id=1053350844 instance=ExtResource("8_hs0w2")]
 
-[node name="AreaExit" parent="Scene" instance=ExtResource("8_s7mva")]
+[node name="AreaExit" parent="Scene" unique_id=371592656 instance=ExtResource("8_s7mva")]
 next_scene = ExtResource("10_hj57s")
 
-[node name="TileMap" type="TileMapLayer" parent="Scene"]
+[node name="TileMap" type="TileMapLayer" parent="Scene" unique_id=329649207]
 visible = false
 z_index = -1
 tile_set = ExtResource("7_n5jbx")
 
-[node name="Quests" type="Node" parent="Scene"]
+[node name="Quests" type="Node" parent="Scene" unique_id=750109988]
 
-[node name="QuestStart" parent="Scene/Quests" node_paths=PackedStringArray("quest") instance=ExtResource("13_fd737")]
+[node name="QuestStart" parent="Scene/Quests" unique_id=1697612810 node_paths=PackedStringArray("quest") instance=ExtResource("13_fd737")]
 position = Vector2(-143, -11)
 quest = NodePath("../FirstQuest")
 
-[node name="QuestUpdate" parent="Scene/Quests" node_paths=PackedStringArray("quest") instance=ExtResource("13_fd737")]
+[node name="QuestUpdate" parent="Scene/Quests" unique_id=1571413500 node_paths=PackedStringArray("quest") instance=ExtResource("13_fd737")]
 position = Vector2(11, 211)
 quest = NodePath("../FirstQuest")
 type = 2
 
-[node name="QuestFinish" parent="Scene/Quests" node_paths=PackedStringArray("quest") instance=ExtResource("13_fd737")]
+[node name="QuestFinish" parent="Scene/Quests" unique_id=920881456 node_paths=PackedStringArray("quest") instance=ExtResource("13_fd737")]
 position = Vector2(32, 23)
 quest = NodePath("../FirstQuest")
 type = 3
 
-[node name="FirstQuest" type="Node" parent="Scene/Quests"]
+[node name="FirstQuest" type="Node" parent="Scene/Quests" unique_id=2118572821]
 script = ExtResource("14_itxyw")
 quest_id = 1
 quest_name = "Explore"
 quest_objective = Array[String](["Expore the corridoors", "Find a way past the enemy"])
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="Scene"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="Scene" unique_id=1793804384]
 stream = ExtResource("12_87j7f")
 volume_db = -8.0
-autoplay = false
 script = ExtResource("17_bgm")
 
-[node name="Score_UI" parent="." instance=ExtResource("11_6cy1t")]
+[node name="Score_UI" parent="." unique_id=1807250585 instance=ExtResource("11_6cy1t")]
 
-[node name="DebugContactOverlay" type="Node2D" parent="."]
+[node name="DebugContactOverlay" type="Node2D" parent="." unique_id=1154543600]
 z_index = 200
 script = ExtResource("18_debug")
 
-[node name="RopeBottomOverlay" type="CanvasLayer" parent="."]
+[node name="RopeBottomOverlay" type="CanvasLayer" parent="." unique_id=1199664201]
 layer = 10
 
-[node name="RopeOverlayRoot" type="Control" parent="RopeBottomOverlay"]
+[node name="RopeOverlayRoot" type="Control" parent="RopeBottomOverlay" unique_id=1105976886]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
 offset_right = 1280.0
 offset_bottom = 720.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="BottomRope1" type="ColorRect" parent="RopeBottomOverlay/RopeOverlayRoot"]
+[node name="BottomRope1" type="ColorRect" parent="RopeBottomOverlay/RopeOverlayRoot" unique_id=490751718]
 layout_mode = 1
 offset_left = 280.0
 offset_top = 614.0
@@ -183,7 +186,7 @@ offset_right = 1000.0
 offset_bottom = 619.0
 color = Color(0.9, 0.15, 0.15, 1)
 
-[node name="BottomRope2" type="ColorRect" parent="RopeBottomOverlay/RopeOverlayRoot"]
+[node name="BottomRope2" type="ColorRect" parent="RopeBottomOverlay/RopeOverlayRoot" unique_id=633763455]
 layout_mode = 1
 offset_left = 279.0
 offset_top = 622.0
@@ -191,10 +194,15 @@ offset_right = 1001.0
 offset_bottom = 627.0
 color = Color(0.9, 0.15, 0.15, 1)
 
-[node name="BottomRope3" type="ColorRect" parent="RopeBottomOverlay/RopeOverlayRoot"]
+[node name="BottomRope3" type="ColorRect" parent="RopeBottomOverlay/RopeOverlayRoot" unique_id=382388176]
 layout_mode = 1
 offset_left = 278.0
 offset_top = 630.0
 offset_right = 1002.0
 offset_bottom = 635.0
 color = Color(0.9, 0.15, 0.15, 1)
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=379314246]
+position = Vector2(300, 17)
+scale = Vector2(1.2769231, 1.359375)
+texture = ExtResource("3_rcobd")
