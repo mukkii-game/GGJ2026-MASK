@@ -10,6 +10,9 @@ signal qte_failed
 @onready var result_label = $ResultLabel
 @onready var anim: AnimationPlayer = $QTEAnimationPlayer
 @onready var hit_hip: AudioStreamPlayer2D = $hit_hip
+@onready var intro_ui: Control = $IntroUI
+@onready var bar_bg: ColorRect = $bar
+@onready var attack_hand: Sprite2D = $attack_hand
 
 var speed = 500.0
 var is_active = false
@@ -47,6 +50,20 @@ func _ready():
 
 
 func start_qte():
+	# IntroUIがあれば3秒表示
+	if intro_ui:
+		intro_ui.visible = true
+		player_point.visible = false
+		target_zone.visible = false
+		bar_bg.visible = false
+		attack_hand.visible = false
+		await get_tree().create_timer(3.0).timeout
+		intro_ui.visible = false
+		player_point.visible = true
+		target_zone.visible = true
+		bar_bg.visible = true
+		attack_hand.visible = true
+
 	# PlayerPointを開始位置に戻す
 	player_point.position = player_start_pos
 	if run_sprite and _tex_l1:
