@@ -13,6 +13,7 @@ signal qte_failed
 @onready var intro_ui: Control = $IntroUI
 @onready var bar_bg: ColorRect = $bar
 @onready var attack_hand: Sprite2D = $attack_hand
+@onready var qt_in: AudioStreamPlayer = $qt_in
 
 var speed = 500.0
 var is_active = false
@@ -52,12 +53,14 @@ func _ready():
 func start_qte():
 	# IntroUIがあれば3秒表示
 	if intro_ui:
+		if qt_in:
+			qt_in.play()
 		intro_ui.visible = true
 		player_point.visible = false
 		target_zone.visible = false
 		bar_bg.visible = false
 		attack_hand.visible = false
-		await get_tree().create_timer(3.0).timeout
+		await get_tree().create_timer(1.0).timeout
 		intro_ui.visible = false
 		player_point.visible = true
 		target_zone.visible = true
