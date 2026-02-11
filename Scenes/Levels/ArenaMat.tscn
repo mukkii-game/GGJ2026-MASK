@@ -20,46 +20,164 @@ script = ExtResource("1_arenamat")
 [node name="MatBackground" type="Node2D" parent="."]
 z_index = -100
 
+[node name="Apron" type="Node2D" parent="MatBackground"]
+z_index = -2
+
+[node name="ApronTop" type="ColorRect" parent="MatBackground/Apron"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 1280.0
+offset_bottom = 100.0
+color = Color(0.58, 0.34, 0.22, 1)
+
+[node name="ApronBottom" type="ColorRect" parent="MatBackground/Apron"]
+offset_left = 0.0
+offset_top = 620.0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.58, 0.34, 0.22, 1)
+
+[node name="ApronLeft" type="ColorRect" parent="MatBackground/Apron"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 280.0
+offset_bottom = 720.0
+color = Color(0.58, 0.34, 0.22, 1)
+
+[node name="ApronRight" type="ColorRect" parent="MatBackground/Apron"]
+offset_left = 1000.0
+offset_top = 0.0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.58, 0.34, 0.22, 1)
+
 [node name="MatColor" type="ColorRect" parent="MatBackground"]
 offset_left = 280.0
-offset_top = 16.0
+offset_top = 100.0
 offset_right = 1000.0
-offset_bottom = 704.0
+offset_bottom = 620.0
+color = Color(1, 1, 1, 1)
+
+[node name="CornerPosts" type="Node2D" parent="."]
+z_index = 155
+
+[node name="PostTopL" type="ColorRect" parent="CornerPosts"]
+offset_left = 274.0
+offset_top = 80.0
+offset_right = 298.0
+offset_bottom = 100.0
+color = Color(0.85, 0.2, 0.2, 1)
+
+[node name="PostTopLCap" type="ColorRect" parent="CornerPosts"]
+offset_left = 278.0
+offset_top = 80.0
+offset_right = 294.0
+offset_bottom = 84.0
+color = Color(1, 1, 1, 1)
+
+[node name="PostTopR" type="ColorRect" parent="CornerPosts"]
+offset_left = 982.0
+offset_top = 80.0
+offset_right = 1006.0
+offset_bottom = 100.0
+color = Color(0.85, 0.2, 0.2, 1)
+
+[node name="PostTopRCap" type="ColorRect" parent="CornerPosts"]
+offset_left = 986.0
+offset_top = 80.0
+offset_right = 1002.0
+offset_bottom = 84.0
+color = Color(1, 1, 1, 1)
+
+[node name="PostBottomL" type="ColorRect" parent="CornerPosts"]
+offset_left = 274.0
+offset_top = 620.0
+offset_right = 298.0
+offset_bottom = 640.0
+color = Color(0.25, 0.45, 0.9, 1)
+
+[node name="PostBottomLCap" type="ColorRect" parent="CornerPosts"]
+offset_left = 278.0
+offset_top = 616.0
+offset_right = 294.0
+offset_bottom = 620.0
+color = Color(1, 1, 1, 1)
+
+[node name="PostBottomR" type="ColorRect" parent="CornerPosts"]
+offset_left = 982.0
+offset_top = 620.0
+offset_right = 1006.0
+offset_bottom = 640.0
+color = Color(0.25, 0.45, 0.9, 1)
+
+[node name="PostBottomRCap" type="ColorRect" parent="CornerPosts"]
+offset_left = 986.0
+offset_top = 616.0
+offset_right = 1002.0
+offset_bottom = 620.0
 color = Color(1, 1, 1, 1)
 
 [node name="RopeFrameBack" type="Node2D" parent="."]
-z_index = 160
+z_index = 165
 
 [node name="RopeTop" type="ColorRect" parent="RopeFrameBack"]
+offset_left = 282.0
+offset_top = 88.0
+offset_right = 998.0
+offset_bottom = 94.0
+color = Color(0.25, 0.5, 0.95, 1)
+
+[node name="RopeTop2" type="ColorRect" parent="RopeFrameBack"]
+offset_left = 281.0
+offset_top = 94.0
+offset_right = 999.0
+offset_bottom = 100.0
+color = Color(0.25, 0.5, 0.95, 1)
+
+[node name="RopeTop3" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 280.0
-offset_top = 0.0
+offset_top = 100.0
 offset_right = 1000.0
-offset_bottom = 16.0
-color = Color(0.9, 0.1, 0.1, 1)
+offset_bottom = 106.0
+color = Color(0.25, 0.5, 0.95, 1)
 
 [node name="RopeLeft" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 264.0
 offset_top = 0.0
 offset_right = 280.0
 offset_bottom = 720.0
-color = Color(0.9, 0.1, 0.1, 1)
+color = Color(0.25, 0.5, 0.95, 1)
 
 [node name="RopeRight" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 1000.0
 offset_top = 0.0
 offset_right = 1016.0
 offset_bottom = 720.0
-color = Color(0.9, 0.1, 0.1, 1)
+color = Color(0.25, 0.5, 0.95, 1)
 
 [node name="RopeBottom" type="Node2D" parent="."]
-z_index = 205
+z_index = 165
 
 [node name="BottomRect" type="ColorRect" parent="RopeBottom"]
 offset_left = 280.0
-offset_top = 704.0
+offset_top = 614.0
 offset_right = 1000.0
-offset_bottom = 720.0
-color = Color(0.9, 0.1, 0.1, 1)
+offset_bottom = 620.0
+color = Color(0.25, 0.5, 0.95, 1)
+
+[node name="BottomRect2" type="ColorRect" parent="RopeBottom"]
+offset_left = 279.0
+offset_top = 620.0
+offset_right = 1001.0
+offset_bottom = 626.0
+color = Color(0.25, 0.5, 0.95, 1)
+
+[node name="BottomRect3" type="ColorRect" parent="RopeBottom"]
+offset_left = 278.0
+offset_top = 626.0
+offset_right = 1002.0
+offset_bottom = 632.0
+color = Color(0.25, 0.5, 0.95, 1)
 
 [node name="WallCollisionVisual" type="CanvasLayer" parent="."]
 layer = -1
@@ -89,14 +207,14 @@ anchors_preset = 0
 offset_left = 280.0
 offset_top = 0.0
 offset_right = 1000.0
-offset_bottom = 16.0
+offset_bottom = 100.0
 color = Color(1, 0.2, 0.2, 0.9)
 
 [node name="WallBottomRect" type="ColorRect" parent="WallCollisionVisual"]
 layout_mode = 3
 anchors_preset = 0
 offset_left = 280.0
-offset_top = 704.0
+offset_top = 620.0
 offset_right = 1000.0
 offset_bottom = 720.0
 color = Color(1, 0.2, 0.2, 0.9)

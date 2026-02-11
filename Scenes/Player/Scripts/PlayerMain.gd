@@ -7,11 +7,11 @@ const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
 ## マット内の移動範囲（ロープの位置ぴったりまで）
 # ArenaMat.tscn の MatColor / RopeLeft / RopeRight に合わせる
-# MatColor: left=280, right=1000, top=16, bottom=704
+# MatColor: left=280, right=1000, top=100, bottom=620（上下せばめてジャンプで見切れないように）
 const MAT_LEFT := 280   # 左ロープの内側端
 const MAT_RIGHT := 1000 # 右ロープの内側端
-const MAT_TOP := 16     # 上ロープの内側端
-const MAT_BOTTOM := 704 # 下ロープの内側端
+const MAT_TOP := 100    # 上ロープの内側端
+const MAT_BOTTOM := 620 # 下ロープの内側端
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
