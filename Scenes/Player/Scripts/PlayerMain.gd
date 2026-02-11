@@ -85,8 +85,9 @@ func _enter_tree() -> void:
 
 func _ready():
 	super()
-	if is_player_two and sprite:
-		sprite.modulate = Color(1.0, 0.35, 0.35, 1.0)
+	# 2P: 専用キャラ画像（m_man_gr_l1 / m_man_gr_l2）に差し替え
+	if is_player_two and sprite and sprite.sprite_frames:
+		_apply_2p_sprite_frames()
 	use_grid_movement = GameManager.use_grid_mode
 	# 一旦ロープ以外の背景コリジョン（ロープ外の壁）を無効化：layer1 のみ当たる
 	collision_mask = 1
@@ -110,6 +111,30 @@ func _ready():
 				remove_child(cam)
 				cam_root.add_child(cam)
 				cam.global_position = CAM_CENTER
+
+## 2P用: SpriteFrames の 1P 画像を 2P 用（m_man_gr_l1 / m_man_gr_l2）に差し替え
+func _apply_2p_sprite_frames() -> void:
+	if not sprite or not sprite.sprite_frames:
+		return
+	var tex_gr_l1 := load("res://Art/Sprites/m_man_gr_l1.png") as Texture2D
+	var tex_gr_l2 := load("res://Art/Sprites/m_man_gr_l2.png") as Texture2D
+	if not tex_gr_l1 or not tex_gr_l2:
+		return
+	var sf := sprite.sprite_frames.duplicate()
+	for anim_name in sf.get_animation_names():
+		var fc: int = sf.get_frame_count(anim_name)
+		for i in range(fc):
+			var t: Texture2D = sf.get_frame_texture(anim_name, i)
+			var dur: float = sf.get_frame_duration(anim_name, i)
+			if t and t.resource_path:
+				var new_tex: Texture2D = null
+				if "m_man_g_l1" in t.resource_path:
+					new_tex = tex_gr_l1
+				elif "m_man_g_l2" in t.resource_path:
+					new_tex = tex_gr_l2
+				if new_tex:
+					sf.set_frame(anim_name, i, new_tex, dur)
+	sprite.sprite_frames = sf
 
 func _process(delta: float):
 	super(delta)
