@@ -107,8 +107,9 @@ func _die():
 	if sprite and is_instance_valid(sprite):
 		var mask_fly = Sprite2D.new()
 		mask_fly.texture = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
-		mask_fly.global_position = sprite.global_position
-		mask_fly.scale = sprite.scale
+		# 反転（scale.x<0）や親スケールを含めた見た目をそのまま引き継ぐ
+		# （root直下に出すので global_transform をコピーする）
+		mask_fly.global_transform = sprite.global_transform
 		mask_fly.set_script(load("res://Scripts/MaskFlyAway.gd"))
 		get_tree().root.add_child(mask_fly)
 		# 本体のスプライトは非表示

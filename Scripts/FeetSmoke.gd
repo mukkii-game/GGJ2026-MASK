@@ -34,3 +34,4 @@ func _process(_delta: float) -> void:
 	var show_smoke := _player_main.is_run_dashing
 	_particles.emitting = show_smoke
 	_particles.visible = show_smoke
+

@@ -34,3 +34,4 @@ func _draw() -> void:
 		var start_p := perp * offset_y
 		var end_p := start_p + base_dir * (LINE_LENGTH + i * 3.0)
 		draw_line(start_p, end_p, LINE_COLOR, LINE_WIDTH)
+
