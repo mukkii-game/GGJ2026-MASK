@@ -77,15 +77,17 @@ const ENEMY_CONTACT_SPEED_SEC := 2.0
 ## アリーナマット（ロープの見た目をたわませる用）
 var _arena_mat: Node2D = null
 
+func _enter_tree() -> void:
+	# 2P: いったん表示にして、1フレーム後に1Pのときだけ非表示にする
+	if is_player_two:
+		visible = true
+		process_mode = PROCESS_MODE_INHERIT
+		call_deferred("_apply_2p_visibility_on_ready")
+
 func _ready():
 	super()
-	# 二人用モードでないときは2Pキャラを出さない
-	if is_player_two and not GameManager.two_player_mode:
-		queue_free()
-		return
-	# 2Pは顔を赤系に
 	if is_player_two and sprite:
-		sprite.modulate = Color(1.2, 0.4, 0.4, 1.0)
+		sprite.modulate = Color(1.0, 0.35, 0.35, 1.0)
 	use_grid_movement = GameManager.use_grid_mode
 	# 一旦ロープ以外の背景コリジョン（ロープ外の壁）を無効化：layer1 のみ当たる
 	collision_mask = 1
@@ -109,6 +111,15 @@ func _ready():
 				remove_child(cam)
 				cam_root.add_child(cam)
 				cam.global_position = CAM_CENTER
+
+## 2P用：1フレーム後に1Pのときだけ非表示（2P/テストのときは何もしない＝表示のまま）
+func _apply_2p_visibility_on_ready() -> void:
+	if not is_player_two:
+		return
+	if GameManager.two_player_mode or GameManager.test_mode:
+		return
+	visible = false
+	process_mode = PROCESS_MODE_DISABLED
 
 func _process(delta: float):
 	super(delta)

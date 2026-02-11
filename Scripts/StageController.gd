@@ -27,6 +27,14 @@ var qte_node: Node2D = null
 func _ready() -> void:
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
 	await get_tree().process_frame
+	# 二人用/テストのときは 2P を確実に表示（PlayerMain の deferred より遅いのでここで上書き）
+	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+	if subvp and subvp.get_child_count() > 0:
+		var main_floor := subvp.get_child(0)
+		var player2 = main_floor.get_node_or_null("Player2")
+		if player2 and (GameManager.two_player_mode or GameManager.test_mode):
+			player2.visible = true
+			player2.process_mode = PROCESS_MODE_INHERIT
 	var npcs = _get_npcs_node()
 	if npcs:
 		for child in npcs.get_children():
