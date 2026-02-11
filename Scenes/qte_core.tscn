@@ -1,17 +1,32 @@
-[gd_scene load_steps=12 format=3 uid="uid://e7ib44d01uvp"]
+[gd_scene format=3 uid="uid://e7ib44d01uvp"]
 
-[ext_resource type="Script" uid="uid://e052xdqbvwhn" path="res://Scenes/qte_main_with_anim.gd" id="1_2dxxf"]
-[ext_resource type="Texture2D" path="res://Art/Sprites/m_man_g_l1.png" id="1_ubf7m"]
-[ext_resource type="Texture2D" path="res://Art/Sprites/m_man_g_l2.png" id="1_ubf7m_l2"]
-[ext_resource type="Texture2D" uid="uid://cdwjcc3c31fx0" path="res://Art/Sprites/k_hip.png" id="2_mn84s"]
-[ext_resource type="Texture2D" uid="uid://ct508uuath2l4" path="res://Art/Sprites/k_hand.png" id="3_2dxxf"]
-[ext_resource type="AudioStream" uid="uid://c1i4gri7v4ure" path="res://Art/Audio/Effects/kill_mask2.wav" id="5_2dxxf"]
+[ext_resource type="Script" uid="uid://cqbfjspwt373g" path="res://Scenes/qte_main_with_anim.gd" id="1_2dxxf"]
+[ext_resource type="Texture2D" uid="uid://bjg1ln27vj8qa" path="res://Art/Sprites/m_man_g_l1.png" id="1_ubf7m"]
+[ext_resource type="Texture2D" uid="uid://qkriyn4pf306" path="res://Art/Sprites/k_hip.png" id="2_mn84s"]
+[ext_resource type="Texture2D" uid="uid://cv0jsq2n1700x" path="res://Art/Sprites/k_hand.png" id="3_2dxxf"]
+[ext_resource type="Texture2D" uid="uid://0fxaesvstco5" path="res://Art/Sprites/qte_bg.png" id="3_vwhkm"]
+[ext_resource type="AudioStream" uid="uid://cqwcenodicx7p" path="res://Art/Audio/Effects/kill_mask2.wav" id="5_2dxxf"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ubf7m"]
 size = Vector2(415, 60)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_mn84s"]
 radius = 20.0
+
+[sub_resource type="Animation" id="Animation_2dxxf"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("attack_hand:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(192.8125, 471.5)]
+}
 
 [sub_resource type="Animation" id="Animation_mn84s"]
 resource_name = "attack"
@@ -29,21 +44,6 @@ tracks/0/keys = {
 "values": [Vector2(192.8125, 471.5), Vector2(1108, 471.5)]
 }
 
-[sub_resource type="Animation" id="Animation_2dxxf"]
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("attack_hand:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(192.8125, 471.5)]
-}
-
 [sub_resource type="Animation" id="Animation_vwhkm"]
 resource_name = "hit_hip"
 
@@ -54,52 +54,57 @@ _data = {
 &"hit_hip": SubResource("Animation_vwhkm")
 }
 
-[node name="QTE_main" type="Node2D"]
+[node name="QTE_main" type="Node2D" unique_id=1449371641]
 script = ExtResource("1_2dxxf")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=624236817]
 offset_right = 1280.0
 offset_bottom = 720.0
 color = Color(0.12156863, 0.21176471, 0.23921569, 1)
 
-[node name="QTE_BG" type="Sprite2D" parent="Background"]
+[node name="Sprite2D" type="Sprite2D" parent="Background" unique_id=294132724]
+position = Vector2(639.90216, 369)
+scale = Vector2(1.1957129, 1.0111113)
+texture = ExtResource("3_vwhkm")
+
+[node name="QTE_BG" type="Sprite2D" parent="Background" unique_id=26973986]
 texture_filter = 1
-position = Vector2(611.5, 349)
-scale = Vector2(4.6555557, 4.6555552)
+position = Vector2(718, 180)
+scale = Vector2(1.0857642, 1.0857639)
 texture = ExtResource("2_mn84s")
 
-[node name="TargetZone" type="Area2D" parent="."]
+[node name="TargetZone" type="Area2D" parent="." unique_id=37796363]
 position = Vector2(321, 685)
 
-[node name="Hit_coli" type="CollisionShape2D" parent="TargetZone"]
+[node name="Hit_coli" type="CollisionShape2D" parent="TargetZone" unique_id=2013344018]
 position = Vector2(292, -50)
 shape = SubResource("RectangleShape2D_ubf7m")
 
-[node name="bar" type="ColorRect" parent="."]
+[node name="bar" type="ColorRect" parent="." unique_id=24734667]
 offset_left = 403.0
 offset_top = 605.0
 offset_right = 822.0
 offset_bottom = 664.0
 color = Color(0.1932, 0.46, 0.19764668, 1)
 
-[node name="attack_hand" type="Sprite2D" parent="."]
+[node name="attack_hand" type="Sprite2D" parent="." unique_id=783599508]
 position = Vector2(192.8125, 471.5)
 scale = Vector2(3.0875, 3.0875)
 texture = ExtResource("3_2dxxf")
 
-[node name="PlayerPoint" type="Area2D" parent="."]
+[node name="PlayerPoint" type="Area2D" parent="." unique_id=1382938056]
 position = Vector2(40, 637)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPoint"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPoint" unique_id=857551247]
 shape = SubResource("CircleShape2D_mn84s")
 
-[node name="sprite" type="Sprite2D" parent="PlayerPoint/CollisionShape2D"]
+[node name="sprite" type="Sprite2D" parent="PlayerPoint/CollisionShape2D" unique_id=855624138]
 texture_filter = 1
 position = Vector2(42.5, -42.5)
 scale = Vector2(3.65625, 3.65625)
 texture = ExtResource("1_ubf7m")
 
-[node name="ResultLabel" type="Label" parent="."]
+[node name="ResultLabel" type="Label" parent="." unique_id=41674991]
 offset_left = 406.0
 offset_top = 36.0
 offset_right = 819.0
@@ -108,10 +113,8 @@ text = "SUCCESS
 "
 horizontal_alignment = 1
 
-[node name="QTEAnimationPlayer" type="AnimationPlayer" parent="."]
-libraries = {
-&"": SubResource("AnimationLibrary_vwhkm")
-}
+[node name="QTEAnimationPlayer" type="AnimationPlayer" parent="." unique_id=1884768745]
+libraries/ = SubResource("AnimationLibrary_vwhkm")
 
-[node name="hit_hip" type="AudioStreamPlayer2D" parent="."]
+[node name="hit_hip" type="AudioStreamPlayer2D" parent="." unique_id=1024236664]
 stream = ExtResource("5_2dxxf")
