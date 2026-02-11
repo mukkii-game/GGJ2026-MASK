@@ -116,6 +116,6 @@ func Update(delta: float) -> void:
 func _calculate_opposite_position(current_pos: Vector2) -> Vector2:
 	# マット中央付近にランダムに配置（確実にマット内に収める）
 	var opposite_x := randf_range(350.0, 930.0)
-	var opposite_y := randf_range(100.0, 620.0)
+	var opposite_y := randf_range(106.0, 614.0)
 	
 	return Vector2(opposite_x, opposite_y)

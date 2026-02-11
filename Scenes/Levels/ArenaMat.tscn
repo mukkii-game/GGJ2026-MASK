@@ -124,60 +124,60 @@ z_index = 165
 offset_left = 282.0
 offset_top = 88.0
 offset_right = 998.0
-offset_bottom = 94.0
-color = Color(0.25, 0.5, 0.95, 1)
+offset_bottom = 93.0
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="RopeTop2" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 281.0
-offset_top = 94.0
+offset_top = 97.0
 offset_right = 999.0
-offset_bottom = 100.0
-color = Color(0.25, 0.5, 0.95, 1)
+offset_bottom = 102.0
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="RopeTop3" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 280.0
-offset_top = 100.0
+offset_top = 106.0
 offset_right = 1000.0
-offset_bottom = 106.0
-color = Color(0.25, 0.5, 0.95, 1)
+offset_bottom = 111.0
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="RopeLeft" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 264.0
 offset_top = 0.0
 offset_right = 280.0
 offset_bottom = 720.0
-color = Color(0.25, 0.5, 0.95, 1)
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="RopeRight" type="ColorRect" parent="RopeFrameBack"]
 offset_left = 1000.0
 offset_top = 0.0
 offset_right = 1016.0
 offset_bottom = 720.0
-color = Color(0.25, 0.5, 0.95, 1)
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="RopeBottom" type="Node2D" parent="."]
-z_index = 165
+z_index = -5
 
 [node name="BottomRect" type="ColorRect" parent="RopeBottom"]
 offset_left = 280.0
 offset_top = 614.0
 offset_right = 1000.0
-offset_bottom = 620.0
-color = Color(0.25, 0.5, 0.95, 1)
+offset_bottom = 619.0
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="BottomRect2" type="ColorRect" parent="RopeBottom"]
 offset_left = 279.0
-offset_top = 620.0
+offset_top = 622.0
 offset_right = 1001.0
-offset_bottom = 626.0
-color = Color(0.25, 0.5, 0.95, 1)
+offset_bottom = 627.0
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="BottomRect3" type="ColorRect" parent="RopeBottom"]
 offset_left = 278.0
-offset_top = 626.0
+offset_top = 630.0
 offset_right = 1002.0
-offset_bottom = 632.0
-color = Color(0.25, 0.5, 0.95, 1)
+offset_bottom = 635.0
+color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="WallCollisionVisual" type="CanvasLayer" parent="."]
 layer = -1

@@ -7,11 +7,11 @@ const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
 
 ## マット内の移動範囲（ロープの位置ぴったりまで）
 # ArenaMat.tscn の MatColor / RopeLeft / RopeRight に合わせる
-# MatColor: left=280, right=1000, top=100, bottom=620（上下せばめてジャンプで見切れないように）
+# ロープの内側だけ行ける（上ロープ下端=106、下ロープ上端=614でクランプ）
 const MAT_LEFT := 280   # 左ロープの内側端
 const MAT_RIGHT := 1000 # 右ロープの内側端
-const MAT_TOP := 100    # 上ロープの内側端
-const MAT_BOTTOM := 620 # 下ロープの内側端
+const MAT_TOP := 106    # 上ロープの内側（ロープより下）
+const MAT_BOTTOM := 614 # 下ロープの内側（ロープより上）
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
@@ -183,6 +183,15 @@ func _process(delta: float):
 	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
+	# 下側ロープの手前：地面にいるときだけキャラをロープより後ろに（z_index で制御）。飛んでるときはキャラ前面
+	var flying := is_jumping
+	if fsm and fsm.current_state:
+		var state_name: StringName = fsm.current_state.name
+		flying = flying or state_name == "RopeLaunched" or state_name == "FireDash"
+	if not flying and global_position.y >= 550:
+		z_index = -10
+	else:
+		z_index = 0
 	# ジャンプ中はYクランプ・体当たりしない
 	if not is_jumping:
 		var p := global_position
