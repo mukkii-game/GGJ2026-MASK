@@ -23,6 +23,8 @@ var use_grid_movement := false
 var start_auto_run := false
 ## 自動走行中か（風エフェクト表示用・ロープバウンド連携）
 var is_auto_running := false
+## 走り（Nダッシュ）中か（前傾・足元うずまき用）
+var is_run_dashing := false
 ## ロープタッチ自動移動中か
 var rope_bounce_running := false
 ## ロープタッチ自動移動の方向
@@ -201,9 +203,9 @@ func _process(delta: float):
 	if not is_jumping:
 		var p := global_position
 		
-		# ロープバウンス自動移動中
+		# ロープバウンス自動移動中（速度は歩きの約1.2倍程度に抑える）
 		if rope_bounce_running:
-			var move_speed := 480.0 * 2.0  # 2倍速
+			var move_speed := 480.0 * 2.0 / 1.2  # 約800（以前の2倍速を1.2で割った値）
 			p += rope_bounce_direction * move_speed * delta
 			# 目標到達チェック
 			if rope_bounce_direction.x > 0 and p.x >= rope_bounce_target.x:
