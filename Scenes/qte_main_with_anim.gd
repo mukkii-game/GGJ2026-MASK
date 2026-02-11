@@ -36,9 +36,9 @@ func _ready():
 	if not _tex_l2:
 		_tex_l2 = _tex_l1
 
-	# 接触イベント（シグナル）の接続
-	target_zone.area_entered.connect(_on_area_entered)
-	target_zone.area_exited.connect(_on_area_exited)
+	# 接触イベント（シグナル）は使用しない（_processで直接重なり判定を行う）
+	# target_zone.area_entered.connect(_on_area_entered)
+	# target_zone.area_exited.connect(_on_area_exited)
 	result_label.text = ""
 
 	# 単体実行時は即スタート、ゲーム内から呼ばれた場合は start_qte() を待つ
@@ -92,7 +92,8 @@ func _process(delta):
 		Input.is_action_just_pressed("Enter")
 	)
 	if qte_pressed:
-		if is_overlapping:
+		# is_overlapping フラグではなく、その瞬間の物理的な重なりを直接判定する（より確実）
+		if target_zone.overlaps_area(player_point):
 			success_game()
 		else:
 			fail_game()
@@ -103,15 +104,15 @@ func _process(delta):
 
 
 # エリアに入った時に呼ばれる
-func _on_area_entered(area):
-	if area == player_point:
-		is_overlapping = true
+# func _on_area_entered(area):
+# 	if area == player_point:
+# 		is_overlapping = true
 
 
 # エリアから出た時に呼ばれる
-func _on_area_exited(area):
-	if area == player_point:
-		is_overlapping = false
+# func _on_area_exited(area):
+# 	if area == player_point:
+# 		is_overlapping = false
 
 
 func success_game():
