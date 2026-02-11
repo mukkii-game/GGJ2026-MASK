@@ -1,4 +1,4 @@
-# SPEC: Body-check Arena（v0.3）
+# SPEC: Body-check Arena（v0.3 / 実装反映: 2026-02-11）
 
 ## 1. Game Definition
 本作はトップダウン視点の体当たりアクションゲームである。  
@@ -64,11 +64,11 @@
 ---
 
 ## 6. 移動仕様（レトロ量子化）
-- 移動は **半キャラ単位の量子化移動**
-- PCおよび敵は32x32ピクセル
-- グリッドはその半分にするため：16px ステップ
-- 見た目は PC-8801 世代のカクカク移動
-- 内部的にアナログ速度を持ってもよいが、表示は量子化する
+- PC/Enemy の基準サイズは 32x32 ピクセル（見た目は2倍スケールのSpriteもあり）
+- Player は **グリッド移動（32px ステップ）** と **滑らか移動（move_and_slide）** を切替可能
+  - 1P のみ **Gキー**で切替（`GameManager.use_grid_mode`）
+  - グリッド移動は `PlayerWalkState.gd` の `STEP_SIZE = 32`
+- Enemy は基本は滑らか移動（`move_and_slide()`）だが、最終的に量子化に寄せる余地あり（TODO）
 
 ---
 
@@ -116,10 +116,14 @@ Enemy は以下の状態（Status）を持つ。
 
 ## 9. Stage
 - 壁 / ブロックは通行不可
-- 左右上下にロープ判定を配置
-  - 接触時、反射＋速度2倍
-  - ダメージ補正ボーナスあり
-  - 効果は一定時間で解除
+- リング（マット）内の移動範囲を固定し、**ロープ外には出られない**（クランプ）
+  - Player/Enemy のマット範囲は概ね以下（`PlayerMain.gd` / `EnemyMain.gd`）：  
+    - 左: 280 / 右: 1000 / 上: 106 / 下: 614
+- 左右ロープ接触時のみ「ロープ跳ね返り」演出
+  - Player はロープ端に触れたら反対側へ自動移動（`rope_bounce_running`）
+  - ロープバウンド速度は **約800px/s**（以前より減速）
+- ノックバック等でマット外へ出た場合は「ロープ飛ばされ（放物線）」へ遷移（`RopeLaunched`）
+  - 見た目の回転・放物線は `PlayerRopeLaunchedState.gd` / `EnemyLaunchedState.gd`
 
 ---
 
@@ -299,8 +303,8 @@ Enemy は以下の状態（Status）を持つ。
 
 **現状**
 
-- Player: 16px ステップのグリッド移動＋G で滑らか/カクカク切替（`PlayerWalkState.gd`, `PlayerMain.gd`）。  
-- Enemy: 連続的な `velocity` + `move_and_slide()`（`EnemyChaseState.gd`）。
+- Player: 32px ステップのグリッド移動＋G で滑らか/カクカク切替（`PlayerWalkState.gd`, `PlayerMain.gd`）。  
+- Enemy: 連続的な `velocity` + `move_and_slide()`（各 Enemy ステート）。
 
 **やること**
 
@@ -402,18 +406,19 @@ Enemy は以下の状態（Status）を持つ。
 
 ### B.8 Stage・ロープ（§9）
 
-**やること**
+**現行実装（実装優先で更新済み）**
 
-- マップの左右上下に「ロープ」用 Area2D を配置。  
-- 接触時: 反射（速度ベクトルを反転）＋速度 2 倍、ダメージ補正バフを一定時間付与。  
-- 効果はタイマーで解除。
-
-**触るファイル・ノード**
-
-| 対象 | ファイル | 変更内容 |
-|------|----------|----------|
-| ロープ | 新規 `Scenes/Interactables/RopeArea.tscn` + `Scripts/RopeArea.gd` | Area2D、body_entered で Player/Enemy を取得。速度反転＋2倍、バフタイマー開始。 |
-| マップ | `MainFloor.tscn` / `Basement01.tscn` | 四辺に RopeArea を配置。 |
+- ロープは Area2D ではなく、**マット内クランプ＋専用ステート/自動移動**で実装。
+- **左右ロープ跳ね返り（Player）**
+  - `Scenes/Player/Scripts/PlayerMain.gd`  
+    - `MAT_LEFT/MAT_RIGHT/MAT_TOP/MAT_BOTTOM` でクランプ  
+    - 左右端到達で `rope_bounce_running` を立て、反対側へ自動移動  
+    - バウンド速度: `480*2/1.2 ≒ 800`
+  - `Scripts/ArenaMat.gd` でロープの見た目たわみ（`bend_rope(left/right)`）
+- **ロープ飛ばされ（放物線）**
+  - Player: `PlayerRopeLaunchedState.gd`（`LAUNCH_DURATION=1.2`、回転＋放物線）  
+  - Enemy: `EnemyLaunchedState.gd`
+- 上下ロープは「跳ね返り自動移動」は行わず、範囲クランプのみ（見た目は `ArenaMat.tscn` のロープ）
 
 ---
 
@@ -439,9 +444,11 @@ Enemy は以下の状態（Status）を持つ。
 
 **やること**
 
-- **Win**: 敵全滅またはゴール到達で VictoryScreen 表示。既存 `VictoryScreen.tscn` + `Reset.gd` を利用。  
-- **Lose**: Player HP == 0 で DeathScreen。既存 `PlayerMain._die()` → DeathScreen 表示でよい。  
-- 敵全滅の検知: 現在のシーンの Enemy 数を数える、または GameManager で「クリア条件」フラグを立てる。
+- **Win（現行）**: `StageController.gd` がステージクリア時に `Scenes/UI/StageClear.tscn` へ遷移。  
+  - `StageClear.gd` で 1秒後に入力受付し、キー/クリックで `GameManager.load_next_stage()` を呼ぶ。  
+  - `load_next_stage()` は `StageIntro.tscn` →（入力で）`GameWrapper.tscn` へ遷移。
+- **Lose（現行）**: Player HP==0 で `PlayerMain._die()` が `Scenes/Misc/DeathScreen.tscn` を表示。
+  - DeathScreen は **コンティニュー / タイトルに戻る / 終了する** を上下で選択（`Scripts/Reset.gd`）。
 
 **触るファイル**
 
@@ -457,7 +464,11 @@ Enemy は以下の状態（Status）を持つ。
 - **HP 表示**: Player/Enemy とも既存の ProgressBar をそのまま利用。最大値・現在値を SPEC の HP 値に合わせる。  
 - **ヒット時フラッシュ**: 既存の `CharacterBase.damage_effects()`（赤フラッシュ）を維持。  
 - **SE**: 既存の `AudioManager`（BLOODY_HIT 等）をそのまま使用。  
-- **タイトル画面・リトライ**: 既存の Restart/Escape/Enter でよい。必要ならタイトル用シーンを 1 つ追加。
+- **タイトル画面（現行）**: `Scenes/Misc/TitleScreen.tscn` + `Scripts/TitleScreen.gd`
+  - 1P / 2P / テストを上下で選択し、選択中は強調表示。
+  - ESCで終了確認（はい/いいえ）を表示。
+- **ポーズ（現行）**: `Scenes/Levels/GameWrapper.tscn` に `Scripts/GameWrapperPause.gd` を付与
+  - ESCでポーズし、縦4択（バトルに戻る / ステージ開始から / タイトルから / やめる）。
 
 ---
 
@@ -487,7 +498,12 @@ Enemy は以下の状態（Status）を持つ。
 | `Scripts/CharacterBase.gd` | 参照のみ | `_take_damage` は既存のまま。呼び出し元で 0.5 秒・交互を実装。 |
 | 新規 `Scripts/ContactCombat.gd`（または類似） | 新規 | 0.5 秒タイマー、Front/Side 判定、交互ダメージ、ノックバック呼び出し。 |
 | 新規 `Scripts/BoundaryHandler.gd`（任意） | 新規 | 画面端で両者を弾き、ランダム再配置。 |
-| 新規 `Scenes/Interactables/RopeArea.tscn` + スクリプト | 新規 | ロープ接触で反射＋2倍＋バフ。 |
+| `Scripts/ArenaMat.gd` / `Scenes/Levels/ArenaMat.tscn` | 変更 | ロープ見た目（たわみ）・マット/ロープ描画。 |
+| `Scenes/Player/Scripts/PlayerMain.gd` | 変更 | マット内クランプ、左右ロープバウンド（約800）、空中z_indexを地上より前面に。 |
+| `Scenes/Levels/GameWrapper.tscn` + `Scripts/GameWrapperPause.gd` | 追加 | ESCポーズ＋縦4択メニュー。 |
+| `Scenes/UI/StageClear.tscn` + `Scripts/StageClear.gd` | 変更 | クリア画面の入力受付を安定化（_unhandled_input等）。 |
+| `Scenes/Misc/DeathScreen.tscn` + `Scripts/Reset.gd` | 変更 | ゲームオーバーを縦3択＋上下選択に変更。 |
+| `Scripts/MaskFlyAway.gd` / `Scripts/CharacterBase.gd` | 変更 | 死亡マスク飛び演出の歪み修正（global_transform継承＋倍率拡大）。 |
 | 新規 `Scenes/UI/FinisherQTE.tscn` + スクリプト | 新規 | QTE 表示・入力・成功/失敗シグナル。 |
 | `Scripts/Managers/GameManager.gd` | 追加 | レベルクリアフラグ、敵数カウント用の参照など（必要に応じて）。 |
 | `Scenes/Levels/MainFloor.tscn` / `Basement01.tscn` | 追加 | ロープ用 Area。敵全滅時の Victory トリガー用ノード/スクリプト。 |
