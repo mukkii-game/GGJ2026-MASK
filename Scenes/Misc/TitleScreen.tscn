@@ -91,6 +91,54 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
 text = "テスト"
 
+[node name="ConfirmReturnPanel" type="PanelContainer" parent="." unique_id=1538102839]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -80.0
+offset_right = 180.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="ConfirmReturnPanel" unique_id=685371799]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="ConfirmReturnPanel/MarginContainer" unique_id=2015891255]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="QuestionLabel" type="Label" parent="ConfirmReturnPanel/MarginContainer/VBox" unique_id=1028311633]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "タイトルに戻りますか？"
+horizontal_alignment = 1
+
+[node name="ButtonsRow" type="HBoxContainer" parent="ConfirmReturnPanel/MarginContainer/VBox" unique_id=1034604509]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BtnYes" type="Button" parent="ConfirmReturnPanel/MarginContainer/VBox/ButtonsRow" unique_id=780477871]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "はい"
+
+[node name="BtnNo" type="Button" parent="ConfirmReturnPanel/MarginContainer/VBox/ButtonsRow" unique_id=395403318]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "いいえ"
+
 [node name="OperationPanel" type="VBoxContainer" parent="." unique_id=356861424]
 layout_mode = 1
 anchors_preset = 8

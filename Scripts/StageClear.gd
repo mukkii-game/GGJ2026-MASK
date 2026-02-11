@@ -34,16 +34,29 @@ func _on_advance_allowed() -> void:
 	_can_advance = true
 
 func _input(event: InputEvent) -> void:
+	_try_advance(event)
+
+func _unhandled_input(event: InputEvent) -> void:
+	# フォーカスで消費されていても未処理ならここで受け取る
+	_try_advance(event)
+
+func _try_advance(event: InputEvent) -> void:
 	if not _can_advance:
+		return
+	var vp := get_viewport()
+	# Enter / スペース / 決定アクション
+	if event.is_action_pressed("Enter") or event.is_action_pressed("ui_accept"):
+		_next_stage()
+		if vp:
+			vp.set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed:
 		_next_stage()
-		var vp = get_viewport()
 		if vp:
 			vp.set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed:
+		return
+	if event is InputEventMouseButton and event.pressed:
 		_next_stage()
-		var vp = get_viewport()
 		if vp:
 			vp.set_input_as_handled()
 

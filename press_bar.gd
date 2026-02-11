@@ -27,3 +27,4 @@ func _process(delta):
 	if bar_pos >= end_x:
 		print("⏰ Bar時間切れ")
 		get_tree().paused = true
+　ｄ

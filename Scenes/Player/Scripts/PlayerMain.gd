@@ -78,13 +78,18 @@ const ENEMY_CONTACT_SPEED_SEC := 2.0
 var _arena_mat: Node2D = null
 
 func _enter_tree() -> void:
-	# 2P: 木に入った瞬間に表示（_ready より前。ここでは絶対に隠さない）
+	# 2P: 木に入った瞬間に表示（元の挙動。1Pのときだけ _ready で隠す）
 	if is_player_two:
 		visible = true
 		process_mode = PROCESS_MODE_INHERIT
 
 func _ready():
 	super()
+	# 2P: 1Pモードのときだけここで非表示にする（2P/テストは表示のまま）
+	if is_player_two:
+		if not (GameManager.two_player_mode or GameManager.test_mode):
+			visible = false
+			process_mode = PROCESS_MODE_DISABLED
 	# 2P: 専用キャラ画像（m_man_gr_l1 / m_man_gr_l2）に差し替え
 	if is_player_two and sprite and sprite.sprite_frames:
 		_apply_2p_sprite_frames()

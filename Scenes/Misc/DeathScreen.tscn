@@ -51,21 +51,25 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 28
 text = "GAME OVER
 
-コンティニュー: クリック / Enter / スペース
-タイトルへ: Esc"
+上下で選択 / Enter で決定"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HBox" type="HBoxContainer" parent="Control/Panel/VBox"]
+[node name="OptionsList" type="VBoxContainer" parent="Control/Panel/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 24
+theme_override_constants/separation = 16
 
-[node name="ContinueButton" type="Button" parent="Control/Panel/VBox/HBox"]
+[node name="ContinueButton" type="Button" parent="Control/Panel/VBox/OptionsList"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "コンティニュー"
 
-[node name="TitleButton" type="Button" parent="Control/Panel/VBox/HBox"]
+[node name="TitleButton" type="Button" parent="Control/Panel/VBox/OptionsList"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "タイトルへ戻る"
+text = "タイトルに戻る"
+
+[node name="QuitButton" type="Button" parent="Control/Panel/VBox/OptionsList"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "終了する"

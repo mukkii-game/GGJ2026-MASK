@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://c3tt8axpvobit"]
+[gd_scene load_steps=4 format=3 uid="uid://c3tt8axpvobit"]
 
 [ext_resource type="PackedScene" uid="uid://dei3j88yw6omf" path="res://Scenes/Levels/MainFloor.tscn" id="1_main"]
 [ext_resource type="Script" path="res://Scripts/StageController.gd" id="2_stage"]
+[ext_resource type="Script" path="res://Scripts/GameWrapperPause.gd" id="3_pause"]
 
 [node name="GameWrapper" type="Control"]
 layout_mode = 3
@@ -11,6 +12,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 custom_minimum_size = Vector2(1280, 720)
+script = ExtResource("3_pause")
 
 [node name="StageController" type="Node" parent="."]
 script = ExtResource("2_stage")
