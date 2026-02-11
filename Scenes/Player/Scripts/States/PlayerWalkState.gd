@@ -7,11 +7,12 @@ const STEP_SIZE := 32
 @export var step_cooldown: float = 0.08
 ## ロープ跳ね返り後の待ち時間（秒）
 const ROPE_BOUNCE_DELAY := 0.5
-## 自動走行時は通常の何倍速か
-const AUTO_RUN_SPEED_MULT := 3.0
+## 走り（N）時は通常の何倍速か（ちょっとだけ早い）
+const AUTO_RUN_SPEED_MULT := 1.3
 
 @export var movespeed: int = 480
-@export var dash_max: int = 2000
+## 走り（N）の速度（ちょっとだけ早い）。ロープで跳ね返る
+@export var dash_max: int = 640
 var dashspeed := float(400)
 var can_dash := bool(false)
 var dash_direction := Vector2(0,0)
@@ -43,26 +44,25 @@ func Update(delta : float):
 	var mv_right := "MoveRight"
 	var mv_up := "MoveUp"
 	var mv_down := "MoveDown"
-	var jump_action := "Punch"
+	var jump_action := "Jump"
 	if player_main and player_main.is_player_two:
 		mv_left = "Move2Left"
 		mv_right = "Move2Right"
 		mv_up = "Move2Up"
 		mv_down = "Move2Down"
-		jump_action = "Punch2"
+		jump_action = "Jump2"
 	var input_dir = Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()
-	# Nボタン / 左クリック：
-	#  - ふつうモード：一回押すと走る（向いている方向に自動走行）
-	#  - カクカク：炎ダッシュ開始（押し続けで維持）
-	if Input.is_action_just_pressed(jump_action) and player_main:
-		if player_main.use_grid_movement:
-			state_transition.emit(self, "FireDash")
-		else:
-			# ふつうモード：停止中にのみ自動走行開始
-			if auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
-				player_main.start_auto_run = true
-				state_transition.emit(self, "Moving")
-			# 既に走行中の場合は特に何もしない（解除は移動キーで行う）
+	# Mボタン＝ジャンプ
+	if Input.is_action_just_pressed(jump_action):
+		state_transition.emit(self, "Jump")
+		return
+	# Nボタン＝走る（押すとダッシュ開始。方向がなければ向いている方向へ自動走行）
+	if Input.is_action_just_pressed("Dash") and player_main:
+		if can_dash:
+			start_dash(input_dir if input_dir.length() > 0 else (auto_run_direction if auto_run_direction != Vector2.ZERO else (Vector2.RIGHT if (player_main.sprite and player_main.sprite.scale.x >= 0) else Vector2.LEFT)))
+		elif auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
+			player_main.start_auto_run = true
+			state_transition.emit(self, "Moving")
 		return
 	# 移動キーを入れると自動走行解除
 	if input_dir.length() > 0 and auto_run_direction != Vector2.ZERO:
@@ -72,9 +72,7 @@ func Update(delta : float):
 	# 自動走行中フラグ更新（風エフェクト用）
 	if player_main:
 		player_main.is_auto_running = auto_run_direction != Vector2.ZERO
-	if Input.is_action_just_pressed("Dash") and can_dash:
-		start_dash(input_dir if input_dir.length() > 0 else auto_run_direction)
-	elif Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
+	if Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
 		Transition("Attacking")
 	else:
 		Move(input_dir, delta)
