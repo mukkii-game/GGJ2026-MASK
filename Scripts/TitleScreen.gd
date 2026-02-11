@@ -1,78 +1,62 @@
 extends Control
-## タイトル画面。「スタート」（本番）と「テスト」（簡単）の2つのモード。
-## 表示時に「ゴドーだ　待たせたな！」をかっこいい男声で再生＋フェードアウト。スタート押下でシュヴァーンジングル。
+## モード選択画面。1P・2P・テストの3つ。移動キーと決定ボタンで選択（1P/2Pどちらの操作でも可）。
 
-var _godou_players: Array[AudioStreamPlayer] = []
-var _menu_visible := false
+var _menu_visible := true
+var _selected_index: int = 0
+var _mode_buttons: Array[Button] = []
 
 func _ready() -> void:
-	# ボタンのシグナル接続（ButtonsContainer の子なのでフルパスで取得）
-	var start_btn = get_node_or_null("ButtonsContainer/StartButton")
-	if start_btn:
-		start_btn.pressed.connect(_on_start_pressed)
-	
-	var test_btn = get_node_or_null("ButtonsContainer/TestButton")
-	if test_btn:
-		test_btn.pressed.connect(_on_test_pressed)
-	
-	var two_btn = get_node_or_null("ButtonsContainer/TwoPlayerButton")
-	if two_btn:
-		two_btn.pressed.connect(_on_two_player_pressed)
-	
-	# タイトル表示時：「ゴドーだ　待たせたな！」をかっこいい男声で再生＋フェードアウト
-	_play_godou_voice()
-	# 3秒後にスタート・テスト・操作説明を表示
-	get_tree().create_timer(3.0).timeout.connect(_show_menu)
+	# 1P / 2P / テスト の3ボタンを取得（シーンで同じ名前のノードにしておく）
+	var container = get_node_or_null("ButtonsContainer")
+	if container:
+		container.visible = true
+		# 子のうち Button だけ順に取得（OperationLabel, Spacer は除く）
+		for c in container.get_children():
+			if c is Button:
+				_mode_buttons.append(c as Button)
+	if _mode_buttons.size() >= 1:
+		_mode_buttons[0].pressed.connect(_on_1p_pressed)
+	if _mode_buttons.size() >= 2:
+		_mode_buttons[1].pressed.connect(_on_2p_pressed)
+	if _mode_buttons.size() >= 3:
+		_mode_buttons[2].pressed.connect(_on_test_pressed)
+	var op_panel = get_node_or_null("OperationPanel")
+	if op_panel:
+		op_panel.visible = true
+	_highlight_selection()
 
-func _input(_event: InputEvent) -> void:
-	# 3秒待つまでメニューは出さない（スキップなし）
-	pass
-
-func _show_menu() -> void:
-	if _menu_visible:
+func _input(event: InputEvent) -> void:
+	if not _menu_visible or _mode_buttons.is_empty():
 		return
-	_menu_visible = true
-	# スタート・テスト・操作説明（ボタン左の小さめ文字）を同時に表示
-	var buttons = get_node_or_null("ButtonsContainer")
-	if buttons:
-		buttons.visible = true
+	var vp := get_viewport()
+	# 1P: WASD or 矢印相当 / 2P: 矢印キーで上下移動
+	var go_up := event.is_action_pressed("MoveUp") or event.is_action_pressed("Move2Up")
+	var go_down := event.is_action_pressed("MoveDown") or event.is_action_pressed("Move2Down")
+	if go_up:
+		_selected_index = (_selected_index - 1 + _mode_buttons.size()) % _mode_buttons.size()
+		_highlight_selection()
+		if vp:
+			vp.set_input_as_handled()
+	if go_down:
+		_selected_index = (_selected_index + 1) % _mode_buttons.size()
+		_highlight_selection()
+		if vp:
+			vp.set_input_as_handled()
+	# 決定: Enter / N(Punch) / M(Kick) / マウス左(Punch2) / マウス右(Kick2)
+	var confirm := event.is_action_pressed("Enter") or event.is_action_pressed("Punch") or event.is_action_pressed("Kick") or event.is_action_pressed("Punch2") or event.is_action_pressed("Kick2")
+	if confirm:
+		_activate_selected()
+		if vp:
+			vp.set_input_as_handled()
 
-## 「ゴドーだ　待たせたな！」声：かっこいい男声（godou_da_matasetana.ogg 優先、なければ godou.ogg）で再生しフェードアウト
-func _play_godou_voice() -> void:
-	var path_ogg := "res://Art/Audio/godou_da_matasetana.ogg"
-	var path_wav := "res://Art/Audio/godou_da_matasetana.wav"
-	if not ResourceLoader.exists(path_ogg):
-		path_ogg = "res://Art/Audio/godou.ogg"
-	if not ResourceLoader.exists(path_wav):
-		path_wav = "res://Art/Audio/godou.wav"
-	var stream: AudioStream = null
-	if ResourceLoader.exists(path_ogg):
-		stream = load(path_ogg) as AudioStream
-	elif ResourceLoader.exists(path_wav):
-		stream = load(path_wav) as AudioStream
-	if stream == null:
+func _highlight_selection() -> void:
+	if _selected_index >= 0 and _selected_index < _mode_buttons.size():
+		_mode_buttons[_selected_index].grab_focus()
+
+func _activate_selected() -> void:
+	if _selected_index < 0 or _selected_index >= _mode_buttons.size():
 		return
-	
-	var main := AudioStreamPlayer.new()
-	main.volume_db = 0.0
-	main.stream = stream
-	add_child(main)
-	_godou_players.append(main)
-	main.play()
-	
-	# 約2秒かけてフェードアウト
-	get_tree().create_timer(0.5).timeout.connect(func() -> void:
-		var tween := create_tween()
-		tween.set_parallel(true)
-		for p in _godou_players:
-			if is_instance_valid(p):
-				tween.tween_property(p, "volume_db", -50.0, 2.0)
-		tween.tween_callback(func() -> void:
-			for p in _godou_players:
-				if is_instance_valid(p):
-					p.stop()
-		)
-	)
+	_mode_buttons[_selected_index].emit_signal("pressed")
 
 func _play_decision_sound() -> void:
 	var path_ogg := "res://Art/Audio/Effects/decision.ogg"
@@ -107,25 +91,25 @@ func _play_start_jingle() -> void:
 	player.finished.connect(player.queue_free)
 	player.play()
 
-## 本番バランスでスタート
-func _on_start_pressed() -> void:
+## 1Pモード
+func _on_1p_pressed() -> void:
 	_play_start_jingle()
 	GameManager.test_mode = false
 	GameManager.two_player_mode = false
 	_start_game()
 
-## テストバランスでスタート
+## 2Pモード（2Pは矢印＋マウス左右。1Pキャラのマスクを赤く表示）
+func _on_2p_pressed() -> void:
+	_play_start_jingle()
+	GameManager.test_mode = false
+	GameManager.two_player_mode = true
+	_start_game()
+
+## テストモード
 func _on_test_pressed() -> void:
 	_play_decision_sound()
 	GameManager.test_mode = true
 	GameManager.two_player_mode = false
-	_start_game()
-
-## 二人用モードでスタート（本番バランス）
-func _on_two_player_pressed() -> void:
-	_play_start_jingle()
-	GameManager.test_mode = false
-	GameManager.two_player_mode = true
 	_start_game()
 
 func _start_game() -> void:
