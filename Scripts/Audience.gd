@@ -53,7 +53,7 @@ func _spawn_top_bottom() -> void:
 	top.name = "Top"
 	add_child(top)
 	var idx := 0
-	for y in range(-10, 17, step):
+	for y in range(-10, 101, step):
 		for x in range(0, 1280, step):
 			var m := Node2D.new()
 			m.set_script(_member_script)
@@ -66,7 +66,7 @@ func _spawn_top_bottom() -> void:
 	bottom.name = "Bottom"
 	add_child(bottom)
 	idx = 0
-	for y in range(704, 731, step):
+	for y in range(620, 731, step):
 		for x in range(0, 1280, step):
 			var m := Node2D.new()
 			m.set_script(_member_script)

@@ -7,8 +7,8 @@ enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee }
 ## 敵同士が重ならないよう、かさなったらずらす用（マット内）
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
-const MAT_TOP := 16.0
-const MAT_BOTTOM := 704.0
+const MAT_TOP := 100.0
+const MAT_BOTTOM := 620.0
 const BODY_HALF := 40.0
 
 @onready var fsm = $FSM as FiniteStateMachine
