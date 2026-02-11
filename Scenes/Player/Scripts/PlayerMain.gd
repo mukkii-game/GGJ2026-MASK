@@ -137,20 +137,20 @@ func _process(delta: float):
 			sprite.speed_scale = 2.0
 		else:
 			sprite.speed_scale = 1.0
-	# グリッドモードトグルは1Pのみ（2PのM/矢印ではトグルしない）
-	if not is_player_two and (Input.is_action_just_pressed("ToggleGridMove") or Input.is_action_just_pressed("Kick")):
+	# グリッドモードトグルは1Pのみ（Gキー）
+	if not is_player_two and Input.is_action_just_pressed("ToggleGridMove"):
 		GameManager.use_grid_mode = not GameManager.use_grid_mode
 		use_grid_movement = GameManager.use_grid_mode
 
-	# 何か操作したらロープバウンス停止
+	# 何か操作したらロープバウンス停止（方向キー・Mジャンプ・N走りで解除）
 	if rope_bounce_running:
 		var mv_left := "MoveLeft" if not is_player_two else "Move2Left"
 		var mv_right := "MoveRight" if not is_player_two else "Move2Right"
 		var mv_up := "MoveUp" if not is_player_two else "Move2Up"
 		var mv_down := "MoveDown" if not is_player_two else "Move2Down"
-		var jump_action := "Punch" if not is_player_two else "Punch2"
+		var jump_act := "Jump" if not is_player_two else "Jump2"
 		var input := Input.get_vector(mv_left, mv_right, mv_up, mv_down)
-		if input.length() > 0.1 or Input.is_action_just_pressed(jump_action) or Input.is_action_just_pressed("Dash"):
+		if input.length() > 0.1 or Input.is_action_just_pressed(jump_act) or Input.is_action_just_pressed("Dash"):
 			rope_bounce_running = false
 			rope_bounce_direction = Vector2.ZERO
 	
