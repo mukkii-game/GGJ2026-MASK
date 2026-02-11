@@ -29,7 +29,6 @@
 [ext_resource type="Texture2D" uid="uid://d3sffbaa38mbk" path="res://Scenes/Player/Sprite/Player_MoonKick3.png" id="21_sg1a0"]
 [ext_resource type="Script" uid="uid://b7vdrieo446or" path="res://Scenes/Player/Scripts/States/PlayerIdleState.gd" id="26_28u22"]
 [ext_resource type="Script" uid="uid://ck2uu6muh37nh" path="res://Scenes/Player/Scripts/States/PlayerAttackState.gd" id="27_j1lrx"]
-[ext_resource type="Texture2D" uid="uid://dyb5iqfj3tmwj" path="res://Art/Sprites/light.png" id="27_on0bn"]
 [ext_resource type="LabelSettings" uid="uid://da8inon5cmt2r" path="res://Art/Fonts/pixelized_label.tres" id="28_5mc6f"]
 [ext_resource type="Script" uid="uid://jnabypoal23g" path="res://Scripts/AttackData.gd" id="28_wb7jg"]
 [ext_resource type="Script" uid="uid://cyqvahbid5dvm" path="res://Scenes/Player/Scripts/States/PlayerWalkState.gd" id="29_bdbrv"]
@@ -504,11 +503,6 @@ script = ExtResource("40_ropelaunched")
 [node name="Die" type="Node" parent="FSM" node_paths=PackedStringArray("animator")]
 script = ExtResource("30_ecf44")
 animator = NodePath("../../AnimationPlayer")
-
-[node name="PointLight2D2" type="PointLight2D" parent="."]
-energy = 0.3
-shadow_enabled = true
-texture = ExtResource("27_on0bn")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 scale = Vector2(2, 2)
