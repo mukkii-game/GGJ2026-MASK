@@ -2,6 +2,7 @@ extends Node
 ## ステージ管理スクリプト。敵の増援、クリア判定、BGM再生、ボス撃破QTEを行う。
 
 @export var enemy_scene: PackedScene = preload("res://Scenes/NPC's/Enemy/Enemy.tscn")
+var _player_scene: PackedScene = preload("res://Scenes/Player/Player.tscn")
 @export var spawn_points: Array[Vector2] = [
 	Vector2(400, 200),
 	Vector2(880, 200),
@@ -27,14 +28,22 @@ var qte_node: Node2D = null
 func _ready() -> void:
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
 	await get_tree().process_frame
-	# 二人用/テストのときは 2P を確実に表示（PlayerMain の deferred より遅いのでここで上書き）
+	# 2P: 2P/テスト時は毎回新規生成して追加（シーン由来に依存しない）
 	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
-	if subvp and subvp.get_child_count() > 0:
-		var main_floor := subvp.get_child(0)
-		var player2 = main_floor.get_node_or_null("Player2")
-		if player2 and (GameManager.two_player_mode or GameManager.test_mode):
-			player2.visible = true
-			player2.process_mode = PROCESS_MODE_INHERIT
+	if subvp and subvp.get_child_count() > 0 and _player_scene:
+		var floor_root := subvp.get_child(0)
+		var show_2p := GameManager.two_player_mode or GameManager.test_mode
+		var old_p2: Node = floor_root.get_node_or_null("Player2")
+		if old_p2:
+			old_p2.queue_free()
+		var player2: Node = _player_scene.instantiate()
+		player2.set("is_player_two", true)
+		player2.position = Vector2(840, 360)
+		player2.scale = Vector2(1.25, 1.25)
+		player2.name = "Player2"
+		player2.visible = show_2p
+		player2.process_mode = PROCESS_MODE_INHERIT if show_2p else PROCESS_MODE_DISABLED
+		floor_root.add_child(player2)
 	var npcs = _get_npcs_node()
 	if npcs:
 		for child in npcs.get_children():

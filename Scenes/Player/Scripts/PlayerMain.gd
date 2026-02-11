@@ -78,11 +78,10 @@ const ENEMY_CONTACT_SPEED_SEC := 2.0
 var _arena_mat: Node2D = null
 
 func _enter_tree() -> void:
-	# 2P: いったん表示にして、1フレーム後に1Pのときだけ非表示にする
+	# 2P: 木に入った瞬間に表示（_ready より前。ここでは絶対に隠さない）
 	if is_player_two:
 		visible = true
 		process_mode = PROCESS_MODE_INHERIT
-		call_deferred("_apply_2p_visibility_on_ready")
 
 func _ready():
 	super()
@@ -111,15 +110,6 @@ func _ready():
 				remove_child(cam)
 				cam_root.add_child(cam)
 				cam.global_position = CAM_CENTER
-
-## 2P用：1フレーム後に1Pのときだけ非表示（2P/テストのときは何もしない＝表示のまま）
-func _apply_2p_visibility_on_ready() -> void:
-	if not is_player_two:
-		return
-	if GameManager.two_player_mode or GameManager.test_mode:
-		return
-	visible = false
-	process_mode = PROCESS_MODE_DISABLED
 
 func _process(delta: float):
 	super(delta)
