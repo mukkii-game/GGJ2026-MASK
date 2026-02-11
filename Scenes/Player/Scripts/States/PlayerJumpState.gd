@@ -87,8 +87,8 @@ func Exit() -> void:
 		body_shape.disabled = false
 	player.z_index = 0
 	player.rotation = 0.0
-	# コリジョンマスクを元に戻す（1 = layer 1 のみ・ロープ外の壁は無効のまま）
-	player.collision_mask = 1
+	# コリジョンマスクを元に戻す（3 = layer 1 + layer 2）
+	player.collision_mask = 3
 	if sprite_node and is_instance_valid(sprite_node):
 		# すべてのtweenを強制終了
 		var tree := sprite_node.get_tree()
@@ -104,16 +104,7 @@ func Update(delta: float) -> void:
 	if not player or not player_main:
 		return
 	# 実座標：歩きの速度で移動。ロープは超えられない（クランプのみ）
-	var mv_left := "MoveLeft"
-	var mv_right := "MoveRight"
-	var mv_up := "MoveUp"
-	var mv_down := "MoveDown"
-	if player_main.is_player_two:
-		mv_left = "Move2Left"
-		mv_right = "Move2Right"
-		mv_up = "Move2Up"
-		mv_down = "Move2Down"
-	var input_dir := Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()
+	var input_dir := Input.get_vector("MoveLeft", "MoveRight", "MoveUp", "MoveDown").normalized()
 	if player_main.use_grid_movement:
 		input_dir = Vector2.ZERO
 	var move := input_dir * WALK_SPEED_JUMP * delta

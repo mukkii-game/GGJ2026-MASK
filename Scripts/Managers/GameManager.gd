@@ -7,7 +7,7 @@ var use_grid_mode: bool = false
 ## 敵を全員止める（体当たりテスト用）。true の間は敵は移動しない
 var enemies_frozen: bool = false
 
-## 二人用モードかどうか（タイトルで選択）
+## 二人用モードかどうか（タイトル画面で設定）
 var two_player_mode: bool = false
 
 ## 現在のステージ（1〜4）

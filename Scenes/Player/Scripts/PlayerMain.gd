@@ -426,10 +426,18 @@ func _body_contact(delta: float) -> void:
 			break
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
-			# ステージ3: ユニ帝仮面の正面無敵 + 反撃
+			# ステージ3: ユニ帝仮面の正面無敵 + 反撃（正面側から当たったときだけ有効）
 			var is_stage3_boss: bool = GameManager.current_stage == 3 and "stage_number" in enemy and enemy.stage_number == 3
+			var stage3_front_guard := false
+			if is_stage3_boss and "facing_dir_sign" in enemy:
+				var boss_facing: int = enemy.facing_dir_sign
+				if boss_facing != 0:
+					# 敵→プレイヤーのX方向と facing が同じなら「正面側」にいる
+					var enemy_to_player_x: float = global_position.x - enemy.global_position.x
+					if absf(enemy_to_player_x) > 4.0 and signf(enemy_to_player_x) == float(boss_facing):
+						stage3_front_guard = true
 			
-			if is_stage3_boss:
+			if stage3_front_guard:
 				# ユニ帝仮面の正面無敵：敵にダメージなし、プレイヤーに20ダメージ + 200px大ノックバック
 				_take_damage(20)
 				_flash_white_body_contact()

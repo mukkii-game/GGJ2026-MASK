@@ -264,6 +264,15 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 				enemy.use_qte_on_defeat = false
 				_set_zako_behavior(enemy, pos)
 	
+	# ステージ3ボスだけは移動速度を半分に落とす
+	if GameManager.current_stage == 3 and enemy.is_boss:
+		var wander = enemy.get_node_or_null("FSM/enemy_wander_state")
+		if wander and "move_speed" in wander:
+			wander.move_speed *= 0.5
+		var chase = enemy.get_node_or_null("FSM/enemy_chase_state")
+		if chase and "move_speed" in chase:
+			chase.move_speed *= 0.5
+	
 	enemy.scale = Vector2(1.25, 1.25)
 	
 	# ボスのみ：HP0でQTE開始

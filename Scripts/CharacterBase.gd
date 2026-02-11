@@ -14,6 +14,9 @@ signal took_damage(amount: int)
 var max_health : int  # 初期HPを記録
 var invincible : bool = false
 var is_dead : bool = false
+## UIの体力バー用：低HP点滅
+var _hb_blink_t: float = 0.0
+var _hb_blink_on: bool = true
 ## HP0で_die()の代わりにQTEを出す（ボスのみ）
 var use_qte_on_defeat: bool = false
 ## ノックバック直後はこの秒数だけ移動しない（隣の敵を押さないように）
@@ -26,12 +29,42 @@ func _ready():
 func _process(delta: float):
 	knockback_stun_remaining = maxf(0.0, knockback_stun_remaining - delta)
 	Turn()
+	_update_healthbar_visual(delta)
 	
 #Add anything here that needs to be initialized on the character
 func init_character():
 	if healthbar:
 		healthbar.max_value = health
 		healthbar.value = health
+		_update_healthbar_visual(0.0)
+
+func _update_healthbar_visual(delta: float) -> void:
+	if not healthbar:
+		return
+	# max_value が未設定の場合も安全に
+	var maxv := float(healthbar.max_value) if healthbar.max_value > 0 else float(max_health if max_health > 0 else 1)
+	var hp_percent := clampf(float(health) / maxv, 0.0, 1.0)
+
+	var color: Color
+	if hp_percent <= 0.3:
+		_hb_blink_t += delta
+		if _hb_blink_t >= 0.15:
+			_hb_blink_t = 0.0
+			_hb_blink_on = not _hb_blink_on
+		color = Color(0.9, 0.25, 0.12, 1.0) if _hb_blink_on else Color.WHITE
+	elif hp_percent <= 0.5:
+		_hb_blink_t = 0.0
+		_hb_blink_on = true
+		color = Color(1.0, 0.9, 0.25, 1.0)
+	else:
+		_hb_blink_t = 0.0
+		_hb_blink_on = true
+		color = Color(0.2, 1.0, 0.35, 1.0)
+
+	# fill の色を差し替える（StyleBoxFlat を想定）
+	var fill := healthbar.get_theme_stylebox("fill")
+	if fill is StyleBoxFlat:
+		(fill as StyleBoxFlat).bg_color = color
 
 #Flip charater sprites based on their current velocity
 func Turn():

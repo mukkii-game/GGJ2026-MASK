@@ -22,6 +22,13 @@ var patrol_distance_override: float = 0.0
 ## ロープ間往復用：>0 のとき Patrol の move_speed として使用（プレイヤーより少し遅い程度）
 var patrol_speed_override: float = 0.0
 
+## 向いている左右（1=右, -1=左）。Turn() で更新。
+var facing_dir_sign: int = 1
+## Turn() 内で使う経過時間（ステージ3ボスの左右反転ディレイ用）
+var _turn_delta: float = 0.0
+var _boss_flip_timer: float = 0.0
+const BOSS3_FLIP_DELAY := 1.0
+
 @export var behavior_type: Behavior = Behavior.Idle
 @export var attack_node : Node
 @export var chase_node : Node
@@ -37,6 +44,7 @@ var _player_contact_timer: float = 0.0
 const PLAYER_CONTACT_SPEED_SEC := 2.0
 
 func _process(delta: float) -> void:
+	_turn_delta = delta
 	if super_flee_remaining > 0.0:
 		super_flee_remaining = maxf(0.0, super_flee_remaining - delta)
 	if _player_contact_timer > 0.0:
@@ -56,6 +64,42 @@ func _process(delta: float) -> void:
 	# 敵が絶対にロープ外に出ないようにクランプ
 	global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
 	global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
+
+func Turn() -> void:
+	if not sprite:
+		return
+	# flipped_horizontal を考慮した基準方向（+1=右を向く）
+	var base_dir := -1 if flipped_horizontal == true else 1
+	
+	# ステージ3ボスだけは左右反転を少し遅らせる
+	if is_boss and stage_number == 3:
+		var move_dir := 0
+		if velocity.x < -0.1:
+			move_dir = -1
+		elif velocity.x > 0.1:
+			move_dir = 1
+		
+		if move_dir != 0 and move_dir != facing_dir_sign:
+			# 進行方向が変わったら、一定時間たってから振り向く
+			_boss_flip_timer += _turn_delta
+			if _boss_flip_timer >= BOSS3_FLIP_DELAY:
+				facing_dir_sign = move_dir
+				_boss_flip_timer = 0.0
+		else:
+			# 同じ方向を向いている、または止まっている間はタイマーをリセット
+			_boss_flip_timer = 0.0
+		
+		if facing_dir_sign != 0:
+			sprite.scale.x = base_dir * float(facing_dir_sign) * absf(sprite.scale.x)
+		return
+	
+	# 通常敵: 速度方向に即座に向きを変える（従来どおり）
+	if velocity.x < -0.1:
+		sprite.scale.x = -base_dir * absf(sprite.scale.x)
+		facing_dir_sign = -1
+	elif velocity.x > 0.1:
+		sprite.scale.x = base_dir * absf(sprite.scale.x)
+		facing_dir_sign = 1
 
 ## 敵同士が重なっていたら互いにずらす（マット内にクランプ）。重なり判定は少し緩めに。
 func _push_apart_from_other_enemies() -> void:

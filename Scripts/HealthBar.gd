@@ -29,12 +29,18 @@ func _draw() -> void:
 	# 背景（黒）
 	draw_rect(Rect2(-BAR_WIDTH / 2, Y_OFFSET, BAR_WIDTH, BAR_HEIGHT), Color(0, 0, 0, 0.8))
 	
-	# HPゲージ：緑と朱（赤）の混合で表現
-	# hp_percent が高い = 緑が多い
-	# hp_percent が低い = 朱（赤）が多い
-	var green_amount := hp_percent
-	var red_amount := 1.0 - hp_percent
-	var bar_color := Color(0.9 * red_amount, 0.8 * green_amount, 0.0, 1.0)
+	# HPゲージ色
+	# - 50%超: 緑
+	# - 50%以下: 黄
+	# - 30%以下: 朱⇄白 点滅
+	var bar_color: Color
+	if hp_percent <= 0.3:
+		var blink_on := int(Time.get_ticks_msec() / 150) % 2 == 0
+		bar_color = Color(0.9, 0.25, 0.12, 1.0) if blink_on else Color.WHITE
+	elif hp_percent <= 0.5:
+		bar_color = Color(1.0, 0.9, 0.25, 1.0)
+	else:
+		bar_color = Color(0.2, 1.0, 0.35, 1.0)
 	
 	var current_width := BAR_WIDTH * hp_percent
 	if current_width > 0:

@@ -13,10 +13,10 @@ func _ready() -> void:
 	if stage_label:
 		stage_label.text = "STAGE " + str(GameManager.current_stage)
 	
-	# ボス名表示
+	# 敵名（ボス名）は表示しない
 	var boss_label = get_node_or_null("BossName")
 	if boss_label:
-		boss_label.text = stage_data["boss_name"]
+		boss_label.visible = false
 	
 	# ボス顔画像
 	var boss_face = get_node_or_null("BossFace")
@@ -51,31 +51,26 @@ func _get_stage_data(stage: int) -> Dictionary:
 	match stage:
 		1:
 			return {
-				"boss_name": "雑魚マスク軍団",
 				"boss_texture": "res://Art/Sprites/iron_mask_title1.png",
 				"description": "弱いが数が多い！\nどんどん増援が来るぞ！"
 			}
 		2:
 			return {
-				"boss_name": "マスクメロンナちゃん",
 				"boss_texture": "res://Art/Sprites/iron_mask_title2.png",
 				"description": "すばしっこい逃げ足！\nジャンプ中は止まる！\n雑魚を召喚してくる！"
 			}
 		3:
 			return {
-				"boss_name": "うに帝仮面",
 				"boss_texture": "res://Art/Sprites/iron_mask_title3.png",
 				"description": "正面は無敵！反撃が痛い！\n半キャラずらしのショルダータックルで攻撃！"
 			}
 		4:
 			return {
-				"boss_name": "異論マスク",
 				"boss_texture": "res://Art/Sprites/iron_mask_title4.png",
 				"description": "高HP！攻撃すると大きく吹っ飛ぶ！\nコーナージャンプ着地で大ダメージ！"
 			}
 		_:
 			return {
-				"boss_name": "Unknown Boss",
 				"boss_texture": "res://Art/Sprites/m_man_b_l1.png",
 				"description": ""
 			}
