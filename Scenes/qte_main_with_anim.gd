@@ -103,13 +103,15 @@ func _process(delta):
 
 
 # エリアに入った時に呼ばれる
-func _on_area_entered(_area):
-	is_overlapping = true
+func _on_area_entered(area):
+	if area == player_point:
+		is_overlapping = true
 
 
 # エリアから出た時に呼ばれる
-func _on_area_exited(_area):
-	is_overlapping = false
+func _on_area_exited(area):
+	if area == player_point:
+		is_overlapping = false
 
 
 func success_game():
