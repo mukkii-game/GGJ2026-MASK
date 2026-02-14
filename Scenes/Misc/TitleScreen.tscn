@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://d1631knq4k5yy"]
 
-[ext_resource type="Script" uid="uid://bcweqqvfwikye" path="res://Scripts/TitleScreen.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://bu1g16cycafad" path="res://Art/Sprites/godot_title.png" id="2_title"]
+[ext_resource type="Script" uid="uid://mn4llttyrpse" path="res://Scripts/TitleScreen.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bhxy0tmn6wh5i" path="res://Art/Sprites/godot_title.png" id="2_title"]
+[ext_resource type="Texture2D" uid="uid://c4184chmdmbfg" path="res://Art/Sprites/blue1.png" id="3_km8kx"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start"]
 content_margin_left = 24.0
@@ -42,6 +43,12 @@ grow_vertical = 2
 texture = ExtResource("2_title")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="text_bg" type="Sprite2D" parent="." unique_id=114657850]
+modulate = Color(1, 1, 1, 0.5529412)
+position = Vector2(641, 209)
+scale = Vector2(6.4687495, 2.03125)
+texture = ExtResource("3_km8kx")
 
 [node name="ButtonsContainer" type="VBoxContainer" parent="." unique_id=445011958]
 layout_mode = 1

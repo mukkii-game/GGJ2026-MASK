@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://ending123"]
+[gd_scene format=3 uid="uid://ending123"]
 
-[ext_resource type="Script" path="res://Scripts/Ending.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Art/Sprites/gr_mask_l1.png" id="2_godot"]
+[ext_resource type="Script" uid="uid://bcu34d7rbm44y" path="res://Scripts/Ending.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dk4nwpvpi8jrx" path="res://Art/Sprites/endding_pic.png" id="2_tohhu"]
 
-[node name="Ending" type="Control"]
+[node name="Ending" type="Control" unique_id=37116707]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=728795601]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,22 +21,22 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
 
-[node name="GodotMask" type="TextureRect" parent="."]
+[node name="GodotMask" type="TextureRect" parent="." unique_id=936796358]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
+offset_left = -436.0
+offset_top = -113.0
+offset_right = 452.6145
+offset_bottom = 347.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_godot")
+texture = ExtResource("2_tohhu")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Title" type="Label" parent="."]
+[node name="Title" type="Label" parent="." unique_id=389686303]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -54,7 +54,7 @@ text = "CONGRATULATIONS!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Message" type="Label" parent="."]
+[node name="Message" type="Label" parent="." unique_id=544630274]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -73,7 +73,7 @@ text = "俺は成長する
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Credits" type="Label" parent="."]
+[node name="Credits" type="Label" parent="." unique_id=1367500618]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -91,7 +91,7 @@ text = "THE END"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PressToExit" type="Label" parent="."]
+[node name="PressToExit" type="Label" parent="." unique_id=1335955417]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -109,7 +109,7 @@ text = "ボタンを押して終了"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ExitButton" type="Button" parent="."]
+[node name="ExitButton" type="Button" parent="." unique_id=829599710]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
