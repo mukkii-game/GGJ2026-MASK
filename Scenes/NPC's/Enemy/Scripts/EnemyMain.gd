@@ -232,6 +232,10 @@ func notify_graze_hit() -> void:
 func notify_stepped_on() -> void:
 	_weak_until = WEAK_DURATION_SEC
 
+## 指定秒数だけ弱り状態にする（パワーエサなど）。既存の弱りより長い場合だけ上書き
+func set_weak_for(duration_sec: float) -> void:
+	_weak_until = maxf(_weak_until, duration_sec)
+
 ## リングイン演出中（スポーン〜着地まで）は true。この間は当たり判定なし・敵として認識しない
 func is_ring_in_effect_only() -> bool:
 	return fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state"

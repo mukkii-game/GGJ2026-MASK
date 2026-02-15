@@ -1,12 +1,12 @@
-[gd_scene format=3 uid="uid://e7ib44d01uvp"]
+[gd_scene load_steps=12 format=3 uid="uid://e7ib44d01uvp"]
 
-[ext_resource type="Script" uid="uid://cqd4a4jxg08cq" path="res://Scenes/qte_main_with_anim.gd" id="1_2dxxf"]
-[ext_resource type="Texture2D" uid="uid://bjg1ln27vj8qa" path="res://Art/Sprites/m_man_g_l1.png" id="1_ubf7m"]
-[ext_resource type="Texture2D" uid="uid://ck5woosilybhj" path="res://Art/Sprites/gtq_gmask_attack.png" id="3_0x5b1"]
-[ext_resource type="Texture2D" uid="uid://cy37mljc6pgo7" path="res://Art/Sprites/gtq_melon_mask.png" id="3_d8001"]
-[ext_resource type="Texture2D" uid="uid://bnjb58gfde2ha" path="res://Art/Sprites/qte_bg.png" id="3_vwhkm"]
-[ext_resource type="AudioStream" uid="uid://cqwcenodicx7p" path="res://Art/Audio/Effects/kill_mask2.wav" id="5_2dxxf"]
-[ext_resource type="AudioStream" uid="uid://bkxjjovycfxla" path="res://Art/Audio/Effects/qt_in.mp3" id="6_qtin"]
+[ext_resource type="Script" uid="uid://co0g40vb8evp4" path="res://Scenes/qte_main_with_anim.gd" id="1_2dxxf"]
+[ext_resource type="Texture2D" uid="uid://b24pdgkqxn0yr" path="res://Art/Sprites/m_man_g_l1.png" id="1_ubf7m"]
+[ext_resource type="Texture2D" uid="uid://bgbtt3ywegmnv" path="res://Art/Sprites/gtq_gmask_attack.png" id="3_0x5b1"]
+[ext_resource type="Texture2D" uid="uid://byy3uwcdh1nca" path="res://Art/Sprites/gtq_melon_mask.png" id="3_d8001"]
+[ext_resource type="Texture2D" uid="uid://3swc38r2jv5f" path="res://Art/Sprites/qte_bg.png" id="3_vwhkm"]
+[ext_resource type="AudioStream" uid="uid://bikv28nqq30dt" path="res://Art/Audio/Effects/kill_mask2.wav" id="5_2dxxf"]
+[ext_resource type="AudioStream" uid="uid://dlx2w4168nqvp" path="res://Art/Audio/Effects/qt_in.mp3" id="6_qtin"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ubf7m"]
 size = Vector2(415, 60)
@@ -35,57 +35,57 @@ _data = {
 &"attack": SubResource("Animation_attack")
 }
 
-[node name="QTE_main" type="Node2D" unique_id=1439511679]
+[node name="QTE_main" type="Node2D"]
 script = ExtResource("1_2dxxf")
 
-[node name="Background" type="ColorRect" parent="." unique_id=740950505]
+[node name="Background" type="ColorRect" parent="."]
 offset_right = 1280.0
 offset_bottom = 720.0
 color = Color(0.12156863, 0.21176471, 0.23921569, 1)
 
-[node name="QTE_BG" type="Sprite2D" parent="Background" unique_id=1643403014]
+[node name="QTE_BG" type="Sprite2D" parent="Background"]
 position = Vector2(640.9499, 354.38434)
 scale = Vector2(1.2459575, 1.0535986)
 texture = ExtResource("3_vwhkm")
 
-[node name="TargetZone" type="Area2D" parent="." unique_id=563257787]
+[node name="TargetZone" type="Area2D" parent="."]
 position = Vector2(321, 685)
 
-[node name="Hit_coli" type="CollisionShape2D" parent="TargetZone" unique_id=1717391246]
+[node name="Hit_coli" type="CollisionShape2D" parent="TargetZone"]
 position = Vector2(292, -50)
 shape = SubResource("RectangleShape2D_ubf7m")
 
-[node name="PlayerPoint" type="Area2D" parent="." unique_id=624265822]
+[node name="PlayerPoint" type="Area2D" parent="."]
 position = Vector2(40, 637)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPoint" unique_id=1973091076]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="PlayerPoint"]
 shape = SubResource("CircleShape2D_mn84s")
 
-[node name="attack_hand" type="Sprite2D" parent="PlayerPoint/CollisionShape2D" unique_id=944119876]
+[node name="attack_hand" type="Sprite2D" parent="PlayerPoint/CollisionShape2D"]
 position = Vector2(261.15057, -237.95105)
 scale = Vector2(3.764613, 3.764613)
 texture = ExtResource("3_0x5b1")
 
-[node name="mini_godot_mask" type="Sprite2D" parent="PlayerPoint/CollisionShape2D" unique_id=1843369886]
+[node name="mini_godot_mask" type="Sprite2D" parent="PlayerPoint/CollisionShape2D"]
 texture_filter = 1
 position = Vector2(42.5, -42.5)
 scale = Vector2(3.65625, 3.65625)
 texture = ExtResource("1_ubf7m")
 
-[node name="QTE_enemy" type="Sprite2D" parent="." unique_id=167236621]
+[node name="QTE_enemy" type="Sprite2D" parent="."]
 texture_filter = 1
 position = Vector2(836, 457)
 scale = Vector2(4.0208464, 4.0208454)
 texture = ExtResource("3_d8001")
 
-[node name="bar" type="ColorRect" parent="." unique_id=779127667]
+[node name="bar" type="ColorRect" parent="."]
 offset_left = 403.0
 offset_top = 605.0
 offset_right = 822.0
 offset_bottom = 664.0
 color = Color(0.1932, 0.46, 0.19764668, 1)
 
-[node name="ResultLabel" type="Label" parent="." unique_id=420462631]
+[node name="ResultLabel" type="Label" parent="."]
 offset_left = 406.0
 offset_top = 36.0
 offset_right = 819.0
@@ -94,15 +94,15 @@ text = "SUCCESS
 "
 horizontal_alignment = 1
 
-[node name="QTEAnimationPlayer" type="AnimationPlayer" parent="." unique_id=1530760425]
+[node name="QTEAnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
-"": SubResource("AnimationLibrary_qte")
+&"": SubResource("AnimationLibrary_qte")
 }
 
-[node name="hit_hip" type="AudioStreamPlayer2D" parent="." unique_id=123144030]
+[node name="hit_hip" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("5_2dxxf")
 
-[node name="IntroUI" type="Control" parent="." unique_id=459081766]
+[node name="IntroUI" type="Control" parent="."]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -113,7 +113,7 @@ offset_bottom = 720.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="IntroBG" type="TextureRect" parent="IntroUI" unique_id=2028583929]
+[node name="IntroBG" type="TextureRect" parent="IntroUI"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -124,7 +124,7 @@ texture = ExtResource("3_vwhkm")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="IntroText" type="Label" parent="IntroUI" unique_id=1456505077]
+[node name="IntroText" type="Label" parent="IntroUI"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -145,5 +145,5 @@ text = "マスクを剥ぎ取れ！"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="qt_in" type="AudioStreamPlayer" parent="." unique_id=1504164605]
+[node name="qt_in" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("6_qtin")

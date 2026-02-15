@@ -98,7 +98,8 @@ func Move(input_dir : Vector2, delta : float):
 	if dashspeed > 0:
 		player_main.is_run_dashing = true
 		player_main.run_dash_direction = dash_direction
-		player.velocity = input_dir * movespeed + dash_direction * dashspeed
+		var speed_mult: float = player_main.power_bait_speed_mult if player_main else 1.0
+		player.velocity = input_dir * (float(movespeed) * speed_mult) + dash_direction * dashspeed
 		player.move_and_slide()
 		if input_dir.length() <= 0:
 			Transition("Idle")
@@ -108,7 +109,8 @@ func Move(input_dir : Vector2, delta : float):
 
 	# 自動走行中：方向入力がなく auto_run_direction が有効なあいだ走り続ける
 	if auto_run_direction != Vector2.ZERO and input_dir.length() <= 0:
-		var run_speed := float(movespeed) * AUTO_RUN_SPEED_MULT
+		var speed_mult: float = player_main.power_bait_speed_mult if player_main else 1.0
+		var run_speed := float(movespeed) * AUTO_RUN_SPEED_MULT * speed_mult
 		player.velocity = auto_run_direction.normalized() * run_speed
 		player.move_and_slide()
 		return
@@ -118,7 +120,8 @@ func Move(input_dir : Vector2, delta : float):
 		var use_grid: bool = (player as PlayerMain).use_grid_movement if player is PlayerMain else false
 		if use_grid:
 			# グリッドモード：velocityを設定して向きを変える（実際の移動はワープ）
-			player.velocity = input_dir * movespeed
+			var speed_mult: float = player_main.power_bait_speed_mult if player_main else 1.0
+			player.velocity = input_dir * (float(movespeed) * speed_mult)
 			if step_timer <= 0:
 				var step := Vector2(
 					STEP_SIZE * sign(input_dir.x) if absf(input_dir.x) > 0.1 else 0,
@@ -128,7 +131,8 @@ func Move(input_dir : Vector2, delta : float):
 					player.global_position += step
 				step_timer = step_cooldown
 		else:
-			player.velocity = input_dir * movespeed
+			var speed_mult: float = player_main.power_bait_speed_mult if player_main else 1.0
+			player.velocity = input_dir * (float(movespeed) * speed_mult)
 			player.move_and_slide()
 	else:
 		player.velocity = Vector2.ZERO

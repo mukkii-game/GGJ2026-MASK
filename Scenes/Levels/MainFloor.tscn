@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://bivaepijd0jte" path="res://Scripts/BGMFromOffset.gd" id="17_bgm"]
 [ext_resource type="Script" uid="uid://cb0kn4cyi7ch7" path="res://Scripts/DebugContactOverlay.gd" id="18_debug"]
 [ext_resource type="PackedScene" uid="uid://cornerpost01" path="res://Scenes/Interactables/CornerPost.tscn" id="19_post"]
+[ext_resource type="Script" path="res://Scripts/PowerBaitSpawner.gd" id="20_spawner"]
 
 [node name="Scene_Root" type="Node2D" unique_id=1760463080]
 texture_filter = 1
@@ -79,6 +80,9 @@ scale = Vector2(1, 1)
 behavior_type = 3
 
 [node name="SceneSettings" parent="." unique_id=1562767808 instance=ExtResource("4_8uhxl")]
+
+[node name="PowerBaitSpawner" type="Node" parent="."]
+script = ExtResource("20_spawner")
 
 [node name="Scene" type="Node" parent="." unique_id=486170183]
 

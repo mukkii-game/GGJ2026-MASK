@@ -49,6 +49,21 @@ var _just_landed_frame := false
 var fire_dash_damage_mult: float = 1.0
 ## 炎ダッシュ中は受けるダメージ倍率（2倍・ハイリスクハイリターン）
 var fire_dash_damage_taken_mult: float = 1.0
+
+## パワーエサ取得：一定時間プレイヤー速度2倍
+func apply_power_bait_speed(duration_sec: float) -> void:
+	power_bait_speed_mult = 2.0
+	power_bait_speed_until = duration_sec
+
+## パワーエサ取得：一定時間敵からダメージを受けない
+func apply_power_bait_enemy_immune(duration_sec: float) -> void:
+	power_bait_enemy_damage_immune_until = duration_sec
+
+## 敵からのダメージ（体当たり・敵攻撃）。パワーエサ効果中は無効
+func take_damage_from_enemy(amount: int) -> void:
+	if power_bait_enemy_damage_immune_until > 0.0:
+		return
+	_take_damage(amount)
 ## 体当たりダメージ用クールダウン（秒）
 var body_contact_cooldown := 0.0
 ## 接した瞬間に食らうように間隔を短めに
@@ -89,6 +104,12 @@ const ROPE_BOTTOM_BOUNCE := 256
 ## 敵と接したあとこの秒数だけモーション2倍速
 var _enemy_contact_timer: float = 0.0
 const ENEMY_CONTACT_SPEED_SEC := 2.0
+## パワーエサ取得後：移動速度倍率（1.0＝通常、2.0＝2倍速）
+var power_bait_speed_mult: float = 1.0
+## パワーエサ速度アップの残り時間（秒）。0以下で power_bait_speed_mult を1に戻す
+var power_bait_speed_until: float = 0.0
+## パワーエサ「敵全員弱り」効果：敵からダメージを受けない残り時間（秒）
+var power_bait_enemy_damage_immune_until: float = 0.0
 
 ## アリーナマット（ロープの見た目をたわませる用）
 var _arena_mat: Node2D = null
@@ -159,6 +180,14 @@ func _apply_2p_sprite_frames() -> void:
 
 func _process(delta: float):
 	super(delta)
+	# パワーエサ速度アップの残り時間
+	if power_bait_speed_until > 0.0:
+		power_bait_speed_until -= delta
+		if power_bait_speed_until <= 0.0:
+			power_bait_speed_mult = 1.0
+	# パワーエサ「敵からダメージ無効」の残り時間
+	if power_bait_enemy_damage_immune_until > 0.0:
+		power_bait_enemy_damage_immune_until -= delta
 	# 敵との接触タイマー（接している間は2秒にリセット、離れたら減衰）
 	var in_contact := false
 	for node in get_tree().get_nodes_in_group("Enemy"):
@@ -537,7 +566,7 @@ func _body_contact(delta: float) -> void:
 					GameManager.body_contact_type_timer = 1.5
 					_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
 					_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(2.0, 0.2, 0.2, 1.0))
-				_take_damage(20)
+				take_damage_from_enemy(20)
 				if not GameManager.training_mode:
 					_flash_white_body_contact()
 				
@@ -566,7 +595,7 @@ func _body_contact(delta: float) -> void:
 					leave_post_2x_jump = false
 				
 				enemy._take_damage(damage_to_enemy)
-				_take_damage(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
+				take_damage_from_enemy(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
 			
 			# 正面衝突：血のエフェクトを2倍大きく、2倍長く
 			if fire_dash_damage_mult > 1.5:

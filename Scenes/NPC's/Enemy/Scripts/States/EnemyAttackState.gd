@@ -28,7 +28,7 @@ func _on_hit_box_body_entered(body):
 func deal_damage_to_player(player : PlayerMain):
 	hit_particles.emitting = true
 	var dmg = int(attack.damage * enemy.charge_damage_mult * player.fire_dash_damage_taken_mult)
-	player._take_damage(dmg)
+	player.take_damage_from_enemy(dmg)
 	
 func play_hitground_sound():
 	AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -10)
