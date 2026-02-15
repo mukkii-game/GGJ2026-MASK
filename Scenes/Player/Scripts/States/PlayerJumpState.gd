@@ -142,6 +142,8 @@ func _land() -> void:
 		if absf(land_pos.x - enemy.global_position.x) <= 2.0 * half and absf(land_pos.y - enemy.global_position.y) <= 2.0 * half:
 			var to_enemy: Vector2 = (enemy.global_position - land_pos).normalized()
 			enemy._take_damage(int(player_main.BODY_DAMAGE_DEALT * damage_mult))
+			if enemy.has_method("notify_stepped_on"):
+				enemy.notify_stepped_on()
 			# 敵を押し飛ばす方向は「敵から離れる方向」（to_enemyの方向）
 			var knock: Vector2 = _axis_knockback(to_enemy, LAND_KNOCKBACK)
 			enemy.global_position += knock

@@ -4,6 +4,9 @@ class_name EnemyMain
 ## 静止・上下ループ・左右ループ・一定範囲ランダム・逃走の5種
 enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee }
 
+## 敵の状態（攻略性向上）：通常・怒り・弱り
+enum EnemyState { Normal, Angry, Weak }
+
 ## 敵同士が重ならないよう、かさなったらずらす用（マット内）
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
@@ -39,6 +42,20 @@ var stage_number: int = 1
 var is_boss: bool = false
 ## トレーニング用ダミー（動かず攻撃しない・プレイヤー検知でチェースに移行しない）
 var is_training_dummy: bool = false
+## 敵の状態（通常／怒り／弱り）。トレーニングダミーはスポーン時に固定され変動しない
+var enemy_state: EnemyState = EnemyState.Normal
+## 怒り：残りHPがこの割合以下で発生（アルゴリズム）
+const ANGRY_HP_RATIO := 0.4
+## 怒り：スポーンからこの秒数経過でも発生（アルゴリズム）
+const ANGRY_TIME_SEC := 15.0
+## 弱り：かすり／踏みのあとこの秒数だけ弱り状態
+const WEAK_DURATION_SEC := 8.0
+var _state_timer: float = 0.0
+var _weak_until: float = 0.0
+## 怒り時の色（体当たり赤と区別するためマゼンタ系）
+const STATE_ANGRY_MODULATE := Color(1.35, 0.45, 0.55, 1.0)
+## 弱り時の色
+const STATE_WEAK_MODULATE := Color(0.5, 0.6, 1.4, 1.0)
 ## 被弾後この秒数だけ超高速で離脱（FleeStateで使用）
 var super_flee_remaining: float = 0.0
 ## プレイヤーと接したあとこの秒数だけモーション2倍速
@@ -51,10 +68,17 @@ func _process(delta: float) -> void:
 		super_flee_remaining = maxf(0.0, super_flee_remaining - delta)
 	if _player_contact_timer > 0.0:
 		_player_contact_timer = maxf(0.0, _player_contact_timer - delta)
+	_weak_until = maxf(0.0, _weak_until - delta)
+	if not is_training_dummy:
+		_state_timer += delta
+		_update_enemy_state()
 	super._process(delta)
 	if is_dead or GameManager.enemies_frozen:
 		return
 	_push_apart_from_other_enemies()
+	# 状態に応じた色（被弾フラッシュ中は触らない）
+	if sprite and not invincible:
+		sprite.modulate = _get_state_modulate()
 	# アニメ速度：飛んでいるとき4倍速、プレイヤーと接した直後数秒は2倍速、それ以外は通常
 	if sprite:
 		if fsm.current_state and fsm.current_state.name.to_lower() == "enemy_launched_state":
@@ -155,6 +179,34 @@ func _ready():
 			fsm.force_change_state("enemy_wander_state")
 		Behavior.Flee:
 			fsm.force_change_state("enemy_flee_state")
+
+func _get_state_modulate() -> Color:
+	match enemy_state:
+		EnemyState.Angry:
+			return STATE_ANGRY_MODULATE
+		EnemyState.Weak:
+			return STATE_WEAK_MODULATE
+		_:
+			return Color.WHITE
+
+func _update_enemy_state() -> void:
+	if _weak_until > 0.0:
+		enemy_state = EnemyState.Weak
+		return
+	var max_hp := maxf(1.0, float(max_health))
+	var hp_ratio := float(health) / max_hp
+	if hp_ratio <= ANGRY_HP_RATIO or _state_timer >= ANGRY_TIME_SEC:
+		enemy_state = EnemyState.Angry
+	else:
+		enemy_state = EnemyState.Normal
+
+## かすりを食らったとき（弱り状態へ）
+func notify_graze_hit() -> void:
+	_weak_until = WEAK_DURATION_SEC
+
+## ジャンプで踏まれたとき（弱り状態へ）
+func notify_stepped_on() -> void:
+	_weak_until = WEAK_DURATION_SEC
 
 ## ボスがダメージを受けたら超高速離脱フラグを立てる
 func _on_took_damage(_amount: int) -> void:

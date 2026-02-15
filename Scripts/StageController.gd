@@ -180,7 +180,7 @@ func _process(delta: float) -> void:
 				var center := Vector2(640.0, 360.0)
 				if spawn_points.size() >= 3:
 					center = spawn_points[2]
-				_spawn_enemy_at(center, false)
+				_spawn_training_enemy_at(center, EnemyMain.EnemyState.Normal)
 				_training_respawn_timer = -1.0
 		return
 	
@@ -204,10 +204,19 @@ func _input(_event: InputEvent) -> void:
 ## 初期配置（ステージ1は全員雑魚、2〜4は最初の1体がボス）
 func _spawn_initial_enemies() -> void:
 	if GameManager.training_mode:
-		var center := Vector2(640.0, 360.0)
-		if spawn_points.size() >= 3:
-			center = spawn_points[2]
-		_spawn_enemy_at(center, false)
+		var base_pos := Vector2(640.0, 360.0)
+		var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+		if subvp:
+			var main_floor := subvp.get_node_or_null("MainFloor")
+			if main_floor:
+				var player := main_floor.get_node_or_null("Player") as Node2D
+				if player:
+					base_pos = player.global_position
+		# 通常・怒り・弱りの3体をプレイヤー位置からずらして配置
+		var offsets: Array[Vector2] = [Vector2(-130, 0), Vector2(0, 0), Vector2(130, 0)]
+		var states: Array[EnemyMain.EnemyState] = [EnemyMain.EnemyState.Normal, EnemyMain.EnemyState.Angry, EnemyMain.EnemyState.Weak]
+		for i in range(3):
+			_spawn_training_enemy_at(base_pos + offsets[i], states[i])
 		return
 	var count: int = stage_params.get("initial_count", 1)
 	var has_boss_stage: bool = GameManager.current_stage >= 2
@@ -235,38 +244,43 @@ func _spawn_reinforcement() -> void:
 		var random_point := spawn_points[randi() % spawn_points.size()]
 		_spawn_enemy_at(random_point, false)
 
+## トレーニング用：1体スポーン（通常・怒り・弱りのいずれかを固定）
+func _spawn_training_enemy_at(pos: Vector2, state: EnemyMain.EnemyState) -> void:
+	if not enemy_scene:
+		return
+	var enemy := enemy_scene.instantiate() as EnemyMain
+	if not enemy:
+		return
+	enemy.health = 200
+	enemy.stage_number = 1
+	enemy.is_boss = false
+	enemy.use_qte_on_defeat = false
+	enemy.behavior_type = EnemyMain.Behavior.Idle
+	enemy.is_training_dummy = true
+	enemy.patrol_distance_override = 0.0
+	enemy.patrol_speed_override = 0.0
+	enemy.enemy_state = state
+	enemy.scale = Vector2(1, 1)
+	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+	if subvp:
+		var main_floor := subvp.get_node_or_null("MainFloor")
+		if main_floor:
+			var npcs := main_floor.get_node_or_null("NPCs")
+			if npcs:
+				npcs.add_child(enemy)
+				enemy.global_position = pos
+			else:
+				main_floor.add_child(enemy)
+				enemy.global_position = pos
+	var tex_path := _get_enemy_texture_path(1, false)
+	_apply_enemy_sprite(enemy, tex_path)
+
 ## 敵をスポーン
 func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	if not enemy_scene:
 		return
 	var enemy := enemy_scene.instantiate() as EnemyMain
 	if not enemy:
-		return
-	
-	# トレーニングモード：中央に動かず攻撃しない敵1体（倒したら復活）
-	if GameManager.training_mode:
-		enemy.health = 200
-		enemy.stage_number = 1
-		enemy.is_boss = false
-		enemy.use_qte_on_defeat = false
-		enemy.behavior_type = EnemyMain.Behavior.Idle
-		enemy.is_training_dummy = true
-		enemy.patrol_distance_override = 0.0
-		enemy.patrol_speed_override = 0.0
-		enemy.scale = Vector2(1, 1)
-		var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
-		if subvp:
-			var main_floor := subvp.get_node_or_null("MainFloor")
-			if main_floor:
-				var npcs := main_floor.get_node_or_null("NPCs")
-				if npcs:
-					npcs.add_child(enemy)
-					enemy.global_position = pos
-				else:
-					main_floor.add_child(enemy)
-					enemy.global_position = pos
-		var tex_path := _get_enemy_texture_path(1, false)
-		_apply_enemy_sprite(enemy, tex_path)
 		return
 	
 	# ステージごとのパラメータ設定

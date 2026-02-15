@@ -472,6 +472,8 @@ func _body_contact(delta: float) -> void:
 				damage = 50
 				leave_post_2x_jump = false
 			enemy._take_damage(damage)
+			if enemy.has_method("notify_graze_hit"):
+				enemy.notify_graze_hit()
 			if enemy.hit_particles:
 				enemy.hit_particles.amount = 16
 				enemy.hit_particles.lifetime = 0.3
