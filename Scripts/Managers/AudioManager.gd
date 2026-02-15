@@ -8,6 +8,8 @@ const ENEMY_HIT = preload("res://Art/Audio/Effects/Enemy_hit.ogg")
 const BLOODY_HIT = preload("res://Art/Audio/Effects/bloody_hit.ogg")
 const COIN_PICK = preload("res://Art/Audio/Effects/coin_pick.ogg")
 const QUEST_SOUND = preload("res://Art/Audio/Effects/QuestSound.ogg")
+## パワーエサ取得時（バクッ／ボワーン／強くなった系）。差し替え用に別定数
+const POWER_BAIT_GET = preload("res://Art/Audio/Effects/QuestSound.ogg")
 #endregion
 
 var audio_players = []

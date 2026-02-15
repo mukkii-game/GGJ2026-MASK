@@ -40,12 +40,15 @@ const DRAW_H := 48.0
 ## 足元の影（プレイヤー同様・四角）のサイズとオフセット（ジャンプ高さぶん下＝足元）
 const SHADOW_SIZE := 28.0
 const SHADOW_Y_OFFSET := FLOAT_HEIGHT
+## 取得判定：物理に頼らず「この範囲にプレイヤーがいれば取れる」（SubViewport でも確実）
+const COLLECT_HALF_X := 55.0
+const COLLECT_HALF_Y := 90.0
 
 
 func _ready() -> void:
-	# 当たり判定を足元の影の位置に（浮いているので通常接触では取れない＝影の上でジャンプしたときだけ取れる）
 	if _area:
-		_area.position = Vector2(0.0, SHADOW_Y_OFFSET)
+		_area.position = Vector2.ZERO
+		_area.body_entered.connect(_on_body_entered)
 
 
 func _draw() -> void:
@@ -94,24 +97,52 @@ func _process(delta: float) -> void:
 	else:
 		base_pos.x += wobble
 	global_position = base_pos
-	# 足元の影の位置にプレイヤーがいて、かつジャンプ中なら取得（コーナーポストジャンプも含む）
+	_try_collect_by_distance()
 	_try_collect()
 	if t >= 1.0:
 		queue_free()
+
+
+func _on_body_entered(body: Node2D) -> void:
+	if _collected:
+		return
+	if not body.is_in_group("Player") or not body is PlayerMain:
+		return
+	_collected = true
+	_apply_random_effect(body as PlayerMain)
+	AudioManager.play_sound(AudioManager.POWER_BAIT_GET, 0, -2)
+	queue_free()
+
+
+## 距離で取得判定（物理の当たり判定に依存しない・SubViewport でも動く）
+func _try_collect_by_distance() -> void:
+	if _collected:
+		return
+	var my_pos := global_position
+	for node in get_tree().get_nodes_in_group("Player"):
+		if not node is PlayerMain:
+			continue
+		var pm := node as PlayerMain
+		if not is_instance_valid(pm) or pm.is_dead:
+			continue
+		var dp := pm.global_position - my_pos
+		if absf(dp.x) <= COLLECT_HALF_X and absf(dp.y) <= COLLECT_HALF_Y:
+			_collected = true
+			_apply_random_effect(pm)
+			AudioManager.play_sound(AudioManager.POWER_BAIT_GET, 0, -2)
+			queue_free()
+			return
 
 
 func _try_collect() -> void:
 	if _collected or not _area:
 		return
 	for body in _area.get_overlapping_bodies():
-		if not body.is_in_group("Player"):
-			continue
-		var pm := body as PlayerMain
-		if not pm or not pm.is_jumping:
+		if not body.is_in_group("Player") or not body is PlayerMain:
 			continue
 		_collected = true
-		_apply_random_effect(pm)
-		AudioManager.play_sound(AudioManager.COIN_PICK, 0, -6)
+		_apply_random_effect(body as PlayerMain)
+		AudioManager.play_sound(AudioManager.POWER_BAIT_GET, 0, -2)
 		queue_free()
 		return
 

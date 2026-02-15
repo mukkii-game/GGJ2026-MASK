@@ -44,6 +44,7 @@ texture = ExtResource("3_rcobd")
 flip_h = true
 
 [node name="Audience" parent="." unique_id=222366286 instance=ExtResource("16_audience")]
+visible = false
 
 [node name="Player" parent="." unique_id=1291361565 instance=ExtResource("1_v023b")]
 position = Vector2(640, 360)
@@ -170,6 +171,7 @@ z_index = 200
 script = ExtResource("18_debug")
 
 [node name="RopeBottomOverlay" type="CanvasLayer" parent="." unique_id=1199664201]
+visible = false
 layer = 10
 
 [node name="RopeOverlayRoot" type="Control" parent="RopeBottomOverlay" unique_id=1105976886]

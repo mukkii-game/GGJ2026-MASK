@@ -220,15 +220,14 @@ func _process(delta: float):
 		GameManager.use_grid_mode = not GameManager.use_grid_mode
 		use_grid_movement = GameManager.use_grid_mode
 
-	# 何か操作したらロープバウンス停止（方向キー・Mジャンプ・N走りで解除）
+	# ロープバウンス中に「新しく」キーを押したときだけ停止（押しっぱなしでは解除しない＝パワーエサ後も跳ね返る）
 	if rope_bounce_running:
 		var mv_left := "MoveLeft" if not is_player_two else "Move2Left"
 		var mv_right := "MoveRight" if not is_player_two else "Move2Right"
 		var mv_up := "MoveUp" if not is_player_two else "Move2Up"
 		var mv_down := "MoveDown" if not is_player_two else "Move2Down"
 		var jump_act := "Jump" if not is_player_two else "Jump2"
-		var input := Input.get_vector(mv_left, mv_right, mv_up, mv_down)
-		if input.length() > 0.1 or Input.is_action_just_pressed(jump_act) or Input.is_action_just_pressed("Dash"):
+		if Input.is_action_just_pressed(mv_left) or Input.is_action_just_pressed(mv_right) or Input.is_action_just_pressed(mv_up) or Input.is_action_just_pressed(mv_down) or Input.is_action_just_pressed(jump_act) or Input.is_action_just_pressed("Dash"):
 			rope_bounce_running = false
 			rope_bounce_direction = Vector2.ZERO
 	
@@ -247,63 +246,57 @@ func _process(delta: float):
 		z_index = 10
 	else:
 		z_index = 0
-	# ジャンプ中はYクランプ・体当たりしない
-	if not is_jumping:
-		var p := global_position
-		
-		# ロープバウンス自動移動中（速度は歩きの約1.2倍程度に抑える）
-		if rope_bounce_running:
-			var move_speed := 480.0 * 2.0 / 1.2  # 約800（以前の2倍速を1.2で割った値）
-			p += rope_bounce_direction * move_speed * delta
-			# 目標到達チェック
-			if rope_bounce_direction.x > 0 and p.x >= rope_bounce_target.x:
-				p.x = rope_bounce_target.x
-				rope_bounce_running = false
-			elif rope_bounce_direction.x < 0 and p.x <= rope_bounce_target.x:
-				p.x = rope_bounce_target.x
-				rope_bounce_running = false
-			elif rope_bounce_direction.y > 0 and p.y >= rope_bounce_target.y:
-				p.y = rope_bounce_target.y
-				rope_bounce_running = false
-			elif rope_bounce_direction.y < 0 and p.y <= rope_bounce_target.y:
-				p.y = rope_bounce_target.y
-				rope_bounce_running = false
-			global_position = p
-			# ロープバウンス中は敵に当たる
-			_body_contact(delta)
-			return
-		
-		# 通常時：ロープ接触チェック（左右のみバネる）
-		# 左ロープに触れたら右へ自動移動（ロープ位置ぴったりでバネる）
-		if p.x <= MAT_LEFT:
-			rope_bounce_running = true
-			rope_bounce_direction = Vector2.RIGHT
-			rope_bounce_target = Vector2(MAT_RIGHT, p.y)
-			# ロープで跳ね返ったら進行方向（右）を向く
-			_face_horizontal(rope_bounce_direction.x)
-			_notify_rope_bounce("left")
-		# 右ロープに触れたら左へ自動移動（ロープ位置ぴったりでバネる）
-		elif p.x >= MAT_RIGHT:
-			rope_bounce_running = true
-			rope_bounce_direction = Vector2.LEFT
-			rope_bounce_target = Vector2(MAT_LEFT, p.y)
-			# ロープで跳ね返ったら進行方向（左）を向く
-			_face_horizontal(rope_bounce_direction.x)
-			_notify_rope_bounce("right")
-		
-		# 上下ロープは「走らない」ので、縦方向のバウンドは行わない
-		# 左右ロープのみ：矯正速度を適用してからクランプ
-		_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * delta)
-		p += _rope_correction_velocity * delta
-		global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
-		var we = get_node_or_null("WindEffect")
-		if we:
-			we.visible = is_auto_running
-		_body_contact(delta)
-	else:
-		# ジャンプ中はXだけマット内に
+	# ジャンプ中はXだけマット内に（Yクランプ・体当たり・ロープバウンスは _physics_process で処理）
+	if is_jumping:
 		var p := global_position
 		global_position.x = clampf(p.x, MAT_LEFT, MAT_RIGHT)
+	var we = get_node_or_null("WindEffect")
+	if we:
+		we.visible = is_auto_running
+
+
+func _physics_process(delta: float) -> void:
+	# ロープ跳ね返り・マット内クランプは移動の後に実行（SubViewport でも確実に動く）
+	if is_jumping:
+		return
+	var p := global_position
+	# ロープバウンス自動移動中（パワーエサ2倍速で逆方向に歩いても必ず跳ね返るよう、余裕で上回る速度に）
+	if rope_bounce_running:
+		var base_speed := 480.0 * 2.0 / 1.2
+		var move_speed := maxf(base_speed, 480.0 * power_bait_speed_mult * 2.2)
+		p += rope_bounce_direction * move_speed * delta
+		if rope_bounce_direction.x > 0 and p.x >= rope_bounce_target.x:
+			p.x = rope_bounce_target.x
+			rope_bounce_running = false
+		elif rope_bounce_direction.x < 0 and p.x <= rope_bounce_target.x:
+			p.x = rope_bounce_target.x
+			rope_bounce_running = false
+		elif rope_bounce_direction.y > 0 and p.y >= rope_bounce_target.y:
+			p.y = rope_bounce_target.y
+			rope_bounce_running = false
+		elif rope_bounce_direction.y < 0 and p.y <= rope_bounce_target.y:
+			p.y = rope_bounce_target.y
+			rope_bounce_running = false
+		global_position = p
+		_body_contact(delta)
+		return
+	# 通常時：ロープ接触チェック（左右のみバネる）
+	if p.x <= MAT_LEFT:
+		rope_bounce_running = true
+		rope_bounce_direction = Vector2.RIGHT
+		rope_bounce_target = Vector2(MAT_RIGHT, p.y)
+		_face_horizontal(rope_bounce_direction.x)
+		_notify_rope_bounce("left")
+	elif p.x >= MAT_RIGHT:
+		rope_bounce_running = true
+		rope_bounce_direction = Vector2.LEFT
+		rope_bounce_target = Vector2(MAT_LEFT, p.y)
+		_face_horizontal(rope_bounce_direction.x)
+		_notify_rope_bounce("right")
+	_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * delta)
+	p += _rope_correction_velocity * delta
+	global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
+	_body_contact(delta)
 
 ## ロープバウンドなど、X方向の進行方向に合わせてスプライトの向きを変える
 func _face_horizontal(dir_x: float) -> void:

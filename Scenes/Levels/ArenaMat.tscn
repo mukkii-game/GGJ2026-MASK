@@ -19,6 +19,7 @@ size = Vector2(300, 720)
 script = ExtResource("1_arenamat")
 
 [node name="MatBackground" type="Node2D" parent="." unique_id=1169735095]
+visible = false
 z_index = -100
 
 [node name="Apron" type="Node2D" parent="MatBackground" unique_id=847568852]
@@ -113,6 +114,7 @@ offset_right = 1002.0
 offset_bottom = 620.0
 
 [node name="RopeFrameBack" type="Node2D" parent="." unique_id=332713384]
+visible = false
 z_index = 165
 
 [node name="RopeTop" type="ColorRect" parent="RopeFrameBack" unique_id=1106025728]
@@ -173,6 +175,7 @@ offset_bottom = 720.0
 color = Color(0.9, 0.15, 0.15, 1)
 
 [node name="RopeBottom" type="Node2D" parent="." unique_id=397493415]
+visible = false
 z_index = -5
 
 [node name="BottomRect" type="ColorRect" parent="RopeBottom" unique_id=2112718072]
