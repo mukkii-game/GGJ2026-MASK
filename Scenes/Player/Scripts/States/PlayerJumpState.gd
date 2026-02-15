@@ -139,6 +139,8 @@ func _land() -> void:
 		var enemy = node as CharacterBase
 		if not is_instance_valid(enemy) or enemy.is_dead:
 			continue
+		if enemy is EnemyMain and (enemy as EnemyMain).is_ring_in_effect_only():
+			continue
 		if absf(land_pos.x - enemy.global_position.x) <= 2.0 * half and absf(land_pos.y - enemy.global_position.y) <= 2.0 * half:
 			var to_enemy: Vector2 = (enemy.global_position - land_pos).normalized()
 			enemy._take_damage(int(player_main.BODY_DAMAGE_DEALT * damage_mult))

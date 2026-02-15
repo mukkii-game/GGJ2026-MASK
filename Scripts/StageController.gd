@@ -244,8 +244,8 @@ func _spawn_reinforcement() -> void:
 		var random_point := spawn_points[randi() % spawn_points.size()]
 		_spawn_enemy_at(random_point, false)
 
-## トレーニング用：1体スポーン（通常・怒り・弱りのいずれかを固定）
-func _spawn_training_enemy_at(pos: Vector2, state: EnemyMain.EnemyState) -> void:
+## トレーニング用：1体スポーン（画面右端からリングインして landing_pos に着地、通常・怒り・弱りを固定）
+func _spawn_training_enemy_at(landing_pos: Vector2, state: EnemyMain.EnemyState) -> void:
 	if not enemy_scene:
 		return
 	var enemy := enemy_scene.instantiate() as EnemyMain
@@ -260,7 +260,10 @@ func _spawn_training_enemy_at(pos: Vector2, state: EnemyMain.EnemyState) -> void
 	enemy.patrol_distance_override = 0.0
 	enemy.patrol_speed_override = 0.0
 	enemy.enemy_state = state
+	enemy.ring_in_landing_pos = landing_pos
 	enemy.scale = Vector2(1, 1)
+	var from_right: bool = randf() >= 0.5
+	var spawn_x: float = RING_IN_SPAWN_RIGHT if from_right else RING_IN_SPAWN_LEFT
 	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
 	if subvp:
 		var main_floor := subvp.get_node_or_null("MainFloor")
@@ -268,10 +271,10 @@ func _spawn_training_enemy_at(pos: Vector2, state: EnemyMain.EnemyState) -> void
 			var npcs := main_floor.get_node_or_null("NPCs")
 			if npcs:
 				npcs.add_child(enemy)
-				enemy.global_position = pos
+				enemy.global_position = Vector2(spawn_x, (MAT_TOP + MAT_BOTTOM) * 0.5)
 			else:
 				main_floor.add_child(enemy)
-				enemy.global_position = pos
+				enemy.global_position = Vector2(spawn_x, (MAT_TOP + MAT_BOTTOM) * 0.5)
 	var tex_path := _get_enemy_texture_path(1, false)
 	_apply_enemy_sprite(enemy, tex_path)
 
@@ -346,26 +349,62 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	if enemy.use_qte_on_defeat:
 		enemy.defeated_for_qte.connect(_on_boss_defeated_for_qte)
 	
-	# SubViewport内のMainFloorに追加
+	# SubViewport内のMainFloorに追加（雑魚は画面右端からリングイン）
 	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
 	if subvp:
 		var main_floor := subvp.get_node_or_null("MainFloor")
 		if main_floor:
+			var spawn_pos := pos
+			if not is_boss:
+				enemy.ring_in_landing_pos = _pick_empty_spot_on_mat(main_floor)
+				var from_right: bool = randf() >= 0.5
+				spawn_pos = Vector2(RING_IN_SPAWN_RIGHT if from_right else RING_IN_SPAWN_LEFT, (MAT_TOP + MAT_BOTTOM) * 0.5)
 			var npcs := main_floor.get_node_or_null("NPCs")
 			if npcs:
 				npcs.add_child(enemy)
-				enemy.global_position = pos
+				enemy.global_position = spawn_pos
 			else:
 				main_floor.add_child(enemy)
-				enemy.global_position = pos
+				enemy.global_position = spawn_pos
 	
 	# ステージ・ボス/雑魚に応じた絵を適用（res://Art/Sprites/）
 	var tex_path := _get_enemy_texture_path(GameManager.current_stage, is_boss)
 	_apply_enemy_sprite(enemy, tex_path)
 
+## リングイン：画面右端／左端スポーン位置（マットより外側・右端か左端から走り込む）
+const MAT_LEFT := 296.0
+const MAT_RIGHT := 984.0
+const MAT_TOP := 106.0
+const MAT_BOTTOM := 614.0
+const RING_IN_SPAWN_RIGHT := 1110.0
+const RING_IN_SPAWN_LEFT := 186.0
+const RING_IN_MIN_DIST := 90.0
+
 ## 雑魚：いままでどおり or ときどき上下/左右ロープ間を死ぬまで往復（プレイヤーより少し遅い速度）
 const ROPE_PATROL_DISTANCE := 344.0  # マット半幅
 const ROPE_PATROL_SPEED := 260.0     # プレイヤーより少し速い
+
+## マット内で他キャラと被らない空き位置を1つ返す（雑魚・トレーニングのリングイン着地用）
+func _pick_empty_spot_on_mat(main_floor: Node) -> Vector2:
+	var obstacles: Array[Vector2] = []
+	var player := main_floor.get_node_or_null("Player") as Node2D
+	if player:
+		obstacles.append(player.global_position)
+	var npcs := main_floor.get_node_or_null("NPCs")
+	if npcs:
+		for c in npcs.get_children():
+			if c is CharacterBase and not (c as CharacterBase).is_dead:
+				obstacles.append(c.global_position)
+	for _attempt in range(25):
+		var p := Vector2(randf_range(MAT_LEFT + 50, MAT_RIGHT - 50), randf_range(MAT_TOP + 50, MAT_BOTTOM - 50))
+		var ok := true
+		for o in obstacles:
+			if p.distance_to(o) < RING_IN_MIN_DIST:
+				ok = false
+				break
+		if ok:
+			return p
+	return Vector2((MAT_LEFT + MAT_RIGHT) * 0.5, (MAT_TOP + MAT_BOTTOM) * 0.5)
 
 func _set_zako_behavior(enemy: EnemyMain, _pos: Vector2) -> void:
 	if randf() < 0.35:  # 35%でロープ往復

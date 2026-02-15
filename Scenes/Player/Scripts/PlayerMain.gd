@@ -373,16 +373,21 @@ func _body_contact(delta: float) -> void:
 	var in_contact := false
 	for node in get_tree().get_nodes_in_group("Enemy"):
 		var e := node as CharacterBase
-		if is_instance_valid(e) and not e.is_dead:
-			if _aabb_overlap(p_pos, e.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
-				in_contact = true
-				break
+		if not is_instance_valid(e) or e.is_dead:
+			continue
+		if e is EnemyMain and (e as EnemyMain).is_ring_in_effect_only():
+			continue
+		if _aabb_overlap(p_pos, e.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
+			in_contact = true
+			break
 	if not in_contact:
 		body_contact_cooldown = 0.0
 		_push_damage_timer = 0.0
 	for node in get_tree().get_nodes_in_group("Enemy"):
 		var enemy = node as CharacterBase
 		if not is_instance_valid(enemy) or enemy.is_dead:
+			continue
+		if enemy is EnemyMain and (enemy as EnemyMain).is_ring_in_effect_only():
 			continue
 		if not _aabb_overlap(p_pos, enemy.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
 			continue

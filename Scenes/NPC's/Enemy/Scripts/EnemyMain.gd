@@ -42,6 +42,8 @@ var stage_number: int = 1
 var is_boss: bool = false
 ## トレーニング用ダミー（動かず攻撃しない・プレイヤー検知でチェースに移行しない）
 var is_training_dummy: bool = false
+## リングイン着地目標（スポーン時に設定すると右端から走り込み→山なりジャンプでここに着地）
+var ring_in_landing_pos: Vector2 = Vector2.ZERO
 ## 敵の状態（通常／怒り／弱り）。トレーニングダミーはスポーン時に固定され変動しない
 var enemy_state: EnemyState = EnemyState.Normal
 ## 怒り：残りHPがこの割合以下で発生（アルゴリズム）
@@ -75,7 +77,9 @@ func _process(delta: float) -> void:
 	super._process(delta)
 	if is_dead or GameManager.enemies_frozen:
 		return
-	_push_apart_from_other_enemies()
+	var in_ring_in: bool = fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state"
+	if not in_ring_in:
+		_push_apart_from_other_enemies()
 	# 状態に応じた色（被弾フラッシュ中は触らない）
 	if sprite and not invincible:
 		sprite.modulate = _get_state_modulate()
@@ -87,9 +91,10 @@ func _process(delta: float) -> void:
 			sprite.speed_scale = 2.0
 		else:
 			sprite.speed_scale = 1.0
-	# 敵が絶対にロープ外に出ないようにクランプ
-	global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
-	global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
+	# 敵が絶対にロープ外に出ないようにクランプ（リングイン中は右から入ってくるのでクランプしない）
+	if not in_ring_in:
+		global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
+		global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
 
 func Turn() -> void:
 	if not sprite:
@@ -166,6 +171,11 @@ func _ready():
 	super()
 	took_damage.connect(_on_took_damage)
 	await get_tree().process_frame
+	# リングイン着地目標が設定されていれば右端から走り込み→山なりジャンプ（最優先）
+	if ring_in_landing_pos != Vector2.ZERO:
+		fsm.force_change_state("enemy_ring_in_state")
+		ring_in_landing_pos = Vector2.ZERO
+		return
 	match behavior_type:
 		Behavior.Idle:
 			fsm.force_change_state("enemy_idle_state")
@@ -208,6 +218,10 @@ func notify_graze_hit() -> void:
 func notify_stepped_on() -> void:
 	_weak_until = WEAK_DURATION_SEC
 
+## リングイン演出中（スポーン〜着地まで）は true。この間は当たり判定なし・敵として認識しない
+func is_ring_in_effect_only() -> bool:
+	return fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state"
+
 ## ボスがダメージを受けたら超高速離脱フラグを立てる
 func _on_took_damage(_amount: int) -> void:
 	if is_boss:
@@ -222,6 +236,9 @@ func _on_detection_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("Player"):
 		if is_training_dummy:
 			return  # トレーニング用ダミーは攻撃・接近しない
+		# リングイン中は最優先で入場のみ。プレイヤー検知でチェースに移行しない
+		if fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state":
+			return
 		_player_contact_timer = PLAYER_CONTACT_SPEED_SEC
 		player_in_range = true
 		# アイドル/パトロール/ワンダー中ならプレイヤーに接近して攻撃（チェース）へ

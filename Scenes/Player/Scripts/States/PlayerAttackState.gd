@@ -36,6 +36,8 @@ func DetermineAttack():
 #Both hitboxes call back to this function through signals
 func _on_hitbox_body_entered(body):
 	if body.is_in_group("Enemy"):
+		if body is EnemyMain and (body as EnemyMain).is_ring_in_effect_only():
+			return
 		deal_damage(body)
 		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 1)
 
