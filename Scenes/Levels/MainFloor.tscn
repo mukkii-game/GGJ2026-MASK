@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://b4l1gom0wsk8p" path="res://Scenes/Interactables/area_exit.tscn" id="8_s7mva"]
 [ext_resource type="PackedScene" uid="uid://bt5yicfpmnlwk" path="res://Scenes/Levels/Basement01.tscn" id="10_hj57s"]
 [ext_resource type="PackedScene" uid="uid://b6xb8nhlqtuhf" path="res://Scenes/ScoreTracker.tscn" id="11_6cy1t"]
-[ext_resource type="AudioStream" uid="uid://cf22uboub1wvu" path="res://Art/Audio/Effects/MainTheme.mp3" id="12_87j7f"]
+[ext_resource type="AudioStream" path="res://Art/Audio/MainThemeNew.mp3" id="12_87j7f"]
 [ext_resource type="PackedScene" uid="uid://48vtm5vekhaq" path="res://Scenes/QuestUpdate.tscn" id="13_fd737"]
 [ext_resource type="Script" uid="uid://rr0wwh6rkc40" path="res://Scripts/QuestGeneral/Quest.gd" id="14_itxyw"]
 [ext_resource type="PackedScene" uid="uid://cproresmat01" path="res://Scenes/Levels/ArenaMat.tscn" id="15_arena"]

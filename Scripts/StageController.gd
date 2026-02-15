@@ -51,13 +51,7 @@ func _ready() -> void:
 		for child in npcs.get_children():
 			child.queue_free()
 	
-	# BGM再生
-	var bgm_path := "res://Art/Audio/MainTheme.mp3"
-	if ResourceLoader.exists(bgm_path):
-		var bgm_player := AudioStreamPlayer.new()
-		bgm_player.stream = load(bgm_path) as AudioStream
-		bgm_player.autoplay = true
-		add_child(bgm_player)
+	# BGMは MainFloor の AudioStreamPlayer（BGMFromOffset）で MainThemeNew.mp3 をループ再生
 	
 	# ステージパラメータを設定
 	_setup_stage_params()
