@@ -18,6 +18,7 @@
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyFleeState.gd" id="31_flee"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyLaunchedState.gd" id="32_launched"]
 [ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyRingInState.gd" id="33_ringin"]
+[ext_resource type="Script" path="res://Scenes/NPC's/Enemy/Scripts/States/EnemyDownState.gd" id="34_down"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_toimg"]
 animations = [{
@@ -359,6 +360,10 @@ script = ExtResource("32_launched")
 
 [node name="enemy_ring_in_state" type="Node" parent="FSM"]
 script = ExtResource("33_ringin")
+
+[node name="enemy_down_state" type="Node" parent="FSM"]
+script = ExtResource("34_down")
+animator = NodePath("../../AnimationPlayer")
 
 [node name="ProgressBar" type="ProgressBar" parent="."]
 visible = false

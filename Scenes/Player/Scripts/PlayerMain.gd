@@ -62,6 +62,8 @@ const BODY_DAMAGE_TAKEN := 8
 const BODY_PUSH_PIXELS := 60.0
 ## 正面衝突（両方ダメージ）時のノックバック＝キャラ約1.5人分・実際に移動で飛ばす
 const BODY_PUSH_PIXELS_FRONTAL := 120.0
+## 通常・半キャラのノックバックを数フレームで動かす時間（その間無敵）
+const BODY_KNOCKBACK_TWEEN_DURATION := 0.2
 ## 正面／半キャラの境：ずれが32未満＝正面、32以上＝半キャラ or かすり
 const HALF_OVERLAP_DIST := 32.0
 ## 半キャラずらしの上限：ずれ 32〜58 未満＝半キャラ、58以上64未満＝かすり
@@ -332,6 +334,11 @@ func _on_kasuri_tween_done(enemy_ref: CharacterBase, _new_player_pos: Vector2) -
 			enemy_ref.set_invincible_for(1.0)
 			enemy_ref.trigger_rope_launch()
 
+## 空中攻撃成功時：プレイヤーと敵を緑フラッシュ
+func flash_aerial_hit(enemy: CharacterBase) -> void:
+	_flash_modulate(sprite if sprite else self, Color(0.25, 1.0, 0.4, 1.0))
+	_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(0.25, 1.0, 0.4, 1.0))
+
 ## 正面衝突でプレイヤーが食らったときの派手な白ぴかぴか
 func _flash_white_body_contact() -> void:
 	_flash_modulate(sprite if sprite else self, Color(2.0, 2.0, 2.0, 1.0))
@@ -375,7 +382,7 @@ func _body_contact(delta: float) -> void:
 		var e := node as CharacterBase
 		if not is_instance_valid(e) or e.is_dead:
 			continue
-		if e is EnemyMain and (e as EnemyMain).is_ring_in_effect_only():
+		if e is EnemyMain and ((e as EnemyMain).is_ring_in_effect_only() or (e as EnemyMain).is_rope_launched()):
 			continue
 		if _aabb_overlap(p_pos, e.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
 			in_contact = true
@@ -387,7 +394,7 @@ func _body_contact(delta: float) -> void:
 		var enemy = node as CharacterBase
 		if not is_instance_valid(enemy) or enemy.is_dead:
 			continue
-		if enemy is EnemyMain and (enemy as EnemyMain).is_ring_in_effect_only():
+		if enemy is EnemyMain and ((enemy as EnemyMain).is_ring_in_effect_only() or (enemy as EnemyMain).is_rope_launched()):
 			continue
 		if not _aabb_overlap(p_pos, enemy.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
 			continue
@@ -442,27 +449,30 @@ func _body_contact(delta: float) -> void:
 				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
 					knock_amount = 150.0
 				
-				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）
+				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）。数フレームで動かし、その間無敵
 				var knock: Vector2 = _axis_knockback(to_enemy, knock_amount)
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
-				if _is_outside_mat(new_enemy_pos):
-					if enemy.has_method("trigger_rope_launch"):
-						enemy.set_invincible_for(1.5)
-						enemy.trigger_rope_launch()
-				else:
-					enemy.global_position = new_enemy_pos
-					enemy.velocity = Vector2.ZERO
-					enemy.knockback_stun_remaining = 0.25
-					enemy.set_invincible_for(0.5)
-				# プレイヤーの反動は小さく（-to_enemyで敵から離れる方向）
 				var new_player_pos := global_position + _axis_knockback(-to_enemy, player_push)
+				enemy.velocity = Vector2.ZERO
+				enemy.knockback_stun_remaining = BODY_KNOCKBACK_TWEEN_DURATION + 0.05
+				enemy.set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
+				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
+				if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
+					enemy.set_invincible_for(1.5)
+					enemy.trigger_rope_launch()
+				else:
+					var tw_e := enemy.create_tween()
+					tw_e.tween_property(enemy, "global_position", new_enemy_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_e.tween_callback(_clamp_enemy_to_mat.bind(enemy))
 				if _is_outside_mat(new_player_pos):
-					# プレイヤーもロープ外に飛ばされた！ロープ反発
 					set_invincible_for(1.5)
 					trigger_rope_launch()
 				else:
-					global_position = new_player_pos
-					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					var tw_p := create_tween()
+					tw_p.tween_property(self, "global_position", new_player_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_p.tween_callback(func() -> void:
+						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					)
 			break
 		if kasuri_ok and body_contact_cooldown <= 0:
 			# かすり：一方的にダメージ、両者斜めにすっ飛ばして離れる。繋がらない（クールダウンで連打防止）
@@ -531,18 +541,21 @@ func _body_contact(delta: float) -> void:
 				if not GameManager.training_mode:
 					_flash_white_body_contact()
 				
-				# プレイヤーを大きく吹っ飛ばす（200px）
+				# プレイヤーを大きく吹っ飛ばす（200px）。数フレームで動かしその間無敵
 				var away: Vector2 = _axis_knockback(-to_enemy, 200.0)
 				var new_player_pos := global_position + away
+				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
 				if _is_outside_mat(new_player_pos):
 					set_invincible_for(1.5)
 					trigger_rope_launch()
 				else:
-					global_position = new_player_pos
-					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					var tw_p := create_tween()
+					tw_p.tween_property(self, "global_position", new_player_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_p.tween_callback(func() -> void:
+						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					)
 				
 				body_contact_cooldown = BODY_CONTACT_INTERVAL
-				set_invincible_for(0.5)
 			else:
 				# 通常の正面衝突
 				var damage_to_enemy: int = int(BODY_DAMAGE_DEALT * fire_dash_damage_mult)
@@ -591,32 +604,40 @@ func _body_contact(delta: float) -> void:
 				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
 					push_amount = 150.0
 				
-				# プレイヤーと敵、両方が離れる方向に押し飛ばす
+				# プレイヤーと敵、両方が離れる方向に数フレームで押し飛ばす（その間無敵）
 				var away: Vector2 = _axis_knockback(-to_enemy, push_amount)
 				var new_player_pos := global_position + away
-				# 敵は反対方向に同じ距離押し飛ばす
 				var new_enemy_pos: Vector2 = Vector2(enemy.global_position.x - away.x, enemy.global_position.y - away.y)
+				enemy.velocity = Vector2.ZERO
+				enemy.knockback_stun_remaining = BODY_KNOCKBACK_TWEEN_DURATION + 0.05
+				enemy.set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
+				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
 				if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
 					enemy.set_invincible_for(1.5)
 					enemy.trigger_rope_launch()
 				else:
-					enemy.global_position = new_enemy_pos
-					enemy.velocity = Vector2.ZERO
-					enemy.knockback_stun_remaining = 0.25
-					enemy.set_invincible_for(0.5)
-				# プレイヤーもロープ外に出たか確認
+					var tw_e := enemy.create_tween()
+					tw_e.tween_property(enemy, "global_position", new_enemy_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_e.tween_callback(_clamp_enemy_to_mat.bind(enemy))
 				if _is_outside_mat(new_player_pos):
 					set_invincible_for(1.5)
 					trigger_rope_launch()
 				else:
-					global_position = new_player_pos
-					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					var tw_p := create_tween()
+					tw_p.tween_property(self, "global_position", new_player_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_p.tween_callback(func() -> void:
+						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					)
 				body_contact_cooldown = BODY_CONTACT_INTERVAL
-				set_invincible_for(0.5)
 		break
 
 func _is_outside_mat(pos: Vector2) -> bool:
 	return pos.x < MAT_LEFT or pos.x > MAT_RIGHT or pos.y < MAT_TOP or pos.y > MAT_BOTTOM
+
+func _clamp_enemy_to_mat(enemy_ref: CharacterBase) -> void:
+	if is_instance_valid(enemy_ref):
+		enemy_ref.global_position.x = clampf(enemy_ref.global_position.x, MAT_LEFT, MAT_RIGHT)
+		enemy_ref.global_position.y = clampf(enemy_ref.global_position.y, MAT_TOP, MAT_BOTTOM)
 
 func _die():
 	super() #calls _die() on base-class CharacterBase
