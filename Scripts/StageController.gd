@@ -211,6 +211,8 @@ func _spawn_initial_enemies() -> void:
 		var states: Array[EnemyMain.EnemyState] = [EnemyMain.EnemyState.Normal, EnemyMain.EnemyState.Angry, EnemyMain.EnemyState.Weak]
 		for i in range(3):
 			_spawn_training_enemy_at(base_pos + offsets[i], states[i])
+		# ダウン状態の雑魚を1体（最初からダウン・移行条件は後でアルゴリズム）
+		_spawn_training_down_enemy_at(base_pos + Vector2(80, 100))
 		return
 	var count: int = stage_params.get("initial_count", 1)
 	var has_boss_stage: bool = GameManager.current_stage >= 2
@@ -269,6 +271,37 @@ func _spawn_training_enemy_at(landing_pos: Vector2, state: EnemyMain.EnemyState)
 			else:
 				main_floor.add_child(enemy)
 				enemy.global_position = Vector2(spawn_x, (MAT_TOP + MAT_BOTTOM) * 0.5)
+	var tex_path := _get_enemy_texture_path(1, false)
+	_apply_enemy_sprite(enemy, tex_path)
+
+## トレーニング用：ダウン状態で1体スポーン（リングインせず指定位置に配置）
+func _spawn_training_down_enemy_at(pos: Vector2) -> void:
+	if not enemy_scene:
+		return
+	var enemy := enemy_scene.instantiate() as EnemyMain
+	if not enemy:
+		return
+	enemy.health = 200
+	enemy.stage_number = 1
+	enemy.is_boss = false
+	enemy.use_qte_on_defeat = false
+	enemy.behavior_type = EnemyMain.Behavior.Idle
+	enemy.is_training_dummy = true
+	enemy.is_down = true
+	enemy.patrol_distance_override = 0.0
+	enemy.patrol_speed_override = 0.0
+	enemy.scale = Vector2(1, 1)
+	var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+	if subvp:
+		var main_floor := subvp.get_node_or_null("MainFloor")
+		if main_floor:
+			var npcs := main_floor.get_node_or_null("NPCs")
+			if npcs:
+				npcs.add_child(enemy)
+				enemy.global_position = pos
+			else:
+				main_floor.add_child(enemy)
+				enemy.global_position = pos
 	var tex_path := _get_enemy_texture_path(1, false)
 	_apply_enemy_sprite(enemy, tex_path)
 

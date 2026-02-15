@@ -15,6 +15,8 @@ var body: CharacterBody2D
 var enemy_main: CharacterBase
 var body_shape: CollisionShape2D
 var sprite_node: Node2D
+## 飛翔前の collision_layer を退避（Exit で復元）
+var _saved_collision_layer: int = 1
 ## ジャンプ開始からの経過時間
 var launch_time: float = 0.0
 ## 開始位置と目標位置
@@ -40,7 +42,9 @@ func Enter() -> void:
 	# 目標位置：反対側のマットのランダムな位置
 	target_pos = _calculate_opposite_position(start_pos)
 	
-	# 当たり判定なし + ロープの壁をすり抜ける
+	# 当たり判定なし + ロープの壁をすり抜ける（一変向中は他キャラと当たらない）
+	_saved_collision_layer = body.collision_layer
+	body.collision_layer = 0
 	body_shape = body.get_node_or_null("BodyCollider") as CollisionShape2D
 	if body_shape:
 		body_shape.disabled = true
@@ -70,6 +74,7 @@ func Enter() -> void:
 func Exit() -> void:
 	if not body:
 		return
+	body.collision_layer = _saved_collision_layer
 	if body_shape and is_instance_valid(body_shape):
 		body_shape.disabled = false
 	body.z_index = 0
