@@ -14,6 +14,8 @@ var _player_scene: PackedScene = preload("res://Scenes/Player/Player.tscn")
 var spawn_timer: float = 0.0
 var stage_cleared: bool = false
 var initial_spawn_done: bool = false  # 初期配置完了前はクリア判定しない
+## トレーニングモード：ダミー撃破後の復活待ち（>=0でカウント中、1.2秒で再スポーン）
+var _training_respawn_timer: float = -1.0
 
 # ステージごとのパラメータ
 var stage_params: Dictionary = {}
@@ -39,7 +41,7 @@ func _ready() -> void:
 		var player2: Node = _player_scene.instantiate()
 		player2.set("is_player_two", true)
 		player2.position = Vector2(840, 360)
-		player2.scale = Vector2(1.25, 1.25)
+		player2.scale = Vector2(1, 1)
 		player2.name = "Player2"
 		player2.visible = show_2p
 		player2.process_mode = PROCESS_MODE_INHERIT if show_2p else PROCESS_MODE_DISABLED
@@ -70,6 +72,9 @@ func _ready() -> void:
 			node.set_invincible_for(2.0)
 
 func _setup_stage_params() -> void:
+	if GameManager.training_mode:
+		stage_params = { "initial_count": 1 }
+		return
 	if GameManager.test_mode:
 		_setup_test_params()
 	else:
@@ -165,6 +170,20 @@ func _process(delta: float) -> void:
 	if stage_cleared:
 		return
 	
+	if GameManager.training_mode:
+		var alive := _get_alive_enemy_count()
+		if alive == 0:
+			if _training_respawn_timer < 0.0:
+				_training_respawn_timer = 0.0
+			_training_respawn_timer += delta
+			if _training_respawn_timer >= 1.2:
+				var center := Vector2(640.0, 360.0)
+				if spawn_points.size() >= 3:
+					center = spawn_points[2]
+				_spawn_enemy_at(center, false)
+				_training_respawn_timer = -1.0
+		return
+	
 	# 全ステージで雑魚を定期的に落とす
 	spawn_timer += delta
 	var interval: float = stage_params.get("spawn_interval", 10.0)
@@ -184,6 +203,12 @@ func _input(_event: InputEvent) -> void:
 
 ## 初期配置（ステージ1は全員雑魚、2〜4は最初の1体がボス）
 func _spawn_initial_enemies() -> void:
+	if GameManager.training_mode:
+		var center := Vector2(640.0, 360.0)
+		if spawn_points.size() >= 3:
+			center = spawn_points[2]
+		_spawn_enemy_at(center, false)
+		return
 	var count: int = stage_params.get("initial_count", 1)
 	var has_boss_stage: bool = GameManager.current_stage >= 2
 	for i in range(count):
@@ -192,6 +217,8 @@ func _spawn_initial_enemies() -> void:
 
 ## 増援（雑魚を定期的に落とす）
 func _spawn_reinforcement() -> void:
+	if GameManager.training_mode:
+		return
 	var npcs = _get_npcs_node()
 	var current_count := npcs.get_child_count() if npcs else 0
 	var max_count: int = 0
@@ -214,6 +241,32 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 		return
 	var enemy := enemy_scene.instantiate() as EnemyMain
 	if not enemy:
+		return
+	
+	# トレーニングモード：中央に動かず攻撃しない敵1体（倒したら復活）
+	if GameManager.training_mode:
+		enemy.health = 200
+		enemy.stage_number = 1
+		enemy.is_boss = false
+		enemy.use_qte_on_defeat = false
+		enemy.behavior_type = EnemyMain.Behavior.Idle
+		enemy.is_training_dummy = true
+		enemy.patrol_distance_override = 0.0
+		enemy.patrol_speed_override = 0.0
+		enemy.scale = Vector2(1, 1)
+		var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+		if subvp:
+			var main_floor := subvp.get_node_or_null("MainFloor")
+			if main_floor:
+				var npcs := main_floor.get_node_or_null("NPCs")
+				if npcs:
+					npcs.add_child(enemy)
+					enemy.global_position = pos
+				else:
+					main_floor.add_child(enemy)
+					enemy.global_position = pos
+		var tex_path := _get_enemy_texture_path(1, false)
+		_apply_enemy_sprite(enemy, tex_path)
 		return
 	
 	# ステージごとのパラメータ設定
@@ -273,7 +326,7 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 		if chase and "move_speed" in chase:
 			chase.move_speed *= 0.5
 	
-	enemy.scale = Vector2(1.25, 1.25)
+	enemy.scale = Vector2(1, 1)
 	
 	# ボスのみ：HP0でQTE開始
 	if enemy.use_qte_on_defeat:
@@ -399,6 +452,8 @@ func _get_alive_enemy_count() -> int:
 
 ## クリア判定（全敵撃破＝雑魚のみのステージはそのまま、ボスステージはQTE成功後にクリア）
 func _check_stage_clear() -> void:
+	if GameManager.training_mode:
+		return  # トレーニングはクリアしない
 	if not initial_spawn_done or current_qte_boss != null:
 		return
 	var alive := _get_alive_enemy_count()

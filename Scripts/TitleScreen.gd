@@ -17,10 +17,10 @@ func _ready() -> void:
 	# 選択中ボタン用スタイル（目立つ色）
 	_style_selected = StyleBoxFlat.new()
 	_style_selected.bg_color = Color(0.95, 0.75, 0.15, 1)
-	_style_selected.set_corner_radius_all(12)
-	_style_selected.set_content_margin_all(10)
-	_style_selected.content_margin_left = 24
-	_style_selected.content_margin_right = 24
+	_style_selected.set_corner_radius_all(8)
+	_style_selected.set_content_margin_all(6)
+	_style_selected.content_margin_left = 16
+	_style_selected.content_margin_right = 16
 	_style_selected.border_width_left = 3
 	_style_selected.border_width_top = 3
 	_style_selected.border_width_right = 3
@@ -29,10 +29,10 @@ func _ready() -> void:
 	# 通常スタイル（ボタンから取得するので後で設定）
 	_style_normal = StyleBoxFlat.new()
 	_style_normal.bg_color = Color(0.15, 0.35, 0.75, 1)
-	_style_normal.set_corner_radius_all(12)
-	_style_normal.set_content_margin_all(10)
-	_style_normal.content_margin_left = 24
-	_style_normal.content_margin_right = 24
+	_style_normal.set_corner_radius_all(8)
+	_style_normal.set_content_margin_all(6)
+	_style_normal.content_margin_left = 16
+	_style_normal.content_margin_right = 16
 
 	# 1P / 2P / テスト の3ボタンを取得（シーンで同じ名前のノードにしておく）
 	var container = get_node_or_null("ButtonsContainer")
@@ -48,15 +48,17 @@ func _ready() -> void:
 	if _mode_buttons.size() >= 3:
 		_mode_buttons[2].pressed.connect(_on_test_pressed)
 	if _mode_buttons.size() >= 4:
-		_mode_buttons[3].pressed.connect(_on_stage_pressed.bind(1))
+		_mode_buttons[3].pressed.connect(_on_training_pressed)
 	if _mode_buttons.size() >= 5:
-		_mode_buttons[4].pressed.connect(_on_stage_pressed.bind(2))
+		_mode_buttons[4].pressed.connect(_on_stage_pressed.bind(1))
 	if _mode_buttons.size() >= 6:
-		_mode_buttons[5].pressed.connect(_on_stage_pressed.bind(3))
+		_mode_buttons[5].pressed.connect(_on_stage_pressed.bind(2))
 	if _mode_buttons.size() >= 7:
-		_mode_buttons[6].pressed.connect(_on_stage_pressed.bind(4))
+		_mode_buttons[6].pressed.connect(_on_stage_pressed.bind(3))
 	if _mode_buttons.size() >= 8:
-		_mode_buttons[7].pressed.connect(_on_ending_pressed)
+		_mode_buttons[7].pressed.connect(_on_stage_pressed.bind(4))
+	if _mode_buttons.size() >= 9:
+		_mode_buttons[8].pressed.connect(_on_ending_pressed)
 
 	# ESC確認パネル（暗い背景・最前面に表示）
 	_confirm_panel = get_node_or_null("ConfirmReturnPanel")
@@ -163,14 +165,14 @@ func _highlight_selection() -> void:
 			btn.add_theme_stylebox_override("normal", _style_selected)
 			btn.add_theme_stylebox_override("hover", _style_selected)
 			btn.add_theme_stylebox_override("pressed", _style_selected)
-			btn.add_theme_font_size_override("font_size", 56)
+			btn.add_theme_font_size_override("font_size", 32)
 			btn.add_theme_color_override("font_color", Color(0.1, 0.1, 0.1, 1))
 			btn.grab_focus()
 		else:
 			btn.add_theme_stylebox_override("normal", _style_normal)
 			btn.add_theme_stylebox_override("hover", _style_normal)
 			btn.add_theme_stylebox_override("pressed", _style_normal)
-			btn.add_theme_font_size_override("font_size", 48)
+			btn.add_theme_font_size_override("font_size", 28)
 			btn.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 
 func _show_confirm_return() -> void:
@@ -265,6 +267,15 @@ func _on_test_pressed() -> void:
 	_play_decision_sound()
 	GameManager.test_mode = true
 	GameManager.two_player_mode = false
+	_start_game()
+
+## トレーニングモード（中央に動かず攻撃しない敵・倒したら復活）
+func _on_training_pressed() -> void:
+	_play_decision_sound()
+	GameManager.test_mode = true
+	GameManager.two_player_mode = false
+	GameManager.training_mode = true
+	GameManager.current_stage = 1
 	_start_game()
 
 func _start_game() -> void:

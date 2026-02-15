@@ -11,7 +11,7 @@ const JUMP_DURATION_POST := 1.7
 const JUMP_VISUAL_HEIGHT := 100.0
 ## 着地時に敵に与えるダメージ倍率（体当たりの2倍）
 const LAND_DAMAGE_MULT := 2
-## 着地時ノックバック量（キャラ1人分＝80、scale 1.25考慮）
+## 着地時ノックバック量（キャラ64に合わせて60）
 const LAND_KNOCKBACK := 60.0
 ## ポストから降りるジャンプ時の回転（1回転の秒数）
 const POST_JUMP_ROTATION_DURATION := 1.0

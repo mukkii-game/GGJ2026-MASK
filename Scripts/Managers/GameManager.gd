@@ -16,6 +16,8 @@ var current_stage: int = 1
 var stage_cleared: Array[bool] = [false, false, false, false]
 ## テストモード（true=簡単バランス、false=本番バランス）
 var test_mode: bool = false
+## トレーニングモード（中央に動かず攻撃しない敵1体・倒したら復活）
+var training_mode: bool = false
 
 #NOTE This class is our game manager and handles the players money and loading scenes
 #These functions can be called globally from anywhere
@@ -51,4 +53,5 @@ func load_next_stage():
 func load_title():
 	current_stage = 1
 	stage_cleared = [false, false, false, false]
+	training_mode = false
 	get_tree().change_scene_to_file("res://Scenes/Misc/TitleScreen.tscn")

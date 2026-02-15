@@ -46,11 +46,11 @@ flip_h = true
 
 [node name="Player" parent="." unique_id=1291361565 instance=ExtResource("1_v023b")]
 position = Vector2(640, 360)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1, 1)
 
 [node name="Player2" parent="." unique_id=1076285188 instance=ExtResource("1_v023b")]
 position = Vector2(840, 360)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1, 1)
 is_player_two = true
 
 [node name="NPCs" type="Node" parent="." unique_id=1564613766]
@@ -58,24 +58,24 @@ is_player_two = true
 [node name="EnemyBounce" parent="NPCs" unique_id=1677050120 instance=ExtResource("2_gsqk0")]
 modulate = Color(0.35, 1, 0.35, 1)
 position = Vector2(400, 200)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1, 1)
 
 [node name="EnemyWander" parent="NPCs" unique_id=1653571523 instance=ExtResource("2_gsqk0")]
 modulate = Color(1, 1, 0.4, 1)
 position = Vector2(520, 400)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1, 1)
 behavior_type = 1
 
 [node name="EnemyChase" parent="NPCs" unique_id=883394220 instance=ExtResource("2_gsqk0")]
 modulate = Color(1, 0.45, 0.35, 1)
 position = Vector2(760, 250)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1, 1)
 behavior_type = 2
 
 [node name="EnemyCharge" parent="NPCs" unique_id=1785789683 instance=ExtResource("2_gsqk0")]
 modulate = Color(0.85, 0.4, 1, 1)
 position = Vector2(500, 500)
-scale = Vector2(1.25, 1.25)
+scale = Vector2(1, 1)
 behavior_type = 3
 
 [node name="SceneSettings" parent="." unique_id=1562767808 instance=ExtResource("4_8uhxl")]

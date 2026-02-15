@@ -9,7 +9,7 @@ const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
 const MAT_TOP := 106.0
 const MAT_BOTTOM := 614.0
-const BODY_HALF := 40.0
+const BODY_HALF := 32.0
 
 @onready var fsm = $FSM as FiniteStateMachine
 var player_in_range = false
@@ -37,6 +37,8 @@ const BOSS3_FLIP_DELAY := 1.0
 var stage_number: int = 1
 ## ボスキャラか（特殊行動用）
 var is_boss: bool = false
+## トレーニング用ダミー（動かず攻撃しない・プレイヤー検知でチェースに移行しない）
+var is_training_dummy: bool = false
 ## 被弾後この秒数だけ超高速で離脱（FleeStateで使用）
 var super_flee_remaining: float = 0.0
 ## プレイヤーと接したあとこの秒数だけモーション2倍速
@@ -166,6 +168,8 @@ func finished_attacking():
 
 func _on_detection_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("Player"):
+		if is_training_dummy:
+			return  # トレーニング用ダミーは攻撃・接近しない
 		_player_contact_timer = PLAYER_CONTACT_SPEED_SEC
 		player_in_range = true
 		# アイドル/パトロール/ワンダー中ならプレイヤーに接近して攻撃（チェース）へ

@@ -74,7 +74,7 @@ func Update(delta: float):
 					return
 			state_transition.emit(self, "enemy_idle_state")
 			return
-		if dist < 40:
+		if dist < 32:
 			body.charge_damage_mult = charge_damage_mult
 			state_transition.emit(self, "enemy_attack_state")
 			return

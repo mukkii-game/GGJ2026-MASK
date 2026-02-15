@@ -38,7 +38,7 @@ func _ready() -> void:
 		bgm_player.play()
 	
 	# ボタン押下で終了
-	var btn = get_node_or_null("ExitButton")
+	var btn = get_node_or_null("TwoColumn/TextColumn/ExitButton")
 	if btn:
 		btn.pressed.connect(_back_to_title)
 

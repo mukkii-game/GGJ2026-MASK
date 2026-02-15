@@ -53,17 +53,17 @@ var fire_dash_damage_taken_mult: float = 1.0
 var body_contact_cooldown := 0.0
 ## 接した瞬間に食らうように間隔を短めに
 const BODY_CONTACT_INTERVAL := 0.3
-## 体当たりはPC-88風の正方形コリジョン（中心から±この値＝1辺80の箱、scale 1.25を考慮）。+1で「ぴったり接している」も検出
-const BODY_CONTACT_HALF := 40.0
+## 体当たりは正方形コリジョン（中心から±この値＝1辺64の箱、キャラ64x64に合わせる）
+const BODY_CONTACT_HALF := 32.0
 const BODY_CONTACT_HALF_TOLERANCE := 1.0
 const BODY_DAMAGE_DEALT := 10
 const BODY_DAMAGE_TAKEN := 8
-## ノックバック＝キャラ1人分の幅を一瞬で移動（80、scale 1.25を考慮）
+## ノックバック＝キャラ1人分の幅を一瞬で移動（64に合わせて60前後）
 const BODY_PUSH_PIXELS := 60.0
 ## 正面衝突（両方ダメージ）時のノックバック＝キャラ約1.5人分・実際に移動で飛ばす
 const BODY_PUSH_PIXELS_FRONTAL := 120.0
-## 体半分以上が重なったとみなす（両軸で中心差がこの値以下＝正方形が半分以上かぶる）
-const HALF_OVERLAP_DIST := 40.0
+## 体半分以上が重なったとみなす（ずれがこの値以下＝正面、超＝ショルダー）
+const HALF_OVERLAP_DIST := 32.0
 ## 半キャラずらし時：ノックバック量（キャラ1人分）・連続ダメージ間隔・1回あたりダメージ
 const PUSH_KNOCKBACK := 60.0
 const PUSH_DAMAGE_INTERVAL := 0.2
@@ -396,11 +396,6 @@ func _body_contact(delta: float) -> void:
 				# ステージ4: 異論マスクの超反動（150px）
 				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
 					knock_amount = 150.0
-				
-				# 上下方向（Y軸方向）は左右より少し弱く
-				if absf(to_enemy.y) >= absf(to_enemy.x):
-					knock_amount = knock_amount * 0.67  # 左右の2/3
-					player_push = 8.0
 				
 				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）
 				var knock: Vector2 = _axis_knockback(to_enemy, knock_amount)
