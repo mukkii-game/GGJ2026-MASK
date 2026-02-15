@@ -4,6 +4,7 @@ class_name PlayerMain
 @onready var fsm = $FSM as FiniteStateMachine
 @onready var cam = $Camera2D
 const DEATH_SCREEN = preload("res://Scenes/Misc/DeathScreen.tscn")
+const FlashPikaPikaScript = preload("res://Scripts/FlashPikaPika.gd")
 
 ## マット内の移動範囲（ロープの位置ぴったりまで）
 # ArenaMat.tscn の MatColor / RopeLeft / RopeRight に合わせる
@@ -79,6 +80,9 @@ const BODY_PUSH_PIXELS := 60.0
 const BODY_PUSH_PIXELS_FRONTAL := 120.0
 ## 通常・半キャラのノックバックを数フレームで動かす時間（その間無敵）
 const BODY_KNOCKBACK_TWEEN_DURATION := 0.2
+## 半キャラずらし時：敵ノックバックを倍速（0.1秒で完了＝追撃しやすい）。プレイヤーはノックバック量を半分に
+const BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR := 0.1
+const PUSH_PLAYER_KNOCKBACK_HALFCAR := 6.0
 ## 正面／半キャラの境：ずれが32未満＝正面、32以上＝半キャラ or かすり
 const HALF_OVERLAP_DIST := 32.0
 ## 半キャラずらしの上限：ずれ 32〜58 未満＝半キャラ、58以上64未満＝かすり
@@ -91,8 +95,8 @@ const KASURI_COOLDOWN := 0.4
 ## かすり：移動＋縦軸回転のティーン時間（バレリーナのように回転しながら飛ぶ）
 const KASURI_TWEEN_DURATION := 0.28
 const KASURI_SPIN_DEGREES := 720.0
-## 半キャラずらし時：ノックバック量（キャラ1人分）・連続ダメージ間隔・1回あたりダメージ
-const PUSH_KNOCKBACK := 60.0
+## 半キャラずらし時：ノックバック量（約1.5キャラ分）・連続ダメージ間隔・1回あたりダメージ
+const PUSH_KNOCKBACK := 90.0
 const PUSH_DAMAGE_INTERVAL := 0.2
 const PUSH_DAMAGE_PER_TICK := 6
 var _push_damage_timer := 0.0
@@ -365,14 +369,16 @@ func flash_aerial_hit(enemy: CharacterBase) -> void:
 func _flash_white_body_contact() -> void:
 	_flash_modulate(sprite if sprite else self, Color(2.0, 2.0, 2.0, 1.0))
 
-## 体当たり用：指定色でフラッシュ。約1秒で必ず白に戻す（赤のまま残らないようにする）
-func _flash_modulate(target: CanvasItem, flash_color: Color) -> void:
+## 体当たり用：指定色でフラッシュ。hold_at_peak でその色のまま維持する秒数（0で従来どおり）。約1秒で必ず白に戻す
+func _flash_modulate(target: CanvasItem, flash_color: Color, hold_at_peak: float = 0.0) -> void:
 	if not target or not is_instance_valid(target):
 		return
 	var tween := create_tween()
 	tween.set_parallel(false)
-	tween.tween_property(target, "modulate", flash_color, 0.14)
-	tween.tween_property(target, "modulate", Color.WHITE, 0.86)
+	tween.tween_property(target, "modulate", flash_color, 0.12)
+	if hold_at_peak > 0.0:
+		tween.tween_interval(hold_at_peak)
+	tween.tween_property(target, "modulate", Color.WHITE, 0.8)
 	tween.tween_callback(func() -> void:
 		if target and is_instance_valid(target):
 			target.modulate = Color.WHITE
@@ -440,8 +446,17 @@ func _body_contact(delta: float) -> void:
 			if GameManager.training_mode:
 				GameManager.body_contact_type_text = "半キャラ"
 				GameManager.body_contact_type_timer = 1.5
-				var enemy_sprite: CanvasItem = enemy.sprite if enemy.sprite else enemy
-				_flash_modulate(enemy_sprite, Color(2.0, 2.0, 2.0, 1.0))
+			# 半キャラずらし＝白エフェクト画像でピカピカ（用意されていれば）。なければ modulate で白
+			var flash_tex: Texture2D = enemy.get("flash_effect_white_texture") as Texture2D
+			if flash_tex and (enemy.sprite or enemy):
+				var flash: Node2D = FlashPikaPikaScript.new()
+				flash.call("setup", flash_tex)
+				flash.call("start")
+				var parent: Node2D = enemy.sprite if enemy.sprite else enemy
+				parent.add_child(flash)
+				flash.start()
+			else:
+				enemy.halfcar_white_until = Time.get_ticks_msec() / 1000.0 + 1.0
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
 				_push_damage_timer = PUSH_DAMAGE_INTERVAL
@@ -463,9 +478,10 @@ func _body_contact(delta: float) -> void:
 					enemy.hit_particles.lifetime = 0.4  # 通常
 					enemy.hit_particles.emitting = true
 				
-				# ノックバック量：ステージ4では超反動
-				var knock_amount: float = PUSH_KNOCKBACK  # 60.0
-				var player_push: float = 12.0
+				# ノックバック量：ステージ4では超反動。半キャラ時は敵を倍速で飛ばし・プレイヤーは半分だけ後ずさり（追撃しやすく）
+				var knock_amount: float = PUSH_KNOCKBACK
+				var player_push: float = PUSH_PLAYER_KNOCKBACK_HALFCAR  # 6.0（従来12の半分）
+				var tween_dur: float = BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR  # 0.1秒＝敵ノックバック倍速
 				
 				# ステージ4: 異論マスクの超反動（150px）
 				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
@@ -476,22 +492,23 @@ func _body_contact(delta: float) -> void:
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
 				var new_player_pos := global_position + _axis_knockback(-to_enemy, player_push)
 				enemy.velocity = Vector2.ZERO
-				enemy.knockback_stun_remaining = BODY_KNOCKBACK_TWEEN_DURATION + 0.05
-				enemy.set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
-				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.1)
+				# スタンは白フラッシュが終わるまで長めに（modulate を上書きしないため）。無敵は短く
+				enemy.knockback_stun_remaining = 1.15  # 0.12上昇+1.0秒維持の間は敵の modulate を触らない
+				enemy.set_invincible_for(tween_dur + 0.1)
+				set_invincible_for(tween_dur + 0.1)
 				if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
 					enemy.set_invincible_for(1.5)
 					enemy.trigger_rope_launch()
 				else:
 					var tw_e := enemy.create_tween()
-					tw_e.tween_property(enemy, "global_position", new_enemy_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_e.tween_property(enemy, "global_position", new_enemy_pos, tween_dur)
 					tw_e.tween_callback(_clamp_enemy_to_mat.bind(enemy))
 				if _is_outside_mat(new_player_pos):
 					set_invincible_for(1.5)
 					trigger_rope_launch()
 				else:
 					var tw_p := create_tween()
-					tw_p.tween_property(self, "global_position", new_player_pos, BODY_KNOCKBACK_TWEEN_DURATION)
+					tw_p.tween_property(self, "global_position", new_player_pos, tween_dur)
 					tw_p.tween_callback(func() -> void:
 						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 					)
@@ -502,8 +519,9 @@ func _body_contact(delta: float) -> void:
 			if GameManager.training_mode:
 				GameManager.body_contact_type_text = "かすり"
 				GameManager.body_contact_type_timer = 1.5
-				_flash_modulate(sprite if sprite else self, Color(1.8, 1.8, 0.2, 1.0))
-				_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(1.8, 1.8, 0.2, 1.0))
+			# かすり＝黄フラッシュ（敵のみ・プレイヤーはダメージなしなので光らせない）。黄を少し長く維持
+			var enemy_sprite_kasuri: CanvasItem = enemy.sprite if enemy.sprite else enemy
+			_flash_modulate(enemy_sprite_kasuri, Color(1.8, 1.8, 0.2, 1.0), 0.56)
 			var damage: int = int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult)
 			if GameManager.current_stage == 4 and leave_post_2x_jump:
 				damage = 50
@@ -616,10 +634,9 @@ func _body_contact(delta: float) -> void:
 				if GameManager.training_mode:
 					GameManager.body_contact_type_text = "正面"
 					GameManager.body_contact_type_timer = 1.5
-					_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
-					_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(2.0, 0.2, 0.2, 1.0))
-				else:
-					_flash_white_body_contact()
+				# 正面衝突＝赤フラッシュ（プレイヤー・敵とも常に。危険・両方ダメージのイメージ）
+				_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
+				_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(2.0, 0.2, 0.2, 1.0))
 				
 				var push_amount := BODY_PUSH_PIXELS_FRONTAL
 				# ステージ4: 異論マスクの超反動（150px）

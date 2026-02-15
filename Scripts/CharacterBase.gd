@@ -21,6 +21,10 @@ var _hb_blink_on: bool = true
 var use_qte_on_defeat: bool = false
 ## ノックバック直後はこの秒数だけ移動しない（隣の敵を押さないように）
 var knockback_stun_remaining: float = 0.0
+## 半キャラずらしヒット時：この時刻（秒・get_ticks_msec/1000）までスプライトをまっしろに（0＝無効）
+var halfcar_white_until: float = 0.0
+## エフェクト用：白いキャラ絵（透明以外を白にした画像）。設定されていれば半キャラ時にピカピカ表示
+var flash_effect_white_texture: Texture2D = null
 
 func _ready():
 	max_health = health  # 初期HPを記録
