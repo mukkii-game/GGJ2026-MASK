@@ -166,4 +166,3 @@ func LessenDash(delta : float):
 func Transition(newstate : String):
 	if(dashspeed <= 0):
 		state_transition.emit(self, newstate)
-

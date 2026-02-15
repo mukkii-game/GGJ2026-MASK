@@ -57,13 +57,13 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -120.0
-offset_right = 200.0
-offset_bottom = 120.0
+offset_left = -220.0
+offset_top = -200.0
+offset_right = 220.0
+offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
 [node name="OperationLabel" type="Label" parent="ButtonsContainer" unique_id=495364201]
 layout_mode = 2
@@ -97,6 +97,46 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
 text = "テスト"
+
+[node name="BtnStage1" type="Button" parent="ButtonsContainer" unique_id=3000001]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+text = "ステージ1"
+
+[node name="BtnStage2" type="Button" parent="ButtonsContainer" unique_id=3000002]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+text = "ステージ2"
+
+[node name="BtnStage3" type="Button" parent="ButtonsContainer" unique_id=3000003]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+text = "ステージ3"
+
+[node name="BtnStage4" type="Button" parent="ButtonsContainer" unique_id=3000004]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+text = "ステージ4"
+
+[node name="BtnEnding" type="Button" parent="ButtonsContainer" unique_id=3000005]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+text = "エンディング"
 
 [node name="ConfirmReturnPanel" type="PanelContainer" parent="." unique_id=1538102839]
 visible = false

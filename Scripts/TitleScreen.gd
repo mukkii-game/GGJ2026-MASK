@@ -47,6 +47,16 @@ func _ready() -> void:
 		_mode_buttons[1].pressed.connect(_on_2p_pressed)
 	if _mode_buttons.size() >= 3:
 		_mode_buttons[2].pressed.connect(_on_test_pressed)
+	if _mode_buttons.size() >= 4:
+		_mode_buttons[3].pressed.connect(_on_stage_pressed.bind(1))
+	if _mode_buttons.size() >= 5:
+		_mode_buttons[4].pressed.connect(_on_stage_pressed.bind(2))
+	if _mode_buttons.size() >= 6:
+		_mode_buttons[5].pressed.connect(_on_stage_pressed.bind(3))
+	if _mode_buttons.size() >= 7:
+		_mode_buttons[6].pressed.connect(_on_stage_pressed.bind(4))
+	if _mode_buttons.size() >= 8:
+		_mode_buttons[7].pressed.connect(_on_ending_pressed)
 
 	# ESC確認パネル（暗い背景・最前面に表示）
 	_confirm_panel = get_node_or_null("ConfirmReturnPanel")
@@ -260,3 +270,16 @@ func _on_test_pressed() -> void:
 func _start_game() -> void:
 	# ステージ1登場画面へ
 	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
+
+## ステージ1〜4直接選択（テスト用）
+func _on_stage_pressed(stage_num: int) -> void:
+	_play_decision_sound()
+	GameManager.test_mode = true
+	GameManager.two_player_mode = false
+	GameManager.current_stage = stage_num
+	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
+
+## エンディングへ直接
+func _on_ending_pressed() -> void:
+	_play_decision_sound()
+	get_tree().change_scene_to_file("res://Scenes/UI/Ending.tscn")
