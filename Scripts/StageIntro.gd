@@ -66,7 +66,7 @@ func _get_stage_data(stage: int) -> Dictionary:
 			}
 		4:
 			return {
-				"boss_texture": "res://Art/Sprites/iron_mask_title4.png",
+				"boss_texture": "res://Art/Sprites/gr_mask_l1.png",
 				"description": "高HP！攻撃すると大きく吹っ飛ぶ！\nコーナージャンプ着地で大ダメージ！"
 			}
 		_:

@@ -319,8 +319,8 @@ func _get_enemy_texture_path(stage: int, is_boss: bool) -> String:
 			return "res://Art/Sprites/panna_chan_l1.png" if is_boss else "res://Art/Sprites/m_man_b_l1.png"
 		3:  # ユニ帝仮面 uni_chan / 雑魚はzako
 			return "res://Art/Sprites/unity_chan_l1.png" if is_boss else "res://Art/Sprites/m_man_b_l1.png"
-		4:  # 異論マスク（バトル用スプライト。iron_mask_title4.png は登場/クリア画面専用なので使わない）
-			return "res://Art/Sprites/m_man_b_l1.png"
+		4:  # 異論マスク（gr_mask_l1 / gr_mask_l2）
+			return "res://Art/Sprites/gr_mask_l1.png"
 		_:
 			return "res://Art/Sprites/m_man_b_l1.png"
 

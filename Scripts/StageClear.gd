@@ -9,8 +9,12 @@ func _ready() -> void:
 	if stage_label:
 		stage_label.text = "STAGE " + str(GameManager.current_stage) + " CLEAR!"
 	
-	# ボス顔画像（ステージごと: iron_mask_title1〜4 を背景に使用）
-	var texture_path := "res://Art/Sprites/iron_mask_title%d.png" % clampi(GameManager.current_stage, 1, 4)
+	# ボス顔画像（ステージ1〜3: iron_mask_title / ステージ4: 異論マスク gr_mask_l1）
+	var texture_path: String
+	if GameManager.current_stage == 4:
+		texture_path = "res://Art/Sprites/gr_mask_l1.png"
+	else:
+		texture_path = "res://Art/Sprites/iron_mask_title%d.png" % clampi(GameManager.current_stage, 1, 4)
 	var tex: Texture2D = null
 	if ResourceLoader.exists(texture_path):
 		tex = load(texture_path) as Texture2D
