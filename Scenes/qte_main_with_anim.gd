@@ -5,14 +5,14 @@ signal qte_succeeded
 signal qte_failed
 
 @onready var player_point = $PlayerPoint
-@onready var run_sprite: Sprite2D = $PlayerPoint/CollisionShape2D/sprite
+@onready var run_sprite: Sprite2D = $PlayerPoint/CollisionShape2D/mini_godot_mask
 @onready var target_zone = $TargetZone
 @onready var result_label = $ResultLabel
 @onready var anim: AnimationPlayer = $QTEAnimationPlayer
 @onready var hit_hip: AudioStreamPlayer2D = $hit_hip
 @onready var intro_ui: Control = $IntroUI
 @onready var bar_bg: ColorRect = $bar
-@onready var attack_hand: Sprite2D = $attack_hand
+@onready var attack_hand: Sprite2D = $PlayerPoint/CollisionShape2D/attack_hand
 @onready var qt_in: AudioStreamPlayer = $qt_in
 
 var speed = 500.0
@@ -55,17 +55,17 @@ func start_qte():
 	if intro_ui:
 		if qt_in:
 			qt_in.play()
-		intro_ui.visible = true
-		player_point.visible = false
-		target_zone.visible = false
-		bar_bg.visible = false
-		attack_hand.visible = false
+		if intro_ui: intro_ui.visible = true
+		if player_point: player_point.visible = false
+		if target_zone: target_zone.visible = false
+		if bar_bg: bar_bg.visible = false
+		if attack_hand: attack_hand.visible = false
 		await get_tree().create_timer(1.0).timeout
-		intro_ui.visible = false
-		player_point.visible = true
-		target_zone.visible = true
-		bar_bg.visible = true
-		attack_hand.visible = true
+		if intro_ui: intro_ui.visible = false
+		if player_point: player_point.visible = true
+		if target_zone: target_zone.visible = true
+		if bar_bg: bar_bg.visible = true
+		if attack_hand: attack_hand.visible = true
 
 	# PlayerPointを開始位置に戻す
 	player_point.position = player_start_pos
@@ -85,8 +85,11 @@ func start_qte():
 	is_active = true
 
 	# アニメも同時に先頭から再生
-	anim.play("attack")   # ←アニメ名が違う場合はここを修正
-	anim.seek(0.0, true)  # 念のため0秒から即反映
+	if anim.has_animation("attack"):
+		anim.play("attack")
+		anim.seek(0.0, true)  # 念のため0秒から即反映
+	else:
+		push_warning("Animation 'attack' not found in %s" % anim.get_path())
 
 
 func _process(delta):
@@ -153,7 +156,7 @@ func fail_game():
 	exit_sequence()
 
 
-func _show_result(text: String, is_success: bool) -> void:
+func _show_result(text: String, _is_success: bool) -> void:
 	result_label.text = text
 	# バーンと出す：でかい赤くて太い文字
 	result_label.add_theme_font_size_override("font_size", 120)
