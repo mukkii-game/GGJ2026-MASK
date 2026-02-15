@@ -62,8 +62,18 @@ const BODY_DAMAGE_TAKEN := 8
 const BODY_PUSH_PIXELS := 60.0
 ## 正面衝突（両方ダメージ）時のノックバック＝キャラ約1.5人分・実際に移動で飛ばす
 const BODY_PUSH_PIXELS_FRONTAL := 120.0
-## 体半分以上が重なったとみなす（ずれがこの値以下＝正面、超＝ショルダー）
+## 正面／半キャラの境：ずれが32未満＝正面、32以上＝半キャラ or かすり
 const HALF_OVERLAP_DIST := 32.0
+## 半キャラずらしの上限：ずれ 32〜58 未満＝半キャラ、58以上64未満＝かすり
+const SEMI_CAR_MAX := 58.0
+## ずれ64以上＝当たってない（体当たり処理しない）
+const BODY_CONTACT_MAX_ALIGNMENT := 64.0
+## かすり時：斜めにすっ飛ばす距離（X,Y両方ずれて離れる方向・まあまあ大きく）
+const KASURI_KNOCKBACK_DIAGONAL := 90.0
+const KASURI_COOLDOWN := 0.4
+## かすり：移動＋縦軸回転のティーン時間（バレリーナのように回転しながら飛ぶ）
+const KASURI_TWEEN_DURATION := 0.28
+const KASURI_SPIN_DEGREES := 720.0
 ## 半キャラずらし時：ノックバック量（キャラ1人分）・連続ダメージ間隔・1回あたりダメージ
 const PUSH_KNOCKBACK := 60.0
 const PUSH_DAMAGE_INTERVAL := 0.2
@@ -306,16 +316,38 @@ func _axis_knockback(to_enemy: Vector2, amount: float) -> Vector2:
 		return Vector2(signf(to_enemy.x) * amount, 0.0)
 	return Vector2(0.0, signf(to_enemy.y) * amount)
 
+## かすりティーン終了時：マット外ならロープ飛ばし、内ならクランプ。スプライト回転をリセット
+func _on_kasuri_tween_done(enemy_ref: CharacterBase, _new_player_pos: Vector2) -> void:
+	if sprite and is_instance_valid(sprite):
+		sprite.rotation_degrees = 0.0
+	if _is_outside_mat(global_position):
+		trigger_rope_launch()
+		set_invincible_for(1.0)
+	else:
+		global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+	if is_instance_valid(enemy_ref):
+		if enemy_ref.sprite and is_instance_valid(enemy_ref.sprite):
+			enemy_ref.sprite.rotation_degrees = 0.0
+		if _is_outside_mat(enemy_ref.global_position) and enemy_ref.has_method("trigger_rope_launch"):
+			enemy_ref.set_invincible_for(1.0)
+			enemy_ref.trigger_rope_launch()
+
 ## 正面衝突でプレイヤーが食らったときの派手な白ぴかぴか
 func _flash_white_body_contact() -> void:
-	var target = sprite if sprite else self
-	if not target:
+	_flash_modulate(sprite if sprite else self, Color(2.0, 2.0, 2.0, 1.0))
+
+## 体当たり用：指定色でフラッシュ。約1秒で必ず白に戻す（赤のまま残らないようにする）
+func _flash_modulate(target: CanvasItem, flash_color: Color) -> void:
+	if not target or not is_instance_valid(target):
 		return
-	var orig: Color = target.modulate
 	var tween := create_tween()
 	tween.set_parallel(false)
-	tween.tween_property(target, "modulate", Color(2.0, 2.0, 2.0, 1.0), 0.08)
-	tween.tween_property(target, "modulate", orig, 0.18)
+	tween.tween_property(target, "modulate", flash_color, 0.14)
+	tween.tween_property(target, "modulate", Color.WHITE, 0.86)
+	tween.tween_callback(func() -> void:
+		if target and is_instance_valid(target):
+			target.modulate = Color.WHITE
+	)
 
 ## 体当たり：敵と触れたら必ずダメージ＋ノックバック。正方形コリジョン（PC-88風）。半キャラずらし＝敵方向に上下左右で移動＋接している部分が幅の半分以下のときは敵だけノックバック＆ダメージ
 func _body_contact(delta: float) -> void:
@@ -360,14 +392,22 @@ func _body_contact(delta: float) -> void:
 		var is_cardinal: bool = absf(input_dir.x) < 0.01 or absf(input_dir.y) < 0.01
 		var pressing_toward: bool = input_dir.length() > 0.3 and input_dir.dot(to_enemy) > 0.5
 		var pressing_toward_ok: bool = is_cardinal and pressing_toward
-		# ショルダータックル判定：左右移動時はY軸の差、上下移動時はX軸の差を見る。少なめ(0〜半キャラ32)＝正面＝両方ダメージ＋作用反作用で離れる。多め(半キャラ〜1キャラ幅32〜64)＝ショルダー＝敵だけダメージ
+		# ずれ：左右接近時はY差、上下接近時はX差。32未満＝正面、32〜58未満＝半キャラ、58〜64未満＝かすり、64以上＝当たってない
 		var alignment_diff: float
 		if absf(to_enemy.x) >= absf(to_enemy.y):
 			alignment_diff = absf(p_pos.y - e_pos.y)
 		else:
 			alignment_diff = absf(p_pos.x - e_pos.x)
-		var shoulder_ok: bool = pressing_toward_ok and alignment_diff > HALF_OVERLAP_DIST
+		if alignment_diff >= BODY_CONTACT_MAX_ALIGNMENT:
+			continue
+		var shoulder_ok: bool = pressing_toward_ok and alignment_diff >= HALF_OVERLAP_DIST and alignment_diff < SEMI_CAR_MAX
+		var kasuri_ok: bool = pressing_toward_ok and alignment_diff >= SEMI_CAR_MAX and alignment_diff < BODY_CONTACT_MAX_ALIGNMENT
 		if shoulder_ok:
+			if GameManager.training_mode:
+				GameManager.body_contact_type_text = "半キャラ"
+				GameManager.body_contact_type_timer = 1.5
+				var enemy_sprite: CanvasItem = enemy.sprite if enemy.sprite else enemy
+				_flash_modulate(enemy_sprite, Color(2.0, 2.0, 2.0, 1.0))
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
 				_push_damage_timer = PUSH_DAMAGE_INTERVAL
@@ -419,6 +459,47 @@ func _body_contact(delta: float) -> void:
 					global_position = new_player_pos
 					global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 			break
+		if kasuri_ok and body_contact_cooldown <= 0:
+			# かすり：一方的にダメージ、両者斜めにすっ飛ばして離れる。繋がらない（クールダウンで連打防止）
+			body_contact_cooldown = KASURI_COOLDOWN
+			if GameManager.training_mode:
+				GameManager.body_contact_type_text = "かすり"
+				GameManager.body_contact_type_timer = 1.5
+				_flash_modulate(sprite if sprite else self, Color(1.8, 1.8, 0.2, 1.0))
+				_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(1.8, 1.8, 0.2, 1.0))
+			var damage: int = int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult)
+			if GameManager.current_stage == 4 and leave_post_2x_jump:
+				damage = 50
+				leave_post_2x_jump = false
+			enemy._take_damage(damage)
+			if enemy.hit_particles:
+				enemy.hit_particles.amount = 16
+				enemy.hit_particles.lifetime = 0.3
+				enemy.hit_particles.emitting = true
+			# 斜めに一定距離移動＋縦軸回転（バレリーナのように）で遅く目立たせる
+			var away: Vector2 = (-to_enemy) * KASURI_KNOCKBACK_DIAGONAL
+			var new_player_pos := global_position + away
+			var new_enemy_pos: Vector2 = Vector2(e_pos.x - away.x, e_pos.y - away.y)
+			enemy.velocity = Vector2.ZERO
+			enemy.knockback_stun_remaining = KASURI_TWEEN_DURATION + 0.1
+			enemy.set_invincible_for(0.6)
+			set_invincible_for(0.6)
+			var player_sprite_node: Node = sprite if sprite else self
+			var enemy_sprite_node: Node = enemy.sprite if enemy.sprite else enemy
+			var spin_from_p: float = player_sprite_node.rotation_degrees
+			var spin_from_e: float = enemy_sprite_node.rotation_degrees
+			# プレイヤー：位置＋回転を一定時間でティーン
+			var tw_p := create_tween()
+			tw_p.set_parallel(true)
+			tw_p.tween_property(self, "global_position", new_player_pos, KASURI_TWEEN_DURATION)
+			tw_p.tween_property(player_sprite_node, "rotation_degrees", spin_from_p + KASURI_SPIN_DEGREES, KASURI_TWEEN_DURATION)
+			tw_p.tween_callback(_on_kasuri_tween_done.bind(enemy, new_player_pos))
+			# 敵：位置＋回転を同じ時間でティーン
+			var tw_e := enemy.create_tween()
+			tw_e.set_parallel(true)
+			tw_e.tween_property(enemy, "global_position", new_enemy_pos, KASURI_TWEEN_DURATION)
+			tw_e.tween_property(enemy_sprite_node, "rotation_degrees", spin_from_e + KASURI_SPIN_DEGREES, KASURI_TWEEN_DURATION)
+			break
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
 			# ステージ3: ユニ帝仮面の正面無敵 + 反撃（正面側から当たったときだけ有効）
@@ -434,8 +515,14 @@ func _body_contact(delta: float) -> void:
 			
 			if stage3_front_guard:
 				# ユニ帝仮面の正面無敵：敵にダメージなし、プレイヤーに20ダメージ + 200px大ノックバック
+				if GameManager.training_mode:
+					GameManager.body_contact_type_text = "正面"
+					GameManager.body_contact_type_timer = 1.5
+					_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
+					_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(2.0, 0.2, 0.2, 1.0))
 				_take_damage(20)
-				_flash_white_body_contact()
+				if not GameManager.training_mode:
+					_flash_white_body_contact()
 				
 				# プレイヤーを大きく吹っ飛ばす（200px）
 				var away: Vector2 = _axis_knockback(-to_enemy, 200.0)
@@ -484,7 +571,13 @@ func _body_contact(delta: float) -> void:
 					hit_particles.amount = 40
 					hit_particles.lifetime = 0.8
 					hit_particles.emitting = true
-				_flash_white_body_contact()
+				if GameManager.training_mode:
+					GameManager.body_contact_type_text = "正面"
+					GameManager.body_contact_type_timer = 1.5
+					_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
+					_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(2.0, 0.2, 0.2, 1.0))
+				else:
+					_flash_white_body_contact()
 				
 				var push_amount := BODY_PUSH_PIXELS_FRONTAL
 				# ステージ4: 異論マスクの超反動（150px）

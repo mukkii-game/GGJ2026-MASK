@@ -18,6 +18,9 @@ var stage_cleared: Array[bool] = [false, false, false, false]
 var test_mode: bool = false
 ## トレーニングモード（中央に動かず攻撃しない敵1体・倒したら復活）
 var training_mode: bool = false
+## トレーニング用：体当たり種別表示（正面/半キャラ/かすり）。表示秒数>0の間ラベルに出す
+var body_contact_type_text: String = ""
+var body_contact_type_timer: float = 0.0
 
 #NOTE This class is our game manager and handles the players money and loading scenes
 #These functions can be called globally from anywhere
