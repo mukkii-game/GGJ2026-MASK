@@ -83,10 +83,15 @@ func _process(delta: float) -> void:
 		return
 	var in_ring_in: bool = fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state"
 	var in_down: bool = fsm.current_state and fsm.current_state.name.to_lower() == "enemy_down_state"
-	if not in_ring_in and not _aerial_knockback_animating and not in_down:
+	# ノックバックティーン中は押し離しをスキップ（半キャラずらしで飛ばす距離が短くならないように）
+	var in_knockback_stun: bool = knockback_stun_remaining > 0.0
+	if not in_ring_in and not _aerial_knockback_animating and not in_down and not in_knockback_stun:
 		_push_apart_from_other_enemies()
-	# 状態に応じた色（被弾フラッシュ中・ダウン中は触らない）
-	if sprite and not invincible and not in_down:
+	# 状態に応じた色。半キャラずらしヒット中は敵の絵自体を白く（modulate で毎フレーム上書き）
+	var now := Time.get_ticks_msec() / 1000.0
+	if sprite and now < halfcar_white_until:
+		sprite.modulate = Color(2.0, 2.0, 2.0, 1.0)
+	elif sprite and not invincible and not in_down and knockback_stun_remaining <= 0.0:
 		sprite.modulate = _get_state_modulate()
 	# アニメ速度：飛んでいるとき4倍速、プレイヤーと接した直後数秒は2倍速、それ以外は通常
 	if sprite:
@@ -96,8 +101,8 @@ func _process(delta: float) -> void:
 			sprite.speed_scale = 2.0
 		else:
 			sprite.speed_scale = 1.0
-	# 敵が絶対にロープ外に出ないようにクランプ（リングイン・空中ノックバック・ダウン中はスキップ）
-	if not in_ring_in and not _aerial_knockback_animating and not in_down:
+	# 敵が絶対にロープ外に出ないようにクランプ（リングイン・空中ノックバック・ダウン・ノックバック中はスキップ）
+	if not in_ring_in and not _aerial_knockback_animating and not in_down and not in_knockback_stun:
 		global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
 		global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
 
@@ -179,6 +184,8 @@ func _push_apart_from_other_enemies() -> void:
 
 func _ready():
 	super()
+	if get("flash_effect_white_texture") == null and ResourceLoader.exists("res://Art/Sprites/Effect/effect_white_m_man_r_l1.png"):
+		set("flash_effect_white_texture", load("res://Art/Sprites/Effect/effect_white_m_man_r_l1.png") as Texture2D)
 	took_damage.connect(_on_took_damage)
 	await get_tree().process_frame
 	# ダウン状態で開始（動かず・赤フラッシュのまま）
