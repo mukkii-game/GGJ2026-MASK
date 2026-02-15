@@ -2,8 +2,9 @@
 
 [sub_resource type="Environment" id="Environment_8bd8l"]
 background_mode = 3
+glow_enabled = true
 glow_normalized = true
-glow_intensity = 1.0
+glow_intensity = 0.6
 glow_bloom = 0.5
 
 [node name="SceneSettings" type="Node" unique_id=276545355]
@@ -12,4 +13,4 @@ glow_bloom = 0.5
 environment = SubResource("Environment_8bd8l")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=294144729]
-color = Color(0.9220031, 0.95001477, 0.9934893, 1)
+color = Color(0.77142423, 0.83981526, 0.82617825, 1)
