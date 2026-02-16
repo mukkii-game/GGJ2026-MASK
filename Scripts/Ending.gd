@@ -4,27 +4,12 @@ extends Control
 @onready var bgm_player: AudioStreamPlayer = null
 
 func _ready() -> void:
-	# 主人公（ゴドーマスク）の絵を表示（m_man_g_l1 / m_man_g_l2 で2コマ切り替え）
+	# endding_pic.png を表示（シーンの TextureRect に既に設定されていればそのまま。なければここで設定）
 	var godot_face = get_node_or_null("GodotMask")
-	if godot_face:
-		var path_l1 := "res://Art/Sprites/m_man_g_l1.png"
-		var path_l2 := "res://Art/Sprites/m_man_g_l2.png"
-		var tex_l1: Texture2D = null
-		var tex_l2: Texture2D = null
-		if ResourceLoader.exists(path_l1):
-			tex_l1 = load(path_l1) as Texture2D
-			godot_face.texture = tex_l1
-		if ResourceLoader.exists(path_l2):
-			tex_l2 = load(path_l2) as Texture2D
-		if tex_l1 and tex_l2:
-			var use_l2 := false
-			var tween := create_tween().set_loops()
-			tween.tween_interval(0.2)
-			tween.tween_callback(func() -> void:
-				if is_instance_valid(godot_face):
-					godot_face.texture = tex_l2 if use_l2 else tex_l1
-					use_l2 = not use_l2
-			)
+	if godot_face and godot_face.texture == null:
+		var pic_path := "res://Art/Sprites/endding_pic.png"
+		if ResourceLoader.exists(pic_path):
+			godot_face.texture = load(pic_path) as Texture2D
 	
 	# エンディング曲を再生（なければMainTheme.mp3）
 	bgm_player = AudioStreamPlayer.new()

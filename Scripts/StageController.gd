@@ -24,8 +24,9 @@ var stage_params: Dictionary = {}
 var qte_scene: PackedScene = preload("res://Scenes/qte_core.tscn")
 var current_qte_boss: CharacterBase = null
 var qte_node: Node2D = null
-
-
+## QTE成功後のシーン遷移用（Timerノードで確実に実行・ポーズの影響も受けにくくする）
+var _pending_clear_stage: int = 0
+var _clear_timer: Timer = null
 
 func _ready() -> void:
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
@@ -622,9 +623,26 @@ func _play_clear_flash_and_fanfare() -> void:
 	tween.tween_property(flash, "color", Color(1, 1, 1, 0), 0.5)
 	tween.tween_callback(flash.queue_free)
 
-## ステージクリア（タイマーコールバックで遷移。フラッシュ約0.65秒＋余裕で1.2秒後に遷移）
+## ステージクリア（Timerノードで1.2秒後に遷移。create_timer のコールバックが失われる不具合を避ける）
+## 全ステージ共通：ステージクリア画面へ→キーで次へ（4の次はエンディング）
 func _on_stage_clear() -> void:
-	get_tree().create_timer(1.2).timeout.connect(func() -> void:
-		GameManager.clear_stage(GameManager.current_stage)
-		get_tree().change_scene_to_file("res://Scenes/UI/StageClear.tscn")
-	)
+	_pending_clear_stage = GameManager.current_stage
+	if _clear_timer != null and is_instance_valid(_clear_timer):
+		_clear_timer.queue_free()
+	_clear_timer = Timer.new()
+	_clear_timer.wait_time = 1.2
+	_clear_timer.one_shot = true
+	_clear_timer.process_callback = Timer.TIMER_PROCESS_PHYSICS
+	_clear_timer.process_mode = PROCESS_MODE_ALWAYS
+	add_child(_clear_timer)
+	_clear_timer.timeout.connect(_on_clear_timer_timeout)
+	_clear_timer.start()
+
+func _on_clear_timer_timeout() -> void:
+	var stage := _pending_clear_stage
+	_pending_clear_stage = 0
+	if _clear_timer and is_instance_valid(_clear_timer):
+		_clear_timer.queue_free()
+		_clear_timer = null
+	GameManager.clear_stage(stage)
+	get_tree().change_scene_to_file("res://Scenes/UI/StageClear.tscn")

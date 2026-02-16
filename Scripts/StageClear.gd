@@ -1,9 +1,12 @@
 extends Control
 ## ステージクリア画面。倒したボスの顔を表示。右上1/4はモザイクで隠し、その上に「STAGE CLEAR!」とメッセージを表示。
+## 何かキー/マウスで次へ（ステージ4の次はエンディング）
 
 var _can_advance := false
 
 func _ready() -> void:
+	process_mode = PROCESS_MODE_ALWAYS
+	set_process_input(true)
 	# ステージ番号表示（右上1/4のモザイク上）
 	var stage_label = get_node_or_null("FaceCover/TextPanel/VBox/StageNumber")
 	if stage_label:
@@ -43,20 +46,16 @@ func _unhandled_input(event: InputEvent) -> void:
 func _try_advance(event: InputEvent) -> void:
 	if not _can_advance:
 		return
-	var vp := get_viewport()
-	# Enter / スペース / 決定アクション
-	if event.is_action_pressed("Enter") or event.is_action_pressed("ui_accept"):
+	var advance := false
+	if event is InputEventKey and event.pressed and not event.echo:
+		advance = true
+	elif event is InputEventMouseButton and event.pressed:
+		advance = true
+	elif event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_select"):
+		advance = true
+	if advance:
 		_next_stage()
-		if vp:
-			vp.set_input_as_handled()
-		return
-	if event is InputEventKey and event.pressed:
-		_next_stage()
-		if vp:
-			vp.set_input_as_handled()
-		return
-	if event is InputEventMouseButton and event.pressed:
-		_next_stage()
+		var vp := get_viewport()
 		if vp:
 			vp.set_input_as_handled()
 
