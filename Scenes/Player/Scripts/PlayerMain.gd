@@ -464,7 +464,7 @@ func _body_contact(delta: float) -> void:
 			break
 		if shoulder_ok:
 			if GameManager.training_mode:
-				GameManager.body_contact_type_text = "半キャラ"
+				GameManager.body_contact_type_text = "弱り(半キャラ)" if enemy_weak else "半キャラ"
 				GameManager.body_contact_type_timer = 1.5
 			# 半キャラずらし＝白エフェクト画像でピカピカ（用意されていれば）。なければ modulate で白
 			var flash_tex: Texture2D = enemy.get("flash_effect_white_texture") as Texture2D
@@ -538,7 +538,7 @@ func _body_contact(delta: float) -> void:
 			# かすり：一方的にダメージ、両者斜めにすっ飛ばして離れる。繋がらない（クールダウンで連打防止）
 			body_contact_cooldown = KASURI_COOLDOWN
 			if GameManager.training_mode:
-				GameManager.body_contact_type_text = "かすり"
+				GameManager.body_contact_type_text = "弱り(かすり)" if enemy_weak else "かすり"
 				GameManager.body_contact_type_timer = 1.5
 			# かすり＝黄フラッシュ（敵のみ・プレイヤーはダメージなしなので光らせない）。黄を少し長く維持
 			var enemy_sprite_kasuri: CanvasItem = enemy.sprite if enemy.sprite else enemy
@@ -658,7 +658,7 @@ func _body_contact(delta: float) -> void:
 					hit_particles.lifetime = 0.8
 					hit_particles.emitting = true
 				if GameManager.training_mode:
-					GameManager.body_contact_type_text = "正面"
+					GameManager.body_contact_type_text = "弱り(正面)" if enemy_weak else "正面"
 					GameManager.body_contact_type_timer = 1.5
 				# 正面衝突＝赤フラッシュ（プレイヤー・敵とも常に。危険・両方ダメージのイメージ）
 				_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))

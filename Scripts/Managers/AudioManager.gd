@@ -13,7 +13,7 @@ const POWER_BAIT_GET = preload("res://Art/Audio/Effects/QuestSound.ogg")
 #endregion
 
 var audio_players = []
-var max_players = 8
+var max_players = 16
 var starting_players = 3
 
 func _ready() -> void:
