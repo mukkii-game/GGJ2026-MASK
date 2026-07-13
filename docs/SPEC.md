@@ -158,6 +158,12 @@ Enemy は以下の状態（Status）を持つ。
 - ノックバック等でマット外へ出た場合は「ロープ飛ばされ（放物線）」へ遷移（`RopeLaunched`）
   - 見た目の回転・放物線は `PlayerRopeLaunchedState.gd` / `EnemyLaunchedState.gd`
 
+### 9.1 ステージ1のクリア条件（雑魚のみ・増援は「無限湧き」）
+- `StageController._setup_normal_params()`: `initial_count: 2`, `max_count: 6`, `spawn_interval: 10.0`
+- `StageController._spawn_reinforcement()` は「場の現在の敵数が `max_count` 未満なら1体補充」を **`spawn_interval` 秒ごとに際限なく繰り返す**（累計スポーン数に上限はない＝総数としての「残り〇体」は存在しない）
+- クリア条件（`_check_stage_clear()`）は **「場の生存数が0になった瞬間」**。次の増援が来る前に場の敵を全滅させればクリアになる、いわば「湧きより早く狩り切れ」方式
+- ステージ2〜4はボス撃破（HP0→Finisher QTE成功）がクリア条件（`use_qte_on_defeat = true`）であり、上記の不透明さは該当しない
+
 ---
 
 ## 10. Finisher QTE
@@ -187,6 +193,8 @@ Enemy は以下の状態（Status）を持つ。
 - HP表示（Player / Enemy）
 - ヒット時フラッシュ / SE
 - タイトル画面 / リトライ
+- ステージ1限定：生存敵数HUD（`Scripts/GameUI.gd`）。「敵 X体（最大Y体・全滅でクリア）」を画面右上に常時表示（本番プレイのみ。トレーニング/S2〜4は非表示）
+- ステージ1限定：正面衝突の誤学習防止ヒント（`Scripts/Managers/GameManager.gd` / `Scripts/GameUI.gd`）。1プレイにつき一度だけ画面上部中央に3.5秒表示
 
 ---
 
@@ -689,6 +697,32 @@ Enemy は以下の状態（Status）を持つ。
   - ESCで終了確認（はい/いいえ）を表示。
 - **ポーズ（現行）**: `Scenes/Levels/GameWrapper.tscn` に `Scripts/GameWrapperPause.gd` を付与
   - ESCでポーズし、縦4択（バトルに戻る / ステージ開始から / タイトルから / やめる）。
+
+### B.11.1 ステージ1 HUD：生存敵数表示（クリア条件の不透明さ対策）
+
+**背景**: §9.1 の通り、ステージ1の増援は無限湧き（累計上限なし・場の同時数のみ`max_count`で制限）で、クリアは「場の生存数が0になった瞬間」。プレイヤーからは「あと何体倒せばいいか」が見えず不透明だった。
+
+**やること**
+
+1. `Scripts/StageController.gd` の `_check_stage_clear()` で、ステージ1のときだけ毎フレーム `GameManager.stage1_alive_enemy_count`（現在の生存数）と `GameManager.stage1_max_concurrent_enemy_count`（`stage_params.max_count`、同時出現の上限）を更新する。
+2. `Scripts/Managers/GameManager.gd` に上記2変数を追加（StageController→GameUIの橋渡し用。既存の`body_contact_type_text`と同じ「Autoload経由でHUDへ通知」パターンを踏襲）。
+3. `Scripts/GameUI.gd` の `_ready()` で、`training_mode` でなく `current_stage == 1` のときだけ `Stage1EnemyLabel` を生成（画面右上・`offset_left/top/right/bottom = 820/8/1270/56`）。`_process()` で毎フレーム `"敵 %d体（最大%d体・全滅でクリア）"` を表示する。
+   - 「残り〇体」ではなく「現在の生存数＋同時上限＋全滅でクリア」という表現にしたのは、累計の残数が存在しない（無限湧き）ため、固定総数を示すと実装と矛盾する誤情報になるから。
+
+### B.11.2 ステージ1限定：正面衝突の誤学習防止ヒント（ワンショット）
+
+**背景**: 正面衝突は痛み分け（両者ダメージ）だが、半キャラずらしは一方的に押し込める。プレイヤーが正面衝突を繰り返すと「痛み分けが正解」と誤学習しかねない。
+
+**やること**
+
+1. `Scenes/Player/Scripts/PlayerMain.gd` の `_body_contact()`：
+   - 「通常の正面衝突」分岐（`stage3_front_guard` が false のとき）で `GameManager.notify_stage1_front_collision()` を呼ぶ。
+   - 半キャラずらしの成功ヒット（`_push_damage_timer <= 0` で実ダメージが入るとき）で `GameManager.notify_stage1_shoulder_tackle()` を呼ぶ（ヒント抑制の判定用）。
+2. `Scripts/Managers/GameManager.gd` に `notify_stage1_front_collision()` / `notify_stage1_shoulder_tackle()` / `reset_stage1_hint_tracking()` を追加。
+   - ステージ1・本番プレイ（`training_mode == false`）限定。正面衝突が累計3回に達した時点で、そのプレイ中まだ半キャラずらしを3回以上決めていなければ `front_collision_hint_text` / `front_collision_hint_timer(=3.5)` をセットして一度だけ表示（既に3回以上決めているプレイヤーには出さない）。
+   - `Scripts/StageController.gd` の `_ready()` で `reset_stage1_hint_tracking()` を呼び、ステージ再挑戦のたびにカウンタをリセット（1プレイにつき1回の制御）。
+3. `Scripts/GameUI.gd` に `Stage1HintLabel` を追加（画面上部中央・`offset_left/top/right/bottom = 140/40/1140/90`）。`_process()` で `front_collision_hint_timer` を減算し、0より大きい間だけ表示。テキスト：「真正面は相打ち！半分ずれてぶつかれば一方的に押し込める！」
+4. HUDラベルのフォントは既存の `pixelized_label` 系と同じ `m3x6.ttf` を流用しつつ、背景色（観客席・マット等）に依存せず読めるよう `outline_size=3` を付けたLabelSettingsをGameUI.gd側で生成（新規`.tres`は追加していない）。
 
 ---
 

@@ -31,6 +31,8 @@ var _clear_timer: Timer = null
 func _ready() -> void:
 	# 前ステージのクリア演出でフリーズしたままにならないよう解除
 	GameManager.enemies_frozen = false
+	# ステージ1誤学習防止ヒントのカウンタを毎ステージ開始時にリセット（KI: 正面衝突の誤学習対処）
+	GameManager.reset_stage1_hint_tracking()
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
 	await get_tree().process_frame
 	# 2P: 2P/テスト時は毎回新規生成して追加（シーン由来に依存しない）
@@ -540,6 +542,11 @@ func _check_stage_clear() -> void:
 	if not initial_spawn_done or current_qte_boss != null:
 		return
 	var alive := _get_alive_enemy_count()
+	# ステージ1 HUD用：クリア条件不透明対策（KI）。増援は無限湧きで「場の敵が0になった瞬間」にクリアなので、
+	# 固定の「残り総数」ではなく現在の生存数＋同時湧き上限を毎フレーム GameManager に反映する
+	if GameManager.current_stage == 1:
+		GameManager.stage1_alive_enemy_count = alive
+		GameManager.stage1_max_concurrent_enemy_count = stage_params.get("max_count", 6)
 	if alive == 0 and not stage_cleared:
 		stage_cleared = true
 		_on_stage_clear()

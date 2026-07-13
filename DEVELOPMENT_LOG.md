@@ -160,6 +160,15 @@
 
 ---
 
+### 2026-07-13: ステージ1クリア条件の可視化・正面衝突の誤学習防止ヒント（UI導線第2弾）
+- **変更内容**:
+  1. **ステージ1 生存敵数HUD**（`Scripts/GameUI.gd`, `Scripts/StageController.gd`, `Scripts/Managers/GameManager.gd`）: 画面右上に「敵 X体（最大Y体・全滅でクリア）」を常時表示（本番プレイのみ、S2〜4/トレーニングは非表示）。ステージ1の増援は`spawn_interval`ごとに際限なく補充される「無限湧き・場の同時数のみ上限あり」方式で、累計の「残り総数」は存在しないため、固定数ではなく現在の生存数＋同時上限＋「全滅でクリア」という実装と矛盾しない表現にした。
+  2. **正面衝突の誤学習防止ヒント（ワンショット）**（`Scenes/Player/Scripts/PlayerMain.gd`, `Scripts/Managers/GameManager.gd`, `Scripts/GameUI.gd`）: ステージ1・本番プレイ限定で、正面衝突を累計3回起こした時点で「真正面は相打ち！半分ずれてぶつかれば一方的に押し込める！」を画面上部中央に3.5秒だけ一度表示。既に半キャラずらしを3回以上決めているプレイヤーには出さない（分かっている人に説教しない）。1プレイ（ステージ1再挑戦のたび）につき1回、`StageController._ready()`でカウンタをリセット。
+- **変更理由**: Opus評価で指摘された「クリア条件が不透明（増援の仕組みが見えない）」「正面衝突を繰り返すと痛み分けが正解だと誤学習しかねない」への対処。既存の`body_contact_type_text`（トレーニング表示）と同じ「Autoload経由でHUDに通知」パターンを踏襲し、新規シーン/リソースは追加せず最小実装で対応。
+- **影響範囲**: `Scripts/Managers/GameManager.gd`, `Scripts/StageController.gd`, `Scripts/GameUI.gd`, `Scenes/Player/Scripts/PlayerMain.gd`, `docs/SPEC.md`
+- **SPEC更新**: §9.1（新規：ステージ1クリア条件の実際の仕組み）、§12（HUD/ヒットの追記）、B.11.1（新規：生存敵数HUD実装詳細）、B.11.2（新規：誤学習防止ヒント実装詳細）
+- **テスト**: headless（`GameWrapper.tscn`）600フレーム実行でエラーなしを確認
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

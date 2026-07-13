@@ -481,7 +481,8 @@ func _body_contact(delta: float) -> void:
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
 				_push_damage_timer = PUSH_DAMAGE_INTERVAL
-				
+				GameManager.notify_stage1_shoulder_tackle()
+
 				# ダメージ計算（コーナージャンプ特攻を含む）。ロープダッシュ中（rope_bounce_running）は2倍。炎ダッシュと重複時は高い方のみ（乗算しない）
 				var rope_dash_mult: float = 2.0 if rope_bounce_running else 1.0
 				var damage_mult: float = maxf(fire_dash_damage_mult, rope_dash_mult)
@@ -642,7 +643,8 @@ func _body_contact(delta: float) -> void:
 				
 				body_contact_cooldown = BODY_CONTACT_INTERVAL
 			else:
-				# 通常の正面衝突
+				# 通常の正面衝突（KI: 誤学習防止ヒントの累計カウントはステージ1・本番プレイのみ）
+				GameManager.notify_stage1_front_collision()
 				var damage_to_enemy: int = int(BODY_DAMAGE_DEALT * fire_dash_damage_mult)
 				
 				# ステージ4: 異論マスク、コーナージャンプ特攻

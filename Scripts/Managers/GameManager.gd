@@ -22,6 +22,18 @@ var training_mode: bool = false
 var body_contact_type_text: String = ""
 var body_contact_type_timer: float = 0.0
 
+## ステージ1 HUD：場に生存している敵の数（毎フレーム StageController が更新。本番プレイのみ意味を持つ）
+var stage1_alive_enemy_count: int = 0
+## ステージ1 HUD：同時出現数の上限（StageController が stage_params から設定）
+var stage1_max_concurrent_enemy_count: int = 0
+
+## 誤学習への介入ヒント（ステージ1・本番プレイ限定・KI対応）：正面衝突を累計3回起こしたら一度だけ表示
+var stage1_front_collision_count: int = 0
+var stage1_shoulder_tackle_count: int = 0
+var stage1_hint_shown: bool = false
+var front_collision_hint_text: String = ""
+var front_collision_hint_timer: float = 0.0
+
 #NOTE This class is our game manager and handles the players money and loading scenes
 #These functions can be called globally from anywhere
 
@@ -58,3 +70,32 @@ func load_title():
 	stage_cleared = [false, false, false, false]
 	training_mode = false
 	get_tree().change_scene_to_file("res://Scenes/Misc/TitleScreen.tscn")
+
+## ステージ1の誤学習防止ヒント判定用カウンタをリセット（StageController._ready から毎ステージ開始時に呼ぶ）
+func reset_stage1_hint_tracking() -> void:
+	stage1_front_collision_count = 0
+	stage1_shoulder_tackle_count = 0
+	stage1_hint_shown = false
+	front_collision_hint_text = ""
+	front_collision_hint_timer = 0.0
+	# HUD用カウンタも初期化（再プレイ時に前回の値が一瞬表示されるのを防ぐ。cap=0の間はHUD非表示）
+	stage1_alive_enemy_count = 0
+	stage1_max_concurrent_enemy_count = 0
+
+## ステージ1・本番プレイでの正面衝突を記録。累計3回で「半キャラずらし」を促すヒントを一度だけ表示する。
+## ただしすでに半キャラずらしを3回以上決めているプレイヤーには出さない（分かっている人に説教しない）。
+func notify_stage1_front_collision() -> void:
+	if training_mode or current_stage != 1 or stage1_hint_shown:
+		return
+	stage1_front_collision_count += 1
+	if stage1_front_collision_count >= 3:
+		stage1_hint_shown = true
+		if stage1_shoulder_tackle_count < 3:
+			front_collision_hint_text = "真正面は相打ち！半分ずれてぶつかれば一方的に押し込める！"
+			front_collision_hint_timer = 3.5
+
+## ステージ1での半キャラずらし成功を記録（誤学習ヒント抑制の判定用）
+func notify_stage1_shoulder_tackle() -> void:
+	if current_stage != 1:
+		return
+	stage1_shoulder_tackle_count += 1
