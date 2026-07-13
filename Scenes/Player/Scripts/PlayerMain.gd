@@ -40,8 +40,8 @@ const DASH_SPEED_MULT := 3.0
 var is_jumping := false
 ## 着地した直後1フレームだけ体当たりをスキップ（ジャンプ着地時の二重発火防止）
 var _just_landed_frame := false
-## ロープダッシュ攻撃の与ダメ倍率（Phase A: 1.5倍・連打間隔も短縮）
-const ROPE_DASH_DAMAGE_MULT := 1.5
+## ロープダッシュ攻撃の与ダメ倍率（ロープバウンド中2倍・連打間隔も短縮）
+const ROPE_DASH_DAMAGE_MULT := 2.0
 
 ## 敵からのダメージ（体当たり・敵攻撃）。パワーエサ効果中は無効
 func take_damage_from_enemy(amount: int) -> void:
@@ -109,6 +109,31 @@ func _get_body_damage_mult() -> float:
 
 func _get_push_damage_interval() -> float:
 	return PUSH_DAMAGE_INTERVAL / ROPE_DASH_DAMAGE_MULT if rope_bounce_running else PUSH_DAMAGE_INTERVAL
+
+## ロープ／走行加速中は入力なしでも進行方向が敵方向なら「押している」扱い（半キャラ・かすり判定用）
+func _is_pressing_toward_enemy(input_dir: Vector2, to_enemy: Vector2) -> bool:
+	var is_cardinal: bool = absf(input_dir.x) < 0.01 or absf(input_dir.y) < 0.01
+	if input_dir.length() > 0.3 and is_cardinal and input_dir.dot(to_enemy) > 0.5:
+		return true
+	var travel := Vector2.ZERO
+	if rope_bounce_running:
+		travel = rope_bounce_direction
+	elif is_run_dashing and run_dash_direction.length_squared() > 0.01:
+		travel = run_dash_direction
+	elif is_auto_running and velocity.length_squared() > 100.0:
+		travel = velocity
+	if travel.length_squared() < 0.01:
+		return false
+	travel = travel.normalized()
+	var travel_cardinal: bool = absf(travel.x) < 0.01 or absf(travel.y) < 0.01
+	return travel_cardinal and travel.dot(to_enemy) > 0.5
+
+func _is_boosted_body_hit(damage_mult: float) -> bool:
+	return damage_mult > 1.5 or rope_bounce_running or is_run_dashing
+
+func _play_shoulder_hit_sound(damage_mult: float) -> void:
+	var volume: float = 2.0 if _is_boosted_body_hit(damage_mult) else 0.0
+	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, volume)
 
 func apply_power_bait_enemy_immune(duration_sec: float) -> void:
 	power_bait_enemy_damage_immune_until = duration_sec
@@ -276,7 +301,7 @@ func _physics_process(delta: float) -> void:
 		global_position = p
 		_body_contact(delta)
 		return
-	# 通常時：ロープ接触チェック（左右のみバネる）
+	# 通常時：ロープ接触チェック（四辺バネる）
 	if p.x <= MAT_LEFT:
 		rope_bounce_running = true
 		rope_bounce_direction = Vector2.RIGHT
@@ -421,10 +446,8 @@ func _body_contact(delta: float) -> void:
 			continue
 		var to_enemy: Vector2 = (enemy.global_position - global_position).normalized()
 		var e_pos: Vector2 = enemy.global_position
-		# 敵方向に上下左右のいずれかを押している場合
-		var is_cardinal: bool = absf(input_dir.x) < 0.01 or absf(input_dir.y) < 0.01
-		var pressing_toward: bool = input_dir.length() > 0.3 and input_dir.dot(to_enemy) > 0.5
-		var pressing_toward_ok: bool = is_cardinal and pressing_toward
+		# 敵方向に上下左右のいずれかを押している場合（ロープ／走行加速中は進行方向で代用）
+		var pressing_toward_ok: bool = _is_pressing_toward_enemy(input_dir, to_enemy)
 		# ずれ：左右接近時はY差、上下接近時はX差。半キャラは左右接近のみ（上下はかすり扱い）
 		var horizontal_approach: bool = absf(to_enemy.x) >= absf(to_enemy.y)
 		var alignment_diff: float
@@ -480,19 +503,18 @@ func _body_contact(delta: float) -> void:
 				enemy.halfcar_white_until = Time.get_ticks_msec() / 1000.0 + 1.0
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
-				_push_damage_timer = _get_push_damage_interval()
+				var push_interval: float = _get_push_damage_interval()
+				_push_damage_timer = push_interval
 				GameManager.notify_stage1_shoulder_tackle()
 
 				var damage_mult: float = _get_body_damage_mult()
 				var damage: int = int(PUSH_DAMAGE_PER_TICK * damage_mult)
 
-				enemy._take_damage(damage)
+				enemy.apply_repeat_contact_damage(damage, push_interval * 0.95)
+				_play_shoulder_hit_sound(damage_mult)
 
-				# 半キャラずらし：敵の方にエフェクトを出す（ロープダッシュ攻撃中は強化）
-				if rope_bounce_running:
-					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 				if enemy.hit_particles:
-					if rope_bounce_running:
+					if _is_boosted_body_hit(damage_mult):
 						enemy.hit_particles.amount = 40
 						enemy.hit_particles.lifetime = 0.8
 					else:
@@ -514,9 +536,8 @@ func _body_contact(delta: float) -> void:
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
 				var new_player_pos := global_position + _axis_knockback(-to_enemy, player_push)
 				enemy.velocity = Vector2.ZERO
-				# スタンは白フラッシュが終わるまで長めに（modulate を上書きしないため）。無敵は短く
+				# スタンは白フラッシュが終わるまで長めに（modulate を上書きしないため）
 				enemy.knockback_stun_remaining = 1.15  # 0.12上昇+1.0秒維持の間は敵の modulate を触らない
-				enemy.set_invincible_for(tween_dur + 0.1)
 				set_invincible_for(tween_dur + 0.1)
 				if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
 					enemy.set_invincible_for(1.5)
@@ -554,10 +575,10 @@ func _body_contact(delta: float) -> void:
 			enemy._take_damage(damage)
 			if enemy.has_method("notify_graze_hit"):
 				enemy.notify_graze_hit()
-			if rope_bounce_running:
+			if _is_boosted_body_hit(damage_mult):
 				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 			if enemy.hit_particles:
-				if rope_bounce_running:
+				if _is_boosted_body_hit(damage_mult):
 					enemy.hit_particles.amount = 40
 					enemy.hit_particles.lifetime = 0.8
 				else:
@@ -641,20 +662,13 @@ func _body_contact(delta: float) -> void:
 				# 弱り状態の敵からは正面でもダメージを受けない（SPEC §7.2 Weak）
 				if not enemy_weak:
 					take_damage_from_enemy(BODY_DAMAGE_TAKEN)
-			
-			# 正面衝突：血のエフェクト
-			if rope_bounce_running:
-				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
-				if enemy.hit_particles:
-					enemy.hit_particles.amount = 40
-					enemy.hit_particles.lifetime = 0.8
-					enemy.hit_particles.emitting = true
-				if hit_particles:
-					hit_particles.amount = 40
-					hit_particles.lifetime = 0.8
-					hit_particles.emitting = true
-			else:
-				# 通常の正面衝突でも血のエフェクトを強く
+				
+				# 正面衝突：血のエフェクト・SE（ロープ加速中もノックバックは必ず実行）
+				var boosted_frontal: bool = _is_boosted_body_hit(damage_mult)
+				if boosted_frontal:
+					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
+				if boosted_frontal or rope_bounce_running:
+					AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
 				if enemy.hit_particles:
 					enemy.hit_particles.amount = 40
 					enemy.hit_particles.lifetime = 0.8
@@ -664,7 +678,7 @@ func _body_contact(delta: float) -> void:
 					hit_particles.lifetime = 0.8
 					hit_particles.emitting = true
 				if GameManager.training_mode:
-					GameManager.body_contact_type_text = "弱り(正面)" if enemy_weak else "正面"
+					GameManager.body_contact_type_text = "弱り(正面)" if enemy_weak else ("ロープ(正面)" if rope_bounce_running else "正面")
 					GameManager.body_contact_type_timer = 1.5
 				# 正面衝突＝赤フラッシュ（プレイヤー・敵とも常に。危険・両方ダメージのイメージ）
 				_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
@@ -694,7 +708,8 @@ func _body_contact(delta: float) -> void:
 				if _is_outside_mat(new_player_pos):
 					set_invincible_for(1.5)
 					trigger_rope_launch()
-				else:
+				elif not rope_bounce_running:
+					# ロープ自動走行中は毎フレーム位置上書きのためプレイヤーTweenはスキップ
 					var tw_p := create_tween()
 					tw_p.tween_property(self, "global_position", new_player_pos, BODY_KNOCKBACK_TWEEN_DURATION)
 					tw_p.tween_callback(func() -> void:

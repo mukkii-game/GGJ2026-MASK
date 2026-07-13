@@ -169,6 +169,32 @@
 - **SPEC更新**: §9.1（新規：ステージ1クリア条件の実際の仕組み）、§12（HUD/ヒットの追記）、B.11.1（新規：生存敵数HUD実装詳細）、B.11.2（新規：誤学習防止ヒント実装詳細）
 - **テスト**: headless（`GameWrapper.tscn`）600フレーム実行でエラーなしを確認
 
+### 2026-07-13: リング左下の謎HPバー削除
+- **原因**: スターターキット残骸の `Camera2D/ProgressBar`（幅約6px・90度回転）。カメラを画面中央固定にした結果、リング左下付近に浮いた
+- **修正**: `Player.tscn` から ProgressBar/Label を削除。HP表示は `HealthBar.gd`（頭上）のみ（敵と同様）
+
+### 2026-07-13: クラウド Fable 引き渡し文書整備
+- **変更内容**: `FABLE_HANDOFF.md` 新規（全 .md 統合・Git 状態・Phase A vs ホットフィックス・チェックリスト）
+- **変更理由**: クラウドデスクトップの Fable へ一括引き継ぎ
+- **影響範囲**: FABLE_HANDOFF.md, HANDOFF.md, TODO.md, CLAUDE.md, PROGRESS.md
+
+### 2026-07-13: BGM開始遅延の修正
+- **原因**: BGM が SubViewport 内 MainFloor の `BGMFromOffset` に依存し、シーン読み込み後に初めて鳴る。タイトルにも BGM なし
+- **修正**: `AudioManager` に専用 BGM プレイヤーを追加。タイトル/バトル/Intro/エンディングから即 `play_*_bgm()`。MainFloor 側は無効化
+- **影響範囲**: AudioManager, TitleScreen, StageIntro, StageController, Ending, BGMFromOffset, docs/SPEC.md
+
+### 2026-07-13: 半キャラ連打SEの間欠鳴り修正
+- **原因**: 半キャラが `_take_damage` → `damage_effects()` 経由で約0.62秒無敵になり、0.2秒 tick と噛み合わずダメージ/SEが飛ぶ。SE も加速時のみだった
+- **修正**: `CharacterBase.apply_repeat_contact_damage()` を追加。半キャラは tick 間隔に合わせた短無敵＋毎 tick `PLAYER_ATTACK_HIT`
+- **影響範囲**: `Scripts/CharacterBase.gd`, `Scenes/Player/Scripts/PlayerMain.gd`, `docs/SPEC.md`
+
+### 2026-07-13: ロープ加速中ノックバック不発・SE差の修正
+- **原因**: Phase A で正面衝突のノックバックが `if rope_bounce_running` の `else` 内に入り、ロープ加速中は SE/パーティクルのみで敵が飛ばされなかった。倍率も 2.0→1.5 に下がり `BLOODY_HIT` 条件も消失
+- **修正**: 正面ノックバックを通常分岐内で常時実行。`ROPE_DASH_DAMAGE_MULT` を 2.0 に復帰。`BLOODY_HIT` / `PLAYER_ATTACK_HIT` を倍率>1.5相当で復活。加速中の半キャラ判定に進行方向入力代用を追加
+- **上下ロープ**: コード上は Phase A で四辺バウンド済み。SPEC B.8 の古い記述（上下はクランプのみ）を修正
+- **影響範囲**: `Scenes/Player/Scripts/PlayerMain.gd`, `docs/SPEC.md`
+- **SPEC更新**: B.0.1, B.8, 定数表, 入力・ダメージ記述
+
 ### 2026-07-13: Phase A システム変更（Sonnet中断 → Composer完成）
 - **変更内容**: グリッド/炎ダッシュ/コーナーポスト廃止、半キャラ左右限定、SEMI_CAR_MAX 52、四辺ロープバウンド、ロープダッシュ1.5倍、パワーエサ統一、ジャンプ多重バインド
 - **変更理由**: Fable Phase A 設計（`DESIGN_CHANGELOG.md`）

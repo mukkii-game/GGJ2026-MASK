@@ -29,6 +29,7 @@ var _pending_clear_stage: int = 0
 var _clear_timer: Timer = null
 
 func _ready() -> void:
+	AudioManager.play_battle_bgm()
 	# 前ステージのクリア演出でフリーズしたままにならないよう解除
 	GameManager.enemies_frozen = false
 	# ステージ1誤学習防止ヒントのカウンタを毎ステージ開始時にリセット（KI: 正面衝突の誤学習対処）
@@ -56,7 +57,7 @@ func _ready() -> void:
 		for child in npcs.get_children():
 			child.queue_free()
 	
-	# BGMは MainFloor の AudioStreamPlayer（BGMFromOffset）で MainThemeNew.mp3 をループ再生
+	# BGMは AudioManager（Autoload）で即再生。MainFloor 内プレイヤーは互換用で無効
 	
 	# ステージパラメータを設定
 	_setup_stage_params()

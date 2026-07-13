@@ -10,15 +10,71 @@ const COIN_PICK = preload("res://Art/Audio/Effects/coin_pick.ogg")
 const QUEST_SOUND = preload("res://Art/Audio/Effects/QuestSound.ogg")
 ## パワーエサ取得時（バクッ／ボワーン／強くなった系）。差し替え用に別定数
 const POWER_BAIT_GET = preload("res://Art/Audio/Effects/QuestSound.ogg")
+
+const BGM_BATTLE := preload("res://Art/Audio/MainThemeNew.mp3")
+const BGM_INTRO := preload("res://Art/Audio/Intro.mp3")
+const BGM_ENDING_PATH := "res://Art/Audio/Ending.mp3"
+const BGM_FALLBACK_PATH := "res://Art/Audio/MainTheme.mp3"
 #endregion
 
 var audio_players = []
 var max_players = 16
 var starting_players = 3
 
+var _bgm_player: AudioStreamPlayer
+var _bgm_finished_callback: Callable = Callable()
+
 func _ready() -> void:
 	initiate_audio_stream()
-	
+	_bgm_player = AudioStreamPlayer.new()
+	_bgm_player.name = "BGMPlayer"
+	add_child(_bgm_player)
+	_bgm_player.finished.connect(_on_bgm_finished)
+
+func _configure_loop(stream: AudioStream, loop: bool) -> void:
+	if stream is AudioStreamMP3:
+		(stream as AudioStreamMP3).loop = loop
+	elif stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = loop
+
+func play_bgm(stream: AudioStream, volume_db: float = -8.0, loop: bool = true, start_offset: float = 0.0, on_finished: Callable = Callable()) -> void:
+	if stream == null:
+		return
+	_configure_loop(stream, loop)
+	_bgm_finished_callback = on_finished
+	_bgm_player.volume_db = volume_db
+	_bgm_player.stream = stream
+	_bgm_player.play(start_offset)
+	if not _bgm_player.playing:
+		_bgm_player.call_deferred("play", start_offset)
+
+func play_battle_bgm() -> void:
+	if _bgm_player.stream == BGM_BATTLE and _bgm_player.playing:
+		return
+	play_bgm(BGM_BATTLE, -8.0, true, 0.0)
+
+func play_intro_bgm(on_finished: Callable = Callable()) -> void:
+	play_bgm(BGM_INTRO, 0.0, false, 0.0, on_finished)
+
+func play_ending_bgm() -> void:
+	var stream: AudioStream = null
+	if ResourceLoader.exists(BGM_ENDING_PATH):
+		stream = load(BGM_ENDING_PATH) as AudioStream
+	elif ResourceLoader.exists(BGM_FALLBACK_PATH):
+		stream = load(BGM_FALLBACK_PATH) as AudioStream
+	if stream:
+		play_bgm(stream, 0.0, true, 0.0)
+
+func stop_bgm() -> void:
+	_bgm_player.stop()
+	_bgm_finished_callback = Callable()
+
+func _on_bgm_finished() -> void:
+	if _bgm_finished_callback.is_valid():
+		var cb := _bgm_finished_callback
+		_bgm_finished_callback = Callable()
+		cb.call()
+
 #Play a sound, call this function from anywhere
 #offset lets you start the sound with an offset, like starting the sound at 0.1s into the clip
 #Arguments(audio_clip, offset, volume)

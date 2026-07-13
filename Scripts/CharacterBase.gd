@@ -149,6 +149,22 @@ func _take_damage(amount):
 			defeated_for_qte.emit(self)
 			return
 		_die()
+
+## 半キャラ連打など：damage_effects（長い無敵＋BLOODY_HIT）を使わず、短い無敵だけで tick ダメージ
+func apply_repeat_contact_damage(amount: int, invincible_sec: float) -> bool:
+	if invincible or is_dead:
+		return false
+	health -= amount
+	if healthbar:
+		healthbar.value = health
+	took_damage.emit(amount)
+	set_invincible_for(invincible_sec)
+	if health <= 0:
+		if use_qte_on_defeat:
+			defeated_for_qte.emit(self)
+			return true
+		_die()
+	return true
 		
 ## 無敵の期限（ミリ秒）。重複呼び出し時に短いタイマーが長い無敵を打ち消さないようにする
 var _invincible_until_ms: int = 0

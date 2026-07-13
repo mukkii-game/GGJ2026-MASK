@@ -1,7 +1,6 @@
 extends Control
 ## ステージ登場画面。ステージ番号、ボス顔、ボス名を表示。Intro.mp3を再生。
 
-@onready var bgm_player: AudioStreamPlayer = null
 var _can_advance := false
 
 func _ready() -> void:
@@ -36,13 +35,7 @@ func _ready() -> void:
 		desc_label.text = stage_data.get("description", "")
 	
 	# Intro.mp3を再生。終了時にプロレス風ゴングを1回長めに鳴らす
-	bgm_player = AudioStreamPlayer.new()
-	add_child(bgm_player)
-	var intro_path := "res://Art/Audio/Intro.mp3"
-	if ResourceLoader.exists(intro_path):
-		bgm_player.stream = load(intro_path) as AudioStream
-		bgm_player.finished.connect(_on_intro_finished)
-		bgm_player.play()
+	AudioManager.play_intro_bgm(_on_intro_finished)
 	
 	# 1秒間は進めない
 	get_tree().create_timer(1.0).timeout.connect(_on_advance_allowed)
@@ -121,8 +114,6 @@ func _start_face_sparkle(node: Control) -> void:
 	tween.tween_property(node, "scale", Vector2(1.0, 1.0), 0.08)
 
 func _start_battle() -> void:
-	# BGMを停止
-	if bgm_player:
-		bgm_player.stop()
+	AudioManager.stop_bgm()
 	# バトル開始
 	get_tree().change_scene_to_file("res://Scenes/Levels/GameWrapper.tscn")

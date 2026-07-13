@@ -40,7 +40,8 @@
 - **上下からの接近**で同程度のズレは **かすり** として扱う（Phase A）。
 - **効果（ダメージ）**:
   - **Enemy のみ**が一方的にダメージを受ける。（1回 6ダメージ）
-  - プレイヤーが押し込み続ければ、0.2秒間隔で連続ヒットする。
+- プレイヤーが押し込み続ければ、0.2秒間隔で連続ヒットする（`apply_repeat_contact_damage()` で短い無敵のみ。通常 `_take_damage` の長い無敵は使わない）。
+- 毎 tick で `PLAYER_ATTACK_HIT` を再生（通常 vol 0、ロープ加速等は vol 2）。
 - **効果（ノックバック）**:
   - Enemy は接触した軸方向（Xのみ、またはYのみ）へ弾き飛ばされる（60px）。
   - Player は反動として軽く後退する（6px）。連続で押し込みながらの攻撃（追撃）が可能。
@@ -249,7 +250,7 @@ Enemy は以下の状態（Status）を持つ。
 
 - **接触判定**: 正方形AABB。中心間距離が両軸とも `2 * (BODY_CONTACT_HALF + 1)` 以下で重なりとみなす。  
   - `BODY_CONTACT_HALF = 32`（1辺64の箱）。
-- **入力**: 敵方向への「上下左右いずれか」の入力を `pressing_toward_ok`（十字のいずれか＋敵方向に押している）で判定。
+- **入力**: 敵方向への「上下左右いずれか」の入力を `pressing_toward_ok` で判定。ロープ／走行加速中は進行方向で代用可（`_is_pressing_toward_enemy()`）。
 - **ずれ（alignment_diff）**:
   - プレイヤー→敵が **左右方向** なら: プレイヤーと敵の **Y座標の差** の絶対値。
   - プレイヤー→敵が **上下方向** なら: **X座標の差** の絶対値。
@@ -271,7 +272,7 @@ Enemy は以下の状態（Status）を持つ。
 **ダメージ**
 
 - **両方** 被弾。
-- 敵へ: `BODY_DAMAGE_DEALT = 10`（ロープダッシュ中は1.5倍）。
+- 敵へ: `BODY_DAMAGE_DEALT = 10`（ロープダッシュ中は2倍）。
 - プレイヤーへ: `BODY_DAMAGE_TAKEN = 8`。
 - 間隔: `body_contact_cooldown` で 0.3 秒（`BODY_CONTACT_INTERVAL`）。
 
@@ -296,8 +297,8 @@ Enemy は以下の状態（Status）を持つ。
 **ダメージ**
 
 - **敵のみ** 被弾。プレイヤーは被弾しない。
-- 1回あたり: `PUSH_DAMAGE_PER_TICK = 6`（ロープダッシュ中は1.5倍）。
-- 間隔: 通常 `0.2` 秒。ロープダッシュ中は `0.2/1.5` 秒。
+- 1回あたり: `PUSH_DAMAGE_PER_TICK = 6`（ロープダッシュ中は2倍）。
+- 間隔: 通常 `0.2` 秒。ロープダッシュ中は `0.2/2` 秒。
 
 **弾け方**
 
@@ -318,7 +319,7 @@ Enemy は以下の状態（Status）を持つ。
 
 **挙動**
 
-- **敵のみ** ダメージ（1回あたり 6。ロープダッシュ中は1.5倍）。
+- **敵のみ** ダメージ（1回あたり 6。ロープダッシュ中は2倍）。
 - **両者** が斜めにすっ飛ばされて離れる：ノックバックは **X,Y 両方** ずれた方向（`-to_enemy` 方向）に `KASURI_KNOCKBACK_DIAGONAL = 90`。**一定時間（0.28秒）で移動**し、その間スプライトを縦軸で約2回転（バレリーナのように）させる。繋がらない（`KASURI_COOLDOWN = 0.4` 秒で連打防止）。
 - 軸は同上（Xのみ or Yのみ）。
 
@@ -335,7 +336,7 @@ Enemy は以下の状態（Status）を持つ。
 | BODY_CONTACT_HALF | 32 | 接触用AABBの半幅（64×64） |
 | HALF_OVERLAP_DIST | 32 | 正面／半キャラの境（ずれ 32 未満＝正面） |
 | SEMI_CAR_MAX | 52 | 半キャラの上限（左右接近・ずれ 32〜52 未満＝半キャラ、52〜64 未満＝かすり） |
-| ROPE_DASH_DAMAGE_MULT | 1.5 | ロープバウンド中の体当たりダメージ倍率（Phase A） |
+| ROPE_DASH_DAMAGE_MULT | 2.0 | ロープバウンド中の体当たりダメージ倍率 |
 | BODY_CONTACT_MAX_ALIGNMENT | 64 | ずれ 64 以上＝当たってない |
 | KASURI_KNOCKBACK_DIAGONAL | 90 | かすり時の斜めノックバック量（X,Y 両方・離れる方向） |
 | KASURI_COOLDOWN | 0.4 | かすり後の連打防止（秒） |
@@ -360,7 +361,7 @@ Enemy は以下の状態（Status）を持つ。
   - **かすり**: 敵方向入力＋ずれ **52〜63**（左右）または上下接近で **32〜63** → 敵だけダメージ（6）、両者を斜めに 90px すっ飛ばす。繋がらない（0.4 秒クールダウン）。  
   - **ずれ 64dot 以上**: 当たってない（体当たり処理しない）。
 - **ノックバック**: どちらも **X 軸だけ** または **Y 軸だけ**（イース風）。正面は両者 120px。ショルダーは敵 60px・自分反動 6（縦横同じ）。ステージ4異論マスクは正面150px・ショルダー90px。マット外ならロープ飛ばされ。
-- **ロープダッシュ攻撃**（B.0.1）: ロープバウンド中（`rope_bounce_running`）の体当たりダメージ **1.5倍**、連打間隔 **1/1.5倍**。
+- **ロープダッシュ攻撃**（B.0.1）: ロープバウンド中（`rope_bounce_running`）の体当たりダメージ **2倍**、連打間隔 **1/2倍**。
 - **特例**: ステージ3 ユニ帝仮面の正面無敵＝正面側から当たると敵は無傷、自分だけ 20 ダメージ＋200px ノックバック。ボス側には常に「ガードされた」ことが伝わる青白フラッシュ（`Color(0.7, 0.9, 2.0)`）が出る（2026-07-13修正: 以前はトレーニングモード限定の赤フラッシュしかなく、本番プレイではボス側に演出が出ていなかった）。
 
 ---
@@ -370,9 +371,11 @@ Enemy は以下の状態（Status）を持つ。
 **実装場所**: `PlayerMain._body_contact()` — `_get_body_damage_mult()` / `_get_push_damage_interval()`
 
 - **発動条件**: `rope_bounce_running == true`（上下左右いずれかのロープに触れて反対側へ自動移動中）。
-- **効果**: ダメージ **1.5倍**、半キャラ連打間隔 **0.2/1.5 秒**。SE・パーティクル強化。
-- **ロープ跳ね返り**: 左右に加え **上下ロープも反対側までバウンド**（Phase A）。`ArenaMat.bend_rope()` で四辺たわみ演出。
-- **演出**: ヒット時に `AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)` を再生し、`hit_particles` を強化（`amount = 40` / `lifetime = 0.8`。通常のショルダーは20/0.4、かすりは16/0.3）。
+- **効果**: ダメージ **2倍**、半キャラ連打間隔 **0.2/2 秒**。SE・パーティクル強化（`damage_mult > 1.5` 相当）。
+- **ロープ跳ね返り**: **上下左右** のロープ端で反対側までバウンド。`ArenaMat.bend_rope()` で四辺たわみ演出。
+- **入力代用**: ロープ／走行加速中（`rope_bounce_running` / `is_run_dashing` / `is_auto_running`）は進行方向を敵方向入力として半キャラ・かすり判定に使用（`_is_pressing_toward_enemy()`）。
+- **正面ノックバック**: ロープ加速中も敵ノックバックは必ず実行（Phase A エンバグ修正: 以前は `rope_bounce_running` 分岐の `else` 内にのみノックバックがあり、加速中は SE だけ鳴って敵が飛ばされなかった）。
+- **演出**: 半キャラ tick ごとに `PLAYER_ATTACK_HIT`（通常 vol 0 / 加速 vol 2）。`apply_repeat_contact_damage()` で 0.2 秒（ロープ時 0.1 秒）無敵と同期。`hit_particles` を強化（`amount = 40` / `lifetime = 0.8`。通常のショルダーは20/0.4、かすりは16/0.3）。
 - **トレーニング表示**: `GameManager.body_contact_type_text` を「ロープ(半キャラ)」「ロープ(かすり)」として区別表示（通常の「半キャラ」「かすり」「弱り(〜)」より優先）。
 - **狙い**: ロープワークと半キャラずらしという2つのコアメカニクスを繋げ、「跳ね返りながら押し込む」というプロレスらしい立ち回りへのインセンティブを作る。
 
@@ -623,13 +626,14 @@ Enemy は以下の状態（Status）を持つ。
 - **左右ロープ跳ね返り（Player）**
   - `Scenes/Player/Scripts/PlayerMain.gd`  
     - `MAT_LEFT/MAT_RIGHT/MAT_TOP/MAT_BOTTOM` でクランプ  
-    - 左右端到達で `rope_bounce_running` を立て、反対側へ自動移動  
+    - **上下左右** いずれかの端到達で `rope_bounce_running` を立て、反対側へ自動移動  
     - バウンド速度: `480*2/1.2 ≒ 800`
-  - `Scripts/ArenaMat.gd` でロープの見た目たわみ（`bend_rope(left/right)`）
+  - `Scripts/ArenaMat.gd` でロープの見た目たわみ（`bend_rope(left/right/top/bottom)`）
+- **BGM**: `AudioManager.play_battle_bgm()`（SubViewport 外・Autoload）
 - **ロープ飛ばされ（放物線）**
   - Player: `PlayerRopeLaunchedState.gd`（`LAUNCH_DURATION=1.2`、回転＋放物線）  
   - Enemy: `EnemyLaunchedState.gd`
-- 上下ロープは「跳ね返り自動移動」は行わず、範囲クランプのみ（見た目は `ArenaMat.tscn` のロープ）
+- 上下ロープも左右と同様に **跳ね返り自動移動** を行う（Phase A で復活・維持）
 
 ---
 
@@ -679,6 +683,12 @@ Enemy は以下の状態（Status）を持つ。
 - **HP 表示**: Player/Enemy とも既存の ProgressBar をそのまま利用。最大値・現在値を SPEC の HP 値に合わせる。  
 - **ヒット時フラッシュ**: 既存の `CharacterBase.damage_effects()`（赤フラッシュ）を維持。  
 - **SE**: 既存の `AudioManager`（BLOODY_HIT 等）をそのまま使用。  
+- **BGM（2026-07-13）**: `AudioManager` の専用 `BGMPlayer` で管理（Autoload・シーン外）。  
+  - タイトル: `MainThemeNew.mp3` ループ（`_ready` 即再生）  
+  - ステージIntro: `Intro.mp3`（非ループ）→ 終了でゴング SE  
+  - バトル: `MainThemeNew.mp3` ループ（`StageController._ready` 先頭で即再生）  
+  - エンディング: `Ending.mp3`（なければ `MainTheme.mp3`）  
+  - MainFloor 内 `BGMFromOffset` は互換ノードのみ（再生しない）
 - **タイトル画面（現行）**: `Scenes/Misc/TitleScreen.tscn` + `Scripts/TitleScreen.gd`
   - 1P / 2P / テストを上下で選択し、選択中は強調表示。
   - ESCで終了確認（はい/いいえ）を表示。

@@ -163,12 +163,6 @@ radius = 25.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_7m131"]
 radius = 32.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ub6e5"]
-bg_color = Color(0.0352941, 0.0156863, 0.00784314, 0.427451)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0guox"]
-bg_color = Color(1, 0, 0, 1)
-
 [sub_resource type="Curve" id="Curve_h7vsg"]
 _data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.71062, 0.0, 0, 0]
 point_count = 2
@@ -427,7 +421,7 @@ floor_stop_on_slope = false
 floor_block_on_wall = false
 script = ExtResource("1_y5oq4")
 sprite = NodePath("AnimatedSprite2D")
-healthbar = NodePath("Camera2D/ProgressBar")
+healthbar = NodePath("")
 health = 200
 hit_particles = NodePath("hit_particle_blood")
 
@@ -510,29 +504,6 @@ animator = NodePath("../../AnimationPlayer")
 [node name="Camera2D" type="Camera2D" parent="."]
 scale = Vector2(2, 2)
 position_smoothing_speed = 15.0
-
-[node name="ProgressBar" type="ProgressBar" parent="Camera2D"]
-light_mask = 2
-visibility_layer = 2
-offset_left = -151.5
-offset_top = 82.5
-offset_right = -145.5
-offset_bottom = 146.5
-rotation = -1.57079
-theme_override_styles/background = SubResource("StyleBoxFlat_ub6e5")
-theme_override_styles/fill = SubResource("StyleBoxFlat_0guox")
-step = 1.0
-value = 25.0
-fill_mode = 2
-show_percentage = false
-
-[node name="Label" type="Label" parent="Camera2D"]
-offset_left = -151.5
-offset_top = 63.5
-offset_right = -105.5
-offset_bottom = 76.5
-text = "Health"
-label_settings = ExtResource("28_5mc6f")
 
 [node name="hit_particle_blood" type="GPUParticles2D" parent="."]
 emitting = false
