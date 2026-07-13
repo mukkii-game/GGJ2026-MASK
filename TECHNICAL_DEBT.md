@@ -30,14 +30,10 @@
 
 ---
 
-## TD-03: qte_main.gd（旧版QTE）がルートに残っている
+## ~~TD-03: qte_main.gd（旧版QTE）がルートに残っている~~ → **修正済み**
 
-**現状**: `Scenes/qte_main.gd` はスタンドアロンテスト用の旧コード。`get_tree().quit()` で終了する。
-実際のゲームでは `StageController.gd` が `qte_core.tscn` を直接操作。
-
-**影響**: 混乱の元。間違って使うとゲームが終了する。
-
-**対処案**: 削除するか、StageController経由の新版に統合。
+`qte_main.gd` をシグナルベース（`qte_succeeded` / `qte_failed`）に書き換え済み。
+`get_tree().quit()` を削除し、`queue_free()` に変更。StageControllerとの連携も整合。
 
 ---
 

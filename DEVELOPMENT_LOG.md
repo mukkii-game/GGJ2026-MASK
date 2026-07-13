@@ -71,6 +71,23 @@
 
 ---
 
+## 変更記録
+
+### 2026-07-13: SPEC乖離修正・バグ修正・引き継ぎ文書整備
+- **変更内容**:
+  1. SPEC.md の PUSH_KNOCKBACK を 60→90 に修正（コードの実値に合わせる）
+  2. SPEC.md のプレイヤー反動を 12→6 に修正（`PUSH_PLAYER_KNOCKBACK_HALFCAR` の実値）
+  3. SPEC.md §9 にプレイヤー/敵のマット範囲差を明記
+  4. `qte_main.gd` をシグナルベースに書き換え（`get_tree().quit()` を除去）
+  5. `DebugContactOverlay.gd` の `draw_line` に線幅パラメータを渡すよう修正
+  6. `EnemyMain.gd` のMAT定数コメントを意図的差異と明示
+  7. KNOWN_ISSUES.md の修正済み項目を更新
+- **変更理由**: SPEC-コード乖離の解消、既知バグの修正、引き継ぎ品質向上
+- **影響範囲**: `docs/SPEC.md`, `Scenes/qte_main.gd`, `Scripts/DebugContactOverlay.gd`, `Scenes/NPC's/Enemy/Scripts/EnemyMain.gd`, `KNOWN_ISSUES.md`, `CURRENT_IMPLEMENTATION.md`
+- **SPEC更新**: B.0 半キャラずらしのノックバック値、§9 マット範囲、定数一覧
+
+---
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

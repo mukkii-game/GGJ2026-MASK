@@ -44,8 +44,7 @@ func _draw() -> void:
 		draw_rect(pr, Color(1, 0, 0, 0.3))
 
 func _draw_rect_outline(rect: Rect2, color: Color, width: float) -> void:
-	var w := width
-	draw_line(rect.position, rect.position + Vector2(rect.size.x, 0), color)
-	draw_line(rect.position + Vector2(rect.size.x, 0), rect.position + rect.size, color)
-	draw_line(rect.position + rect.size, rect.position + Vector2(0, rect.size.y), color)
-	draw_line(rect.position + Vector2(0, rect.size.y), rect.position, color)
+	draw_line(rect.position, rect.position + Vector2(rect.size.x, 0), color, width)
+	draw_line(rect.position + Vector2(rect.size.x, 0), rect.position + rect.size, color, width)
+	draw_line(rect.position + rect.size, rect.position + Vector2(0, rect.size.y), color, width)
+	draw_line(rect.position + Vector2(0, rect.size.y), rect.position, color, width)

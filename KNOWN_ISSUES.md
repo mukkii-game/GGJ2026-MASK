@@ -6,11 +6,9 @@
 
 ## 重大度: 高
 
-### KI-01: qte_main.gd が失敗時にゲーム終了する
-- **場所**: `Scenes/qte_main.gd` の `exit_sequence()`
-- **内容**: `get_tree().quit()` を呼んでいる。これはスタンドアロンテスト用の古いコード
-- **影響**: `qte_main.gd` はルートに残っているが、`StageController.gd` は `qte_core.tscn` を直接使うため、**実際には発火しない**。ただしシーンを間違えて使うと問題
-- **対処案**: `qte_main.gd` を削除するか、`exit_sequence()` を修正
+### ~~KI-01: qte_main.gd が失敗時にゲーム終了する~~ → **修正済み**
+- `qte_main.gd` をシグナルベース（`qte_succeeded` / `qte_failed`）に書き換え済み
+- `get_tree().quit()` を削除し、`queue_free()` に変更
 
 ### KI-02: Tween一括killによる副作用
 - **場所**: `PlayerJumpState.gd` の `Enter()` / `Exit()`
@@ -28,11 +26,8 @@
 - **影響**: 上端に張り付く挙動が起こり得る
 - **対処案**: 上下バウンドを左右と同様に実装するか、矯正ロジックを整理
 
-### KI-04: PUSH_KNOCKBACK の値がSPECと乖離している可能性
-- **場所**: `PlayerMain.gd`
-- **内容**: コード上は `PUSH_KNOCKBACK = 90.0` だが、SPEC B.0では「60px」と記載。未コミット変更で値が変わっている可能性
-- **影響**: SPEC.mdとコードの乖離（spec-syncルール違反）
-- **対処案**: 実際の値を確認し、SPEC.mdを更新
+### ~~KI-04: PUSH_KNOCKBACK の値がSPECと乖離~~ → **修正済み**
+- SPEC.md をコードの実値（`PUSH_KNOCKBACK=90`, `PUSH_PLAYER_KNOCKBACK_HALFCAR=6`）に更新済み
 
 ### KI-05: 敵死亡後のqueue_free競合
 - **場所**: `CharacterBase._die()` / `StageController._on_qte_succeeded()`
@@ -55,14 +50,12 @@
 - **内容**: 2P側は `cam.enabled = false` で無効化しているが、Camera2Dノード自体は残る
 - **影響**: なし（機能しない）
 
-### KI-08: collision_maskの不統一
-- **場所**: `PlayerRopeLaunchedState.Exit()` vs `PlayerMain._ready()`
-- **内容**: RopeLaunched Exit時に `collision_mask = 1` だが、`_ready()` でも `collision_mask = 1`。正常時は3（layer 1+2）のはず
-- **影響**: ロープ飛ばし後にlayer 2の壁をすり抜け続ける可能性
-- **対処案**: Exit時に元の値（3 or 1）を正しく復元
+### ~~KI-08: collision_maskの不統一~~ → **確認済み: 意図的**
+- `PlayerMain._ready()` で `collision_mask = 1` に設定（ロープ外壁 layer 2 を無効化）
+- `PlayerRopeLaunchedState.Exit()` も `collision_mask = 1` に復元
+- これは意図的（ロープ外の壁をすり抜けるため）。問題なし
 
-### KI-09: StageControllerのMAT定数がEnemyMainと微妙に異なる
-- **場所**: `StageController.gd` と `EnemyMain.gd`
-- **内容**: StageControllerの `MAT_LEFT=296, MAT_RIGHT=984`、EnemyMainの `MAT_LEFT=296, MAT_RIGHT=984`、PlayerMainの `MAT_LEFT=280, MAT_RIGHT=1000`
-- **影響**: プレイヤーと敵のマット範囲が微妙に異なる（プレイヤーの方が広い）
-- **対処案**: 意図的ならSPECに明記。意図的でなければ統一
+### ~~KI-09: MAT定数の差異~~ → **確認済み: 意図的**
+- Player: `MAT_LEFT=280, MAT_RIGHT=1000`（幅720）
+- Enemy: `MAT_LEFT=296, MAT_RIGHT=984`（幅688、片側16px狭い）
+- 敵がロープ端に張り付かないための設計。SPEC §9 と EnemyMain コメントに明記済み

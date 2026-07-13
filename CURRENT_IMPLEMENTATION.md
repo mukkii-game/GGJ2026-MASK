@@ -143,7 +143,7 @@ SPECのこれらのセクションは初期計画であり、B.0が現行実装�
 | ロープ飛ばし(P) | `Scenes/Player/Scripts/States/PlayerRopeLaunchedState.gd` |
 | 敵AI・状態 | `Scenes/NPC's/Enemy/Scripts/EnemyMain.gd` |
 | ステージ進行・スポーン | `Scripts/StageController.gd` |
-| QTE | `Scenes/qte_core.tscn` + `Scenes/qte_main.gd`（旧版。StageControllerから呼ばれる新版あり） |
+| QTE | `Scenes/qte_core.tscn` + `Scenes/qte_main.gd`（シグナルベースに修正済み。StageControllerから呼ばれる） |
 | ゲーム全体管理 | `Scripts/Managers/GameManager.gd` |
 | タイトル画面 | `Scripts/TitleScreen.gd` |
 | デス画面 | `Scripts/Reset.gd` |

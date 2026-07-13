@@ -7,7 +7,7 @@ enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee }
 ## 敵の状態（攻略性向上）：通常・怒り・弱り
 enum EnemyState { Normal, Angry, Weak }
 
-## 敵同士が重ならないよう、かさなったらずらす用（マット内）
+## 敵のマット範囲（PlayerMainより片側16px狭い＝敵がロープ端に張り付かない）
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
 const MAT_TOP := 106.0
