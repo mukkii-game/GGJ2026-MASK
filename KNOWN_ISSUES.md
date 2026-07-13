@@ -71,6 +71,18 @@
 - `qte_main_with_anim.gd` のQTE成功判定が `Punch` / `Kick` / `Dash` / `Enter` / `ui_accept` のみを見ており、2P専用の `Punch2` が含まれていなかった
 - 修正: `Input.is_action_just_pressed("Punch2")` を追加（`project.godot` に定義済みであることを確認済み）
 
+### KI-19: 「ボスを倒してもクリア画面に行かない」報告 → **現行HEADで再現せず（2026-07-13調査）**
+- ユーザー報告。ステージ不明（S2〜S4のいずれか）
+- headless実機シミュレーション（ボスHP0→QTE success_game()→シーン遷移監視）で S2/S3/S4 全て `CLEARED_OK` を確認。
+  `defeated_for_qte` → QTE起動 → `qte_succeeded` → `_on_qte_succeeded()`（雑魚残数と無関係に無条件でクリア）→ 1.2秒後 StageClear.tscn 遷移のパイプラインは現行コードで正常
+- 有力仮説: (a) 報告が本日の修正前のビルド（KI-05: QTE成功時のqueue_free競合がまさにこの症状を起こしうる）、
+  (b) QTEが実は失敗していた（FAIL→ボスHP20%回復で戦闘続行。「倒したのに何も起きない」ように見える）
+- 再現情報待ち: どのステージか / QTE画面は出たか / SUCCESS!とFAIL...のどちらが表示されたか / 1P・2Pどちらか
+
+### KI-20: かすりトドメ時のボス位置クランプ漏れ（軽微・未修正）
+- `PlayerMain._body_contact()` のかすり分岐の敵移動Tweenに、半キャラ/正面と違い `_clamp_enemy_to_mat` のコールバックが無い
+- マット端でかすりトドメ→QTE中にボスが僅かに回転・ドリフトして見える可能性。見た目のみで実害なし
+
 ---
 
 ## 重大度: 低
