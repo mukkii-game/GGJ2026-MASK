@@ -48,10 +48,12 @@ var is_down: bool = false
 var ring_in_landing_pos: Vector2 = Vector2.ZERO
 ## 敵の状態（通常／怒り／弱り）。トレーニングダミーはスポーン時に固定され変動しない
 var enemy_state: EnemyState = EnemyState.Normal
-## 怒り：残りHPがこの割合以下で発生（アルゴリズム）
+## 怒り：残りHPがこの割合以下で発生（アルゴリズム・HP起因は継続）
 const ANGRY_HP_RATIO := 0.4
 ## 怒り：スポーンからこの秒数経過でも発生（アルゴリズム）
 const ANGRY_TIME_SEC := 15.0
+## 時間経過起因の怒りはこの秒数だけ続き、その後タイマーがリセットされて通常に戻る（波状の怒り）
+const ANGRY_TIME_DURATION := 8.0
 ## 弱り：かすり／踏みのあとこの秒数だけ弱り状態
 const WEAK_DURATION_SEC := 8.0
 var _state_timer: float = 0.0
@@ -226,10 +228,35 @@ func _update_enemy_state() -> void:
 		return
 	var max_hp := maxf(1.0, float(max_health))
 	var hp_ratio := float(health) / max_hp
+	# HP起因の怒りは継続。時間起因の怒りは一定時間で収まり、タイマーがリセットされて再び通常に（波状）
+	if _state_timer >= ANGRY_TIME_SEC + ANGRY_TIME_DURATION:
+		_state_timer = 0.0
 	if hp_ratio <= ANGRY_HP_RATIO or _state_timer >= ANGRY_TIME_SEC:
 		enemy_state = EnemyState.Angry
 	else:
 		enemy_state = EnemyState.Normal
+
+## 状態による移動速度倍率（Angry=速い / Weak=遅い）。各ステートの移動処理で乗算する
+func state_speed_mult() -> float:
+	match enemy_state:
+		EnemyState.Angry:
+			return 1.35
+		EnemyState.Weak:
+			return 0.5
+		_:
+			return 1.0
+
+## 状態による与ダメージ倍率（Angry=1.5倍）。EnemyAttackState で乗算する
+func state_damage_mult() -> float:
+	return 1.5 if enemy_state == EnemyState.Angry else 1.0
+
+## 半キャラずらしが無効か（Angry中は正面以外のダメージ源はかすり・踏みのみ）
+func is_shoulder_immune() -> bool:
+	return enemy_state == EnemyState.Angry
+
+## 弱り中か（どの角度からでも一方的ダメージ・プレイヤーは正面でも無傷）
+func is_weak_state() -> bool:
+	return enemy_state == EnemyState.Weak
 
 ## かすりを食らったとき（弱り状態へ）
 func notify_graze_hit() -> void:

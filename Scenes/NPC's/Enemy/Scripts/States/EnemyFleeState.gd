@@ -33,7 +33,8 @@ func Update(_delta: float):
 	var to_player := player.global_position - owner_node.global_position
 	var distance := to_player.length()
 	
-	var speed := move_speed
+	# 逃走ボスは怒りで加速させない（追いつけなくなるため）。弱りの減速だけ適用
+	var speed := move_speed * minf(1.0, owner_node.state_speed_mult())
 	if owner_node.super_flee_remaining > 0.0:
 		speed = super_flee_speed
 	

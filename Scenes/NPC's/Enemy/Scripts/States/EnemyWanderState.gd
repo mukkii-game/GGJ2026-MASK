@@ -43,5 +43,6 @@ func Update(delta: float):
 		_has_target = false
 		state_transition.emit(self, "enemy_idle_state")
 		return
-	body.velocity = to_target.normalized() * move_speed
+	var speed_mult: float = (body as EnemyMain).state_speed_mult() if body is EnemyMain else 1.0
+	body.velocity = to_target.normalized() * move_speed * speed_mult
 	body.move_and_slide()

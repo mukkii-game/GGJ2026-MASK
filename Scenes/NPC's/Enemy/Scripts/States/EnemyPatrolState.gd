@@ -87,6 +87,8 @@ func Update(delta: float):
 		elif len <= -dist:
 			_dir = 1.0
 
+	if body is EnemyMain:
+		spd *= (body as EnemyMain).state_speed_mult()
 	if use_h:
 		body.velocity = Vector2(_dir * spd, 0)
 	else:

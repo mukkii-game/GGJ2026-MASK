@@ -437,6 +437,31 @@ func _body_contact(delta: float) -> void:
 			continue
 		var shoulder_ok: bool = pressing_toward_ok and alignment_diff >= HALF_OVERLAP_DIST and alignment_diff < SEMI_CAR_MAX
 		var kasuri_ok: bool = pressing_toward_ok and alignment_diff >= SEMI_CAR_MAX and alignment_diff < BODY_CONTACT_MAX_ALIGNMENT
+		# 敵状態の参照（Angry=半キャラ無効 / Weak=どの角度でも一方的）: SPEC §7.2
+		var enemy_angry: bool = enemy is EnemyMain and (enemy as EnemyMain).is_shoulder_immune()
+		var enemy_weak: bool = enemy is EnemyMain and (enemy as EnemyMain).is_weak_state()
+		if shoulder_ok and enemy_angry:
+			# 怒り状態：半キャラずらし無効。ダメージなし・ノックバックなし。
+			# 押し込みが「効いていない」ことを伝えるため、プレイヤーだけ軽く弾き返す
+			if GameManager.training_mode:
+				GameManager.body_contact_type_text = "半キャラ無効(怒り)"
+				GameManager.body_contact_type_timer = 1.5
+			if _push_damage_timer <= 0:
+				_push_damage_timer = PUSH_DAMAGE_INTERVAL
+				var repel: Vector2 = _axis_knockback(-to_enemy, PUSH_KNOCKBACK * 0.5)
+				var repel_pos := global_position + repel
+				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR + 0.1)
+				if _is_outside_mat(repel_pos):
+					set_invincible_for(1.5)
+					trigger_rope_launch()
+				else:
+					var tw_rp := create_tween()
+					tw_rp.tween_property(self, "global_position", repel_pos, BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR)
+					tw_rp.tween_callback(func() -> void:
+						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+					)
+					register_motion_tween(tw_rp)
+			break
 		if shoulder_ok:
 			if GameManager.training_mode:
 				GameManager.body_contact_type_text = "半キャラ"
@@ -558,10 +583,10 @@ func _body_contact(delta: float) -> void:
 			break
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
-			# ステージ3: ユニ帝仮面の正面無敵 + 反撃（正面側から当たったときだけ有効）
+			# ステージ3: ユニ帝仮面の正面無敵 + 反撃（正面側から当たったときだけ有効。弱り中は無効）
 			var is_stage3_boss: bool = GameManager.current_stage == 3 and "stage_number" in enemy and enemy.stage_number == 3
 			var stage3_front_guard := false
-			if is_stage3_boss and "facing_dir_sign" in enemy:
+			if is_stage3_boss and not enemy_weak and "facing_dir_sign" in enemy:
 				var boss_facing: int = enemy.facing_dir_sign
 				if boss_facing != 0:
 					# 敵→プレイヤーのX方向と facing が同じなら「正面側」にいる
@@ -606,7 +631,9 @@ func _body_contact(delta: float) -> void:
 					leave_post_2x_jump = false
 				
 				enemy._take_damage(damage_to_enemy)
-				take_damage_from_enemy(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
+				# 弱り状態の敵からは正面でもダメージを受けない（SPEC §7.2 Weak）
+				if not enemy_weak:
+					take_damage_from_enemy(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
 			
 			# 正面衝突：血のエフェクトを2倍大きく、2倍長く
 			if fire_dash_damage_mult > 1.5:

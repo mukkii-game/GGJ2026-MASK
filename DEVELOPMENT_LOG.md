@@ -110,6 +110,18 @@
 - **SPEC更新**: §5（攻撃ボタン）、B.5.1（自動走行/炎ダッシュ入力）、B.10（Win/Loseのクリア時フリーズ・死亡一元化）
 - **テスト**: Godot 4.7 headless で `GameWrapper.tscn` 600フレーム実行しエラーゼロを確認。実プレイ確認は未実施（TODO.md参照）
 
+### 2026-07-13: 敵状態（Angry/Weak）のゲームプレイ効果を実装
+- **変更内容**:
+  1. `EnemyMain` に `state_speed_mult()` / `state_damage_mult()` / `is_shoulder_immune()` / `is_weak_state()` を追加
+  2. Angry: 半キャラずらし無効（ダメージ・敵ノックバックなし、プレイヤーだけ45px弾き返し＋トレーニング時「半キャラ無効(怒り)」表示）、移動1.35倍、敵攻撃1.5倍
+  3. Weak: 移動0.5倍、正面衝突でもプレイヤー無傷（一方的ダメージ）、弱り中の敵攻撃はダメージ0、ステージ3ボスの正面ガードも無効
+  4. 時間経過起因の怒りを波状化（15秒経過→8秒間怒り→タイマーリセットで通常へ）。HP40%以下起因の怒りは継続
+  5. 逃走ボス（ステージ2）は怒りで加速しない（追いつけなくなるため。弱りの減速のみ適用）
+- **変更理由**: GAME_SPEC・SPEC §7.2・CURRENT_IMPLEMENTATION に「実装済み」と記載されていたが、実際は見た目の色変化のみでゲームプレイ効果が未実装だった（ドキュメントとコードの重大な乖離）。「かすり→弱り→押し込み」の攻略ループを成立させるコア仕様のため実装
+- **影響範囲**: `Scenes/NPC's/Enemy/Scripts/EnemyMain.gd`, `Scenes/Player/Scripts/PlayerMain.gd`, `Scenes/NPC's/Enemy/Scripts/States/EnemyAttackState.gd`・`EnemyChaseState.gd`・`EnemyWanderState.gd`・`EnemyPatrolState.gd`・`EnemyFleeState.gd`
+- **SPEC更新**: §7.2 Status（Angry/Weakの効果・発生条件・実装箇所を明記）
+- **テスト**: headless 600フレーム実行でエラーなし。実プレイでの体感バランスは未検証
+
 ---
 
 ## 変更記録テンプレート

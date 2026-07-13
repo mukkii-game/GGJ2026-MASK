@@ -48,7 +48,8 @@ func Update(delta: float):
 		state_transition.emit(self, "enemy_attack_state")
 		return
 
-	body.velocity = chase_direction.normalized() * move_speed
+	var speed_mult: float = (body as EnemyMain).state_speed_mult() if body is EnemyMain else 1.0
+	body.velocity = chase_direction.normalized() * move_speed * speed_mult
 	body.move_and_slide()
 
 func Exit():
