@@ -1,13 +1,5 @@
 extends Label
+## プロトタイプ用の残骸。ゲーム本体では未使用。
 
-
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
 	pass
-Label
- └ Transform → Scale = (2, 2)

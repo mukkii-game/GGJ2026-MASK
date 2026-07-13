@@ -55,6 +55,12 @@
 - `PlayerRopeLaunchedState.Exit()` も `collision_mask = 1` に復元
 - これは意図的（ロープ外の壁をすり抜けるため）。問題なし
 
+### ~~KI-10: press_bar.gd / result_label.gd / kancho.gd のパースエラー~~ → **修正済み**
+- `press_bar.gd` 30行目の全角不正文字を除去
+- `result_label.gd` の `_ready()` 重複定義と未定義参照を修正
+- `kancho.gd` の末尾の無効テキストを除去
+- いずれもゲーム本体では未使用の残骸ファイル
+
 ### ~~KI-09: MAT定数の差異~~ → **確認済み: 意図的**
 - Player: `MAT_LEFT=280, MAT_RIGHT=1000`（幅720）
 - Enemy: `MAT_LEFT=296, MAT_RIGHT=984`（幅688、片側16px狭い）

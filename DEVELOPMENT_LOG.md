@@ -86,6 +86,15 @@
 - **影響範囲**: `docs/SPEC.md`, `Scenes/qte_main.gd`, `Scripts/DebugContactOverlay.gd`, `Scenes/NPC's/Enemy/Scripts/EnemyMain.gd`, `KNOWN_ISSUES.md`, `CURRENT_IMPLEMENTATION.md`
 - **SPEC更新**: B.0 半キャラずらしのノックバック値、§9 マット範囲、定数一覧
 
+### 2026-07-13: 残骸スクリプトのパースエラー修正
+- **変更内容**:
+  1. `press_bar.gd` 30行目の全角不正文字を除去
+  2. `Scenes/result_label.gd` の `_ready()` 重複定義と未定義参照を修正
+  3. `Scenes/kancho.gd` の末尾無効テキストを除去
+- **変更理由**: Godotエディタのパースエラー回避。スクリプト監査で発見
+- **影響範囲**: `press_bar.gd`, `Scenes/result_label.gd`, `Scenes/kancho.gd`（いずれもゲーム本体では未使用）
+- **SPEC更新**: 不要
+
 ---
 
 ## 変更記録テンプレート
