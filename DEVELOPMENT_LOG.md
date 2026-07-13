@@ -95,6 +95,21 @@
 - **影響範囲**: `press_bar.gd`, `Scenes/result_label.gd`, `Scenes/kancho.gd`（いずれもゲーム本体では未使用）
 - **SPEC更新**: 不要
 
+### 2026-07-13: 既知バグ一括修正（KI-02/03/05/06/11/12）・パワーエサFB・残骸削除
+- **変更内容**:
+  1. KI-02: `CharacterBase` に `register_motion_tween()`/`kill_motion_tweens()` を追加し、ジャンプ・ロープ飛ばしステートの「全Tween一括kill」を自分の移動系Tweenのみのkillに変更
+  2. KI-03: 未使用の上ロープ矯正ロジック（`_rope_correction_velocity` 等）を削除。上下ロープはクランプのみで確定
+  3. KI-05: QTE成功時のボス消滅を `CharacterBase._die()` に一元化（マスク飛び演出→1秒後に自動free）
+  4. KI-06: ステージクリア確定後 `enemies_frozen=true`＋プレイヤー5秒無敵。次ステージ開始時に解除。`set_invincible_for()` を期限管理方式に変更
+  5. KI-11（新規発見）: 存在しないアクション `AttackPunch`/`AttackKick` の毎フレーム参照を除去。通常攻撃（Attacking）遷移を削除し、グリッドモード時のNボタン（2Pは左クリック）＝炎ダッシュ遷移を Idle/Walk に実装
+  6. KI-12（新規発見）: `PlayerMain._ready()` のカメラ付け替えを `call_deferred` 化（add_child失敗の解消）
+  7. TD-08: パワーエサ取得時に効果色フラッシュ＋効果名ポップアップを表示
+  8. TD-10: 残骸ファイル削除（`press_bar.gd`, `Scenes/qte_main.gd`, `Scenes/result_label.gd`, `Scenes/kancho.gd`）
+- **変更理由**: 既知バグの解消と、コアの気持ちよさに直結するフィードバック強化。KI-11 は「炎ダッシュが1Pで一度も発動できていなかった」実質的な機能欠落の修正
+- **影響範囲**: `Scripts/CharacterBase.gd`, `Scripts/StageController.gd`, `Scripts/PowerBait.gd`, `Scenes/Player/Scripts/PlayerMain.gd`, `Scenes/Player/Scripts/States/PlayerJumpState.gd`・`PlayerRopeLaunchedState.gd`・`PlayerIdleState.gd`・`PlayerWalkState.gd`, `Scenes/NPC's/Enemy/Scripts/EnemyMain.gd`, `Scenes/NPC's/Enemy/Scripts/States/EnemyLaunchedState.gd`
+- **SPEC更新**: §5（攻撃ボタン）、B.5.1（自動走行/炎ダッシュ入力）、B.10（Win/Loseのクリア時フリーズ・死亡一元化）
+- **テスト**: Godot 4.7 headless で `GameWrapper.tscn` 600フレーム実行しエラーゼロを確認。実プレイ確認は未実施（TODO.md参照）
+
 ---
 
 ## 変更記録テンプレート

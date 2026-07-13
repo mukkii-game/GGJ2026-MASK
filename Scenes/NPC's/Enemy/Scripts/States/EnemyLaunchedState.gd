@@ -53,23 +53,18 @@ func Enter() -> void:
 	body.collision_mask = 1
 	sprite_node = enemy_main.sprite if enemy_main else body.get_node_or_null("AnimatedSprite2D")
 	
-	# Enter時に必ず既存のtweenをすべてkillしてリセット
+	# Enter時に自分の移動・回転Tweenだけをkillしてリセット（他ノードのTweenは巻き込まない）
+	enemy_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
-		# 既存のすべてのtweenを強制終了
-		var tree := sprite_node.get_tree()
-		if tree:
-			for tween in tree.get_processed_tweens():
-				if tween.is_valid():
-					tween.kill()
 		# scaleは一切触らない！rotationとpositionだけリセット
 		sprite_node.rotation = 0.0
 		sprite_node.position = Vector2.ZERO
 	
 	# スプライト高速回転
 	if sprite_node and is_instance_valid(sprite_node):
-		sprite_node.rotation = 0.0
 		var tween := sprite_node.create_tween()
 		tween.tween_property(sprite_node, "rotation", TAU * 2.0, LAUNCH_DURATION)  # 2回転
+		enemy_main.register_motion_tween(tween)
 
 func Exit() -> void:
 	if not body:
@@ -80,13 +75,10 @@ func Exit() -> void:
 	body.z_index = 0
 	# コリジョンマスクを元に戻す（3 = layer 1 + layer 2）
 	body.collision_mask = 3
+	# 自分の移動・回転Tweenだけをkillしてリセット
+	if enemy_main and is_instance_valid(enemy_main):
+		enemy_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
-		# すべてのtweenを強制終了
-		var tree := sprite_node.get_tree()
-		if tree:
-			for tween in tree.get_processed_tweens():
-				if tween.is_valid():
-					tween.kill()
 		sprite_node.position = Vector2.ZERO
 		sprite_node.rotation = 0.0
 		# scaleは一切触らない！

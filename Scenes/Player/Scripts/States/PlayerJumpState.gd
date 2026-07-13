@@ -39,14 +39,9 @@ func Enter() -> void:
 	# sprite_nodeを先に取得
 	sprite_node = player_main.sprite if player_main else player.get_node_or_null("AnimatedSprite2D")
 	
-	# Enter時に必ず既存のtweenをすべてkillしてリセット
+	# Enter時に自分の移動・回転Tweenだけをkillしてリセット（他ノードのTweenは巻き込まない）
+	player_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
-		# 既存のすべてのtweenを強制終了
-		var tree := sprite_node.get_tree()
-		if tree:
-			for tween in tree.get_processed_tweens():
-				if tween.is_valid():
-					tween.kill()
 		# scaleは一切触らない！rotationとpositionだけリセット
 		sprite_node.rotation = 0.0
 		sprite_node.position = Vector2.ZERO
@@ -57,15 +52,10 @@ func Enter() -> void:
 		jump_duration = JUMP_DURATION_POST
 		# スプライト高速回転（影は動かない、スプライトのみ回転）6回転
 		if sprite_node and is_instance_valid(sprite_node):
-			# 既存のすべてのtweenを強制終了してから新規作成
-			var tree := sprite_node.get_tree()
-			if tree:
-				for tween_old in tree.get_processed_tweens():
-					if tween_old.is_valid():
-						tween_old.kill()
 			var tween := sprite_node.create_tween()
 			tween.set_parallel(false)
 			tween.tween_property(sprite_node, "rotation", TAU * 6.0, JUMP_DURATION_POST)  # 6回転（2倍速）
+			player_main.register_motion_tween(tween)
 		# 「ギュルるる」音を立て続けて（PLAYER_ATTACK_SWINGを連続で）
 		_play_spin_sounds()
 	else:
@@ -89,13 +79,9 @@ func Exit() -> void:
 	player.rotation = 0.0
 	# コリジョンマスクを元に戻す（3 = layer 1 + layer 2）
 	player.collision_mask = 3
+	# 自分の移動・回転Tweenだけをkillしてリセット
+	player_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
-		# すべてのtweenを強制終了
-		var tree := sprite_node.get_tree()
-		if tree:
-			for tween in tree.get_processed_tweens():
-				if tween.is_valid():
-					tween.kill()
 		sprite_node.position = Vector2.ZERO  # 完全にリセット
 		sprite_node.rotation = 0.0  # スプライトの回転もリセット
 		# scaleは一切触らない！

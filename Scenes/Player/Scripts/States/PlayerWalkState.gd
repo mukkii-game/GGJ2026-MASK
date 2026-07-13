@@ -61,8 +61,14 @@ func Update(delta : float):
 	if Input.is_action_just_pressed(jump_action):
 		state_transition.emit(self, "Jump")
 		return
-	# Nボタン＝走る（押すとダッシュ開始。方向がなければ向いている方向へ自動走行）
-	if Input.is_action_just_pressed("Dash") and player_main:
+	# Nボタン（2Pは左クリック）＝走る（押すとダッシュ開始。方向がなければ向いている方向へ自動走行）
+	var dash_action := "Dash"
+	if player_main and player_main.is_player_two:
+		dash_action = "Punch2"
+	if Input.is_action_just_pressed(dash_action) and player_main:
+		if player_main.use_grid_movement:
+			state_transition.emit(self, "FireDash")
+			return
 		if can_dash:
 			start_dash(input_dir if input_dir.length() > 0 else (auto_run_direction if auto_run_direction != Vector2.ZERO else (Vector2.RIGHT if (player_main.sprite and player_main.sprite.scale.x >= 0) else Vector2.LEFT)))
 		elif auto_run_direction == Vector2.ZERO and dashspeed <= 0 and input_dir.length() <= 0:
@@ -77,10 +83,8 @@ func Update(delta : float):
 	# 自動走行中フラグ更新（風エフェクト用）
 	if player_main:
 		player_main.is_auto_running = auto_run_direction != Vector2.ZERO
-	if Input.is_action_just_pressed("AttackPunch") or Input.is_action_just_pressed("AttackKick"):
-		Transition("Attacking")
-	else:
-		Move(input_dir, delta)
+	# 通常攻撃は存在しない（NON_NEGOTIABLES #1）。旧 Attacking 遷移は削除済み
+	Move(input_dir, delta)
 	LessenDash(delta)
 	
 func Move(input_dir : Vector2, delta : float):

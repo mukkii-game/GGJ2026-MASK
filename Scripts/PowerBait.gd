@@ -152,6 +152,7 @@ func _apply_random_effect(player: PlayerMain) -> void:
 	if choice == 0:
 		# プレイヤー速度2倍・一定時間
 		player.apply_power_bait_speed(EFFECT_DURATION)
+		_show_pickup_feedback(player, "スピード2倍！", Color(0.3, 0.8, 2.0, 1.0))
 	else:
 		# 敵全員弱り状態＋プレイヤーは敵からダメージを受けなくなる
 		for node in get_tree().get_nodes_in_group("Enemy"):
@@ -159,3 +160,32 @@ func _apply_random_effect(player: PlayerMain) -> void:
 			if is_instance_valid(e) and not e.is_dead:
 				e.set_weak_for(EFFECT_DURATION)
 		player.apply_power_bait_enemy_immune(EFFECT_DURATION)
+		_show_pickup_feedback(player, "敵全員よわり！", Color(0.3, 2.0, 0.6, 1.0))
+
+
+## 取得フィードバック：プレイヤーをフラッシュ＋効果名のポップアップ表示（TD-08）
+func _show_pickup_feedback(player: PlayerMain, text: String, flash_color: Color) -> void:
+	# プレイヤー本体を効果色でフラッシュ（少し長めに維持して分かりやすく）
+	if player.has_method("_flash_modulate"):
+		player._flash_modulate(player.sprite if player.sprite else player, flash_color, 0.5)
+	# 頭上に効果名を表示して浮かせながらフェードアウト
+	var parent := player.get_parent()
+	if not parent:
+		return
+	var label := Label.new()
+	label.text = text
+	label.z_index = 200
+	label.add_theme_font_size_override("font_size", 36)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color(flash_color.r * 0.5, flash_color.g * 0.5, flash_color.b * 0.5, 1.0))
+	label.add_theme_constant_override("outline_size", 8)
+	parent.add_child(label)
+	# 中央揃えで頭上に配置
+	label.position = player.global_position + Vector2(-120.0, -110.0)
+	label.size = Vector2(240.0, 40.0)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 50.0, 1.2)
+	tw.tween_property(label, "modulate:a", 0.0, 1.2).set_delay(0.5)
+	tw.chain().tween_callback(label.queue_free)

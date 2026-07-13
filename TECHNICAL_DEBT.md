@@ -71,26 +71,23 @@ l1/l2の2フレームアニメーション（Idle, Walk, Attack, Death）を手�
 
 ---
 
-## TD-07: Tween管理が場当たり的
+## TD-07: Tween管理が場当たり的 → **大部分対処済み（2026-07-13）**
 
-**現状**: 各所で `create_tween()` を呼び、前のTweenがkillされないまま新しいTweenが走ることがある。
-`PlayerJumpState` では `get_processed_tweens()` で全Tweenをkillする荒い対処。
+**対処済み**: `CharacterBase.register_motion_tween()` / `kill_motion_tweens()` を導入。
+移動・回転系Tweenはキャラごとに登録され、ステート切替時に自分のTweenだけkillされる。
+`get_processed_tweens()` の全killは排除済み（KI-02参照）。
 
-**影響**: Tween競合によるアニメーション異常。
-
-**対処案**: Tweenをメンバ変数に保持し、新規作成前に明示的にkill。
+**残り**: modulate系フラッシュのTweenは登録外（フラッシュ同士の競合は許容範囲）。
 
 ---
 
-## TD-08: パワーエサの実装が仮
+## TD-08: パワーエサの実装が仮 → **一部対処済み（2026-07-13）**
 
-**現状**: `POWER_BAIT_GET` が `QuestSound.ogg` を流用。専用SEなし。
-`apply_power_bait_speed()` / `apply_power_bait_enemy_immune()` は動作するが、
-取得時のエフェクトやUI表示がない。
+**対処済み**: 取得時にプレイヤーが効果色でフラッシュ（速度2倍＝青、敵弱り＝緑）し、
+頭上に「スピード2倍！」「敵全員よわり！」のポップアップが浮かんでフェードアウトする
+（`PowerBait._show_pickup_feedback()`）。
 
-**影響**: プレイヤーがパワーエサを取ったことに気づきにくい。
-
-**対処案**: 専用SE、取得時フラッシュ、UI表示を追加。
+**残り**: 専用SEなし（`POWER_BAIT_GET` が `QuestSound.ogg` を流用のまま。音声アセット待ち）。
 
 ---
 
@@ -104,10 +101,7 @@ l1/l2の2フレームアニメーション（Idle, Walk, Attack, Death）を手�
 
 ---
 
-## TD-10: press_bar.gd がルート直下に存在
+## ~~TD-10: press_bar.gd がルート直下に存在~~ → **修正済み（2026-07-13）**
 
-**現状**: `press_bar.gd` がプロジェクトルートに残っている。おそらくQTEの初期プロトタイプ。
-
-**影響**: 不要ファイル。混乱の元。
-
-**対処案**: 削除。
+残骸ファイルを削除: `press_bar.gd` / `Scenes/qte_main.gd` / `Scenes/result_label.gd` / `Scenes/kancho.gd`
+（いずれも .tscn から未参照であることを確認済み。QTEの実体は `Scenes/qte_main_with_anim.gd`）

@@ -29,6 +29,8 @@ var _pending_clear_stage: int = 0
 var _clear_timer: Timer = null
 
 func _ready() -> void:
+	# 前ステージのクリア演出でフリーズしたままにならないよう解除
+	GameManager.enemies_frozen = false
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
 	await get_tree().process_frame
 	# 2P: 2P/テスト時は毎回新規生成して追加（シーン由来に依存しない）
@@ -563,8 +565,11 @@ func _on_boss_defeated_for_qte(who: CharacterBase) -> void:
 			qte_node.qte_failed.connect(_on_qte_failed)
 
 func _on_qte_succeeded() -> void:
+	# 死亡フローを CharacterBase._die() に一元化（KI-05）。
+	# マスク飛び演出＋1秒後に自動 queue_free されるので直接 free しない
 	if current_qte_boss and is_instance_valid(current_qte_boss):
-		current_qte_boss.queue_free()
+		current_qte_boss.is_dead = false  # _die() の二重実行ガードを通すため一旦戻す
+		current_qte_boss._die()
 	current_qte_boss = null
 	qte_node = null
 	stage_cleared = true
@@ -626,6 +631,11 @@ func _play_clear_flash_and_fanfare() -> void:
 ## ステージクリア（Timerノードで1.2秒後に遷移。create_timer のコールバックが失われる不具合を避ける）
 ## 全ステージ共通：ステージクリア画面へ→キーで次へ（4の次はエンディング）
 func _on_stage_clear() -> void:
+	# クリア確定後は敵を止め、プレイヤーを無敵にする（遷移までの1.2秒間に被弾死しないように: KI-06）
+	GameManager.enemies_frozen = true
+	for node in get_tree().get_nodes_in_group("Player"):
+		if node and node.has_method("set_invincible_for"):
+			node.set_invincible_for(5.0)
 	_pending_clear_stage = GameManager.current_stage
 	if _clear_timer != null and is_instance_valid(_clear_timer):
 		_clear_timer.queue_free()

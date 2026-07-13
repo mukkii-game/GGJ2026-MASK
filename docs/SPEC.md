@@ -66,14 +66,15 @@
 ---
 
 ## 5. 攻撃ボタン（コンテキスト依存）
-攻撃ボタンは常に同じ効果を持たない。
+攻撃ボタンは常に同じ効果を持たない。**通常攻撃（パンチ/キックでダメージ）は存在しない**（NON_NEGOTIABLES #1。旧 Attacking ステートへの遷移は 2026-07-13 に削除済み）。
 
 | 状況 | 効果 |
 |---|---|
-| 飛び道具所持 | 飛び道具を投擲 |
-| 通常状態 | 短時間の高速ダッシュ |
+| 飛び道具所持 | 飛び道具を投擲（Out of Scope） |
+| 通常（滑らか）モード | Nボタン（2Pは左クリック）＝短時間ダッシュ / 停止中なら自動走行 |
+| グリッド（カクカク）モード | Nボタン（2Pは左クリック）押し続け＝炎ダッシュ（与/被ダメ2倍） |
 | ダッシュ中に敵接触 | ノックバック強化 |
-| Enemy | 同様の行動を取る |
+| Enemy | 体当たりのみ |
 
 ---
 
@@ -505,12 +506,13 @@ Enemy は以下の状態（Status）を持つ。
 **入力仕様**
 
 - **通常（滑らか）モード時**  
-  - Idle 中に Nボタンを 1 回押す → プレイヤーの向いている左右方向に自動走行開始。  
+  - Idle 中に Nボタン（2Pは左クリック）を 1 回押す → プレイヤーの向いている左右方向に自動走行開始。  
   - Moving 中に Nボタンを押した場合も、停止中かつ方向入力がなければ同様に自動走行開始。  
   - **移動キー（十字キー／WASD など）を入れると、自動走行は解除される。**
 - **カクカク（グリッド）モード時**  
-  - 既存仕様どおり、Nボタン押しっぱなしで **炎ダッシュ状態（`PlayerFireDashState`）** を維持する。  
+  - Nボタン（2Pは左クリック）押しっぱなしで **炎ダッシュ状態（`PlayerFireDashState`）** を維持する（Idle/Moving どちらからでも遷移）。  
   - このモードでは Nボタンは自動走行のトリガーにはならない。
+- **補足（2026-07-13 修正）**: 旧コードは存在しないアクション名 `AttackPunch`/`AttackKick` を参照しており、1P では Attacking 遷移も FireDash 遷移も発動していなかった。現在は Idle/Walk 両ステートで上記入力仕様どおりに動作し、通常攻撃（Attacking）への遷移は削除された。
 
 **ロープとの連携**
 
@@ -621,8 +623,10 @@ Enemy は以下の状態（Status）を持つ。
 **やること**
 
 - **Win（現行）**: `StageController.gd` がステージクリア時に `Scenes/UI/StageClear.tscn` へ遷移。  
+  - クリア確定〜遷移までの1.2秒間は `GameManager.enemies_frozen = true`＋全プレイヤー5秒無敵（クリア後の被弾死防止。次ステージの `StageController._ready()` で解除）。  
+  - QTE成功時のボス消滅は `CharacterBase._die()` に一元化（マスク飛び演出→1秒後に自動 `queue_free`）。  
   - `StageClear.gd` で 1秒後に入力受付し、キー/クリックで `GameManager.load_next_stage()` を呼ぶ。  
-  - `load_next_stage()` は `StageIntro.tscn` →（入力で）`GameWrapper.tscn` へ遷移。
+  - `load_next_stage()` は `StageIntro.tscn` →（入力で）`GameWrapper.tscn` へ遷移。ステージ4の次は `Ending.tscn`。
 - **Lose（現行）**: Player HP==0 で `PlayerMain._die()` が `Scenes/Misc/DeathScreen.tscn` を表示。
   - DeathScreen は **コンティニュー / タイトルに戻る / 終了する** を上下で選択（`Scripts/Reset.gd`）。
 

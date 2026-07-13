@@ -1,6 +1,6 @@
 # KNOWN_ISSUES.md — 既知のバグ・不具合
 
-**最終更新**: 2026-07-13
+**最終更新**: 2026-07-13（デスクトップ側AIによる修正反映）
 
 ---
 
@@ -8,38 +8,43 @@
 
 ### ~~KI-01: qte_main.gd が失敗時にゲーム終了する~~ → **修正済み**
 - `qte_main.gd` をシグナルベース（`qte_succeeded` / `qte_failed`）に書き換え済み
-- `get_tree().quit()` を削除し、`queue_free()` に変更
+- その後、未使用の残骸だったため削除（実際に使われているのは `qte_main_with_anim.gd`）
 
-### KI-02: Tween一括killによる副作用
-- **場所**: `PlayerJumpState.gd` の `Enter()` / `Exit()`
-- **内容**: `get_tree().get_processed_tweens()` で**全ての**アクティブTweenをkillしている
-- **影響**: ジャンプ開始/終了時に、他のノード（敵のノックバック、UIアニメーション等）のTweenも巻き込む可能性
-- **対処案**: 自分が作ったTweenだけをkillするように変更
+### ~~KI-02: Tween一括killによる副作用~~ → **修正済み（2026-07-13）**
+- `CharacterBase` に `register_motion_tween()` / `kill_motion_tweens()` を追加
+- 移動・回転系Tween（ノックバック・かすり回転・空中ノックバック等）は作成時に登録し、
+  ジャンプ/ロープ飛ばしのステート Enter/Exit では**自分の登録済みTweenだけ**をkillする方式に変更
+- `get_processed_tweens()` の全killは全箇所から排除（PlayerJumpState / PlayerRopeLaunchedState / EnemyLaunchedState）
+
+### KI-11: 存在しないアクション名によるエラースパム → **修正済み（2026-07-13）**
+- `PlayerIdleState` / `PlayerWalkState` が存在しない `AttackPunch` / `AttackKick` を毎フレーム参照していた
+- 影響: 1P では Attacking / FireDash 遷移が一切発動せず、ログにエラーが毎フレーム出ていた
+- 修正: 通常攻撃（Attacking）遷移を削除（NON_NEGOTIABLES #1 準拠）。
+  グリッドモード時の Nボタン（2Pは左クリック）＝炎ダッシュ遷移を Idle/Walk 両方に実装（SPEC B.5.1 準拠）
 
 ---
 
 ## 重大度: 中
 
-### KI-03: 上ロープのバウンドが不安定
-- **場所**: `PlayerMain.gd` の `_physics_process()`
-- **内容**: 上下ロープは跳ね返り自動移動を行わず、クランプのみ。ただし `_rope_correction_velocity` と `ROPE_TOP_CORRECTION_SPEED` が定義されており、上ロープ矯正用の仕組みが残っている
-- **影響**: 上端に張り付く挙動が起こり得る
-- **対処案**: 上下バウンドを左右と同様に実装するか、矯正ロジックを整理
+### ~~KI-03: 上ロープのバウンドが不安定~~ → **修正済み（2026-07-13）**
+- 未使用の上ロープ矯正ロジック（`_rope_correction_velocity` / `ROPE_TOP_CORRECTION_*` / `ROPE_BOTTOM_BOUNCE`）を削除
+- 上下ロープは「クランプのみ」で確定（OQ-02 は選択肢A採用）
 
 ### ~~KI-04: PUSH_KNOCKBACK の値がSPECと乖離~~ → **修正済み**
 - SPEC.md をコードの実値（`PUSH_KNOCKBACK=90`, `PUSH_PLAYER_KNOCKBACK_HALFCAR=6`）に更新済み
 
-### KI-05: 敵死亡後のqueue_free競合
-- **場所**: `CharacterBase._die()` / `StageController._on_qte_succeeded()`
-- **内容**: `_die()` は1秒後に `queue_free()`、QTE成功時も `current_qte_boss.queue_free()`
-- **影響**: タイミング次第で二重freeやnull参照の可能性（is_instance_validで概ね防いでいるが）
-- **対処案**: 死亡フローの一元化
+### ~~KI-05: 敵死亡後のqueue_free競合~~ → **修正済み（2026-07-13）**
+- QTE成功時の `current_qte_boss.queue_free()` 直呼びをやめ、`CharacterBase._die()` に一元化
+- ボスもマスク飛び演出→1秒後に自動 `queue_free` される（クリア遷移は1.2秒後なので競合しない）
 
-### KI-06: ステージクリア後の入力が残る
-- **場所**: `StageController._on_stage_clear()` / `StageClear.gd`
-- **内容**: クリア判定後もプレイヤーは操作可能。Timer(1.2秒)で画面遷移するまでの間に体当たりが発生する
-- **影響**: クリア後に死亡する可能性（レアケース）
-- **対処案**: クリア判定後にプレイヤーを無敵にするか、入力を無効化
+### ~~KI-06: ステージクリア後の入力が残る~~ → **修正済み（2026-07-13）**
+- `_on_stage_clear()` で `GameManager.enemies_frozen = true`＋全プレイヤーを5秒無敵に
+- 次ステージの `StageController._ready()` で `enemies_frozen` を解除
+- あわせて `set_invincible_for()` を「期限管理方式」に変更（短い無敵が長い無敵を打ち消さない）
+
+### KI-12: PlayerMain._ready() のカメラ付け替えがエラーを出す → **修正済み（2026-07-13）**
+- `_ready()` 中の `add_child()` が「親がセットアップ中」で失敗していた
+- `add_child.call_deferred()` + `set_deferred()` に変更
 
 ---
 

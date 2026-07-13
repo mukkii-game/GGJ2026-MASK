@@ -29,18 +29,14 @@ func Update(_delta : float):
 		jump_action = "Jump2"
 	if Input.is_action_just_pressed(jump_action):
 		state_transition.emit(self, "Jump")
-	# Nボタン＝走る（向いている方向に自動走行開始）
-	if Input.is_action_just_pressed("Dash"):
-		var p := player_main
-		if p:
-			p.start_auto_run = true
-			state_transition.emit(self, "Moving")
-	# 攻撃はパンチ/キック
-	var atk_punch := "AttackPunch"
-	var atk_kick := "AttackKick"
-	# 2Pはマウス左右クリックで攻撃ステートへ
+	# Nボタン（2Pは左クリック）＝通常モード：自動走行 / グリッドモード：炎ダッシュ（SPEC B.5.1）
+	# ※通常攻撃は存在しない（NON_NEGOTIABLES #1）。旧 Attacking 遷移は削除済み
+	var dash_action := "Dash"
 	if player_main and player_main.is_player_two:
-		atk_punch = "Punch2"
-		atk_kick = "Kick2"
-	if Input.is_action_just_pressed(atk_punch) or Input.is_action_just_pressed(atk_kick):
-		state_transition.emit(self, "Attacking")
+		dash_action = "Punch2"
+	if Input.is_action_just_pressed(dash_action) and player_main:
+		if player_main.use_grid_movement:
+			state_transition.emit(self, "FireDash")
+		else:
+			player_main.start_auto_run = true
+			state_transition.emit(self, "Moving")

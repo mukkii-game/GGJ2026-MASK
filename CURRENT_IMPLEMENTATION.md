@@ -40,7 +40,7 @@
 - [x] ダッシュ（N+方向→短時間加速）
 - [x] ジャンプ（M→小ジャンプ。空中は体当たり無効、着地で敵踏みダメージ）
 - [x] コーナーポストジャンプ（大ジャンプ、6回転、着地で高ダメージ）
-- [x] 炎ダッシュ（カクカクモード時Nボタン押し続け。赤く光る。与/被ダメ2倍）
+- [x] 炎ダッシュ（カクカクモード時Nボタン押し続け。赤く光る。与/被ダメ2倍）※2026-07-13 に遷移バグ修正（それまで1Pでは発動不能だった）
 - [x] パワーエサ（速度2倍 or 敵ダメージ無効）
 - [x] 2P対応（テンキー＋マウス。専用スプライト `m_man_gr_l1/l2`）
 - [x] 死亡時マスク飛び演出（`MaskFlyAway.gd`）
@@ -143,7 +143,7 @@ SPECのこれらのセクションは初期計画であり、B.0が現行実装�
 | ロープ飛ばし(P) | `Scenes/Player/Scripts/States/PlayerRopeLaunchedState.gd` |
 | 敵AI・状態 | `Scenes/NPC's/Enemy/Scripts/EnemyMain.gd` |
 | ステージ進行・スポーン | `Scripts/StageController.gd` |
-| QTE | `Scenes/qte_core.tscn` + `Scenes/qte_main.gd`（シグナルベースに修正済み。StageControllerから呼ばれる） |
+| QTE | `Scenes/qte_core.tscn` + `Scenes/qte_main_with_anim.gd`（シグナルベース。StageControllerから呼ばれる。旧 qte_main.gd は削除済み） |
 | ゲーム全体管理 | `Scripts/Managers/GameManager.gd` |
 | タイトル画面 | `Scripts/TitleScreen.gd` |
 | デス画面 | `Scripts/Reset.gd` |

@@ -100,11 +100,6 @@ const PUSH_KNOCKBACK := 90.0
 const PUSH_DAMAGE_INTERVAL := 0.2
 const PUSH_DAMAGE_PER_TICK := 6
 var _push_damage_timer := 0.0
-## 上ロープ矯正用（ワープではなく数フレームで下方向に押し戻す）
-var _rope_correction_velocity := Vector2.ZERO
-const ROPE_TOP_CORRECTION_SPEED := 120.0
-const ROPE_TOP_CORRECTION_DECAY := 400.0
-const ROPE_BOTTOM_BOUNCE := 256
 ## 敵と接したあとこの秒数だけモーション2倍速
 var _enemy_contact_timer: float = 0.0
 const ENEMY_CONTACT_SPEED_SEC := 2.0
@@ -154,9 +149,10 @@ func _ready():
 			if vp != get_tree().root and vp.get_child_count() > 0:
 				cam_root = vp.get_child(0)
 			if cam_root and cam.get_parent() == self:
+				# _ready 中は親がセットアップ中で add_child が失敗するため遅延実行
 				remove_child(cam)
-				cam_root.add_child(cam)
-				cam.global_position = CAM_CENTER
+				cam_root.add_child.call_deferred(cam)
+				cam.set_deferred("global_position", CAM_CENTER)
 
 ## 2P用: SpriteFrames の 1P 画像を 2P 用（m_man_gr_l1 / m_man_gr_l2）に差し替え
 func _apply_2p_sprite_frames() -> void:
@@ -297,8 +293,7 @@ func _physics_process(delta: float) -> void:
 		rope_bounce_target = Vector2(MAT_LEFT, p.y)
 		_face_horizontal(rope_bounce_direction.x)
 		_notify_rope_bounce("right")
-	_rope_correction_velocity = _rope_correction_velocity.move_toward(Vector2.ZERO, ROPE_TOP_CORRECTION_DECAY * delta)
-	p += _rope_correction_velocity * delta
+	# 上下ロープはクランプのみ（跳ね返りは左右だけ＝プロレスのロープワーク）
 	global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
 	_body_contact(delta)
 
@@ -503,6 +498,7 @@ func _body_contact(delta: float) -> void:
 					var tw_e := enemy.create_tween()
 					tw_e.tween_property(enemy, "global_position", new_enemy_pos, tween_dur)
 					tw_e.tween_callback(_clamp_enemy_to_mat.bind(enemy))
+					enemy.register_motion_tween(tw_e)
 				if _is_outside_mat(new_player_pos):
 					set_invincible_for(1.5)
 					trigger_rope_launch()
@@ -512,6 +508,7 @@ func _body_contact(delta: float) -> void:
 					tw_p.tween_callback(func() -> void:
 						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 					)
+					register_motion_tween(tw_p)
 			break
 		if kasuri_ok and body_contact_cooldown <= 0:
 			# かすり：一方的にダメージ、両者斜めにすっ飛ばして離れる。繋がらない（クールダウンで連打防止）
@@ -551,11 +548,13 @@ func _body_contact(delta: float) -> void:
 			tw_p.tween_property(self, "global_position", new_player_pos, KASURI_TWEEN_DURATION)
 			tw_p.tween_property(player_sprite_node, "rotation_degrees", spin_from_p + KASURI_SPIN_DEGREES, KASURI_TWEEN_DURATION)
 			tw_p.tween_callback(_on_kasuri_tween_done.bind(enemy, new_player_pos))
+			register_motion_tween(tw_p)
 			# 敵：位置＋回転を同じ時間でティーン
 			var tw_e := enemy.create_tween()
 			tw_e.set_parallel(true)
 			tw_e.tween_property(enemy, "global_position", new_enemy_pos, KASURI_TWEEN_DURATION)
 			tw_e.tween_property(enemy_sprite_node, "rotation_degrees", spin_from_e + KASURI_SPIN_DEGREES, KASURI_TWEEN_DURATION)
+			enemy.register_motion_tween(tw_e)
 			break
 		# 正面（差が少なめ）または敵方向を押していない：両方ダメージ＋作用反作用で反対向きにノックバック（約3キャラ分・移動で飛ばす）
 		if body_contact_cooldown <= 0:
@@ -594,6 +593,7 @@ func _body_contact(delta: float) -> void:
 					tw_p.tween_callback(func() -> void:
 						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 					)
+					register_motion_tween(tw_p)
 				
 				body_contact_cooldown = BODY_CONTACT_INTERVAL
 			else:
@@ -658,6 +658,7 @@ func _body_contact(delta: float) -> void:
 					var tw_e := enemy.create_tween()
 					tw_e.tween_property(enemy, "global_position", new_enemy_pos, BODY_KNOCKBACK_TWEEN_DURATION)
 					tw_e.tween_callback(_clamp_enemy_to_mat.bind(enemy))
+					enemy.register_motion_tween(tw_e)
 				if _is_outside_mat(new_player_pos):
 					set_invincible_for(1.5)
 					trigger_rope_launch()
@@ -667,6 +668,7 @@ func _body_contact(delta: float) -> void:
 					tw_p.tween_callback(func() -> void:
 						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
 					)
+					register_motion_tween(tw_p)
 				body_contact_cooldown = BODY_CONTACT_INTERVAL
 		break
 

@@ -45,14 +45,9 @@ func Enter() -> void:
 	player.collision_mask = 1
 	sprite_node = player_main.sprite if player_main else player.get_node_or_null("AnimatedSprite2D")
 	
-	# Enter時に必ず既存のtweenをすべてkillしてリセット
+	# Enter時に自分の移動・回転Tweenだけをkillしてリセット（他ノードのTweenは巻き込まない）
+	player_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
-		# 既存のすべてのtweenを強制終了
-		var tree := sprite_node.get_tree()
-		if tree:
-			for tween in tree.get_processed_tweens():
-				if tween.is_valid():
-					tween.kill()
 		# scaleは一切触らない！rotationとpositionだけリセット
 		sprite_node.rotation = 0.0
 		sprite_node.position = Vector2.ZERO
@@ -61,6 +56,7 @@ func Enter() -> void:
 	if sprite_node:
 		var tween := sprite_node.create_tween()
 		tween.tween_property(sprite_node, "rotation", TAU * 2.0, LAUNCH_DURATION)  # 2回転
+		player_main.register_motion_tween(tween)
 
 func Exit() -> void:
 	if not player:
@@ -72,13 +68,9 @@ func Exit() -> void:
 	player.rotation = 0.0
 	# コリジョンマスクを元に戻す（1 = layer 1 のみ・ロープ外の壁は無効のまま）
 	player.collision_mask = 1
+	# 自分の移動・回転Tweenだけをkillしてリセット
+	player_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
-		# すべてのtweenを強制終了
-		var tree := sprite_node.get_tree()
-		if tree:
-			for tween in tree.get_processed_tweens():
-				if tween.is_valid():
-					tween.kill()
 		sprite_node.position = Vector2.ZERO
 		sprite_node.rotation = 0.0
 		# scaleは一切触らない！

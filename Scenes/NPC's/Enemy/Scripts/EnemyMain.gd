@@ -317,6 +317,7 @@ func trigger_aerial_knockback() -> void:
 	if sprite_node:
 		tw.tween_property(sprite_node, "rotation_degrees", spin_from + AERIAL_KNOCKBACK_SPIN_DEGREES, AERIAL_KNOCKBACK_TWEEN_DURATION)
 	tw.tween_callback(_on_aerial_knockback_done)
+	register_motion_tween(tw)
 	if body_shape_node:
 		body_shape_node.disabled = true
 	collision_mask = 1

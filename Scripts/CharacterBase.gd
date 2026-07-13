@@ -25,6 +25,21 @@ var knockback_stun_remaining: float = 0.0
 var halfcar_white_until: float = 0.0
 ## エフェクト用：白いキャラ絵（透明以外を白にした画像）。設定されていれば半キャラ時にピカピカ表示
 var flash_effect_white_texture: Texture2D = null
+## 移動・回転系のTween（ノックバック・かすり回転など）。ステート切替時に個別killするために保持
+## （以前は get_processed_tweens() で全Tweenをkillしており、UIや他キャラのTweenを巻き込んでいた: KI-02）
+var _motion_tweens: Array[Tween] = []
+
+## 位置・回転を動かすTweenを登録する。ジャンプ/ロープ飛ばし開始時にまとめてkillされる
+func register_motion_tween(t: Tween) -> void:
+	_motion_tweens = _motion_tweens.filter(func(x: Tween) -> bool: return x != null and x.is_valid())
+	_motion_tweens.append(t)
+
+## 登録済みの移動・回転Tweenだけをkillする（modulateフラッシュ等は巻き込まない）
+func kill_motion_tweens() -> void:
+	for t in _motion_tweens:
+		if t and t.is_valid():
+			t.kill()
+	_motion_tweens.clear()
 
 func _ready():
 	max_health = health  # 初期HPを記録
@@ -127,11 +142,18 @@ func _take_damage(amount):
 			return
 		_die()
 		
+## 無敵の期限（ミリ秒）。重複呼び出し時に短いタイマーが長い無敵を打ち消さないようにする
+var _invincible_until_ms: int = 0
+
 ## 指定秒数だけ無敵にする（体当たり・ロープ跳ね返り後など）
 func set_invincible_for(duration: float) -> void:
 	invincible = true
+	var until := Time.get_ticks_msec() + int(duration * 1000.0)
+	if until > _invincible_until_ms:
+		_invincible_until_ms = until
 	await get_tree().create_timer(duration).timeout
-	if is_instance_valid(self):
+	# 自分より後に、より長い無敵が設定されていたら解除しない
+	if is_instance_valid(self) and Time.get_ticks_msec() >= _invincible_until_ms - 10:
 		invincible = false
 		
 func _die():
