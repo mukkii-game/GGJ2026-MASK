@@ -1,5 +1,5 @@
 extends Node2D
-## パワーエサ。画面端からフラフラ揺れながら移動。ジャンプで取るとランダム効果（敵全体弱り or プレイヤー速度2倍）
+## パワーエサ。画面端からフラフラ揺れながら移動。ジャンプで取ると敵全員弱り＋プレイヤー無敵
 ## 見た目は _draw で大きくはっきり描画
 
 ## マット範囲（右→左 or 上→下の移動に使用）
@@ -18,10 +18,10 @@ const SCREEN_BOTTOM := 780.0
 const WOBBLE_AMP := 18.0
 ## 揺れの周波数（rad/秒）
 const WOBBLE_FREQ := 4.5
-## 端から端までかかる時間（秒）（速度2倍＝8秒）
-const TRAVEL_DURATION := 8.0
+## 端から端までかかる時間（秒）
+const TRAVEL_DURATION := 20.0
 ## 効果持続時間（秒）
-const EFFECT_DURATION := 5.0
+const EFFECT_DURATION := 8.0
 
 enum Pattern { RightToLeft, TopToBottom }
 
@@ -148,19 +148,12 @@ func _try_collect() -> void:
 
 
 func _apply_random_effect(player: PlayerMain) -> void:
-	var choice: int = randi() % 2
-	if choice == 0:
-		# プレイヤー速度2倍・一定時間
-		player.apply_power_bait_speed(EFFECT_DURATION)
-		_show_pickup_feedback(player, "スピード2倍！", Color(0.3, 0.8, 2.0, 1.0))
-	else:
-		# 敵全員弱り状態＋プレイヤーは敵からダメージを受けなくなる
-		for node in get_tree().get_nodes_in_group("Enemy"):
-			var e := node as EnemyMain
-			if is_instance_valid(e) and not e.is_dead:
-				e.set_weak_for(EFFECT_DURATION)
-		player.apply_power_bait_enemy_immune(EFFECT_DURATION)
-		_show_pickup_feedback(player, "敵全員よわり！", Color(0.3, 2.0, 0.6, 1.0))
+	for node in get_tree().get_nodes_in_group("Enemy"):
+		var e := node as EnemyMain
+		if is_instance_valid(e) and not e.is_dead:
+			e.set_weak_for(EFFECT_DURATION)
+	player.apply_power_bait_enemy_immune(EFFECT_DURATION)
+	_show_pickup_feedback(player, "敵全員よわり！", Color(0.3, 2.0, 0.6, 1.0))
 
 
 ## 取得フィードバック：プレイヤーをフラッシュ＋効果名のポップアップ表示（TD-08）

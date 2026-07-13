@@ -1,11 +1,11 @@
 extends Node2D
-## アリーナマット：
-## - カクカクモード時にマット色を変更
-## - ロープヒット時にロープを外側に「たわませる」演出を行う
+## アリーナマット：ロープヒット時にロープを外側に「たわませる」演出を行う
 
 @onready var mat_rect: ColorRect = get_node_or_null("MatBackground/MatColor")
-@onready var rope_left: ColorRect = get_node_or_null("RopeFrameBack/RopeLeft")
-@onready var rope_right: ColorRect = get_node_or_null("RopeFrameBack/RopeRight")
+@onready var rope_left: ColorRect = get_node_or_null("RopeFrameBack/RopeLeft1")
+@onready var rope_right: ColorRect = get_node_or_null("RopeFrameBack/RopeRight1")
+@onready var rope_top: ColorRect = get_node_or_null("RopeFrameBack/RopeTop")
+@onready var rope_bottom: ColorRect = get_node_or_null("RopeBottom/BottomRect")
 
 const ROPE_BEND_OFFSET := 8.0
 const ROPE_BEND_TIME_OUT := 0.06
@@ -15,8 +15,14 @@ var _left_orig_left: float
 var _left_orig_right: float
 var _right_orig_left: float
 var _right_orig_right: float
+var _top_orig_top: float
+var _top_orig_bottom: float
+var _bottom_orig_top: float
+var _bottom_orig_bottom: float
 var _left_tween: Tween
 var _right_tween: Tween
+var _top_tween: Tween
+var _bottom_tween: Tween
 
 func _ready() -> void:
 	if rope_left:
@@ -25,48 +31,57 @@ func _ready() -> void:
 	if rope_right:
 		_right_orig_left = rope_right.offset_left
 		_right_orig_right = rope_right.offset_right
+	if rope_top:
+		_top_orig_top = rope_top.offset_top
+		_top_orig_bottom = rope_top.offset_bottom
+	if rope_bottom:
+		_bottom_orig_top = rope_bottom.offset_top
+		_bottom_orig_bottom = rope_bottom.offset_bottom
 
 func _process(_delta: float) -> void:
 	if mat_rect:
-		# カクカクモード時：マットを黒に近いグレーに
-		if GameManager.use_grid_mode:
-			mat_rect.color = Color(0.15, 0.15, 0.15, 1.0)  # 黒に近いグレー
-		else:
-			mat_rect.color = Color.WHITE
+		mat_rect.color = Color.WHITE
 
-## プレイヤーがロープにヒットしたときに呼ぶ。side: "left" / "right"
+## プレイヤーがロープにヒットしたときに呼ぶ。side: "left" / "right" / "top" / "bottom"
 func bend_rope(side: String) -> void:
-	if side == "left":
-		_bend_left()
-	elif side == "right":
-		_bend_right()
+	match side:
+		"left":
+			_bend_horizontal(rope_left, _left_orig_left, _left_orig_right, true, "_left_tween")
+		"right":
+			_bend_horizontal(rope_right, _right_orig_left, _right_orig_right, false, "_right_tween")
+		"top":
+			_bend_vertical(rope_top, _top_orig_top, _top_orig_bottom, true, "_top_tween")
+		"bottom":
+			_bend_vertical(rope_bottom, _bottom_orig_top, _bottom_orig_bottom, false, "_bottom_tween")
 
-func _bend_left() -> void:
-	if not rope_left:
+func _bend_horizontal(rect: ColorRect, orig_l: float, orig_r: float, is_left: bool, tween_var: String) -> void:
+	if not rect:
 		return
-	if _left_tween and _left_tween.is_valid():
-		_left_tween.kill()
-	rope_left.offset_left = _left_orig_left
-	rope_left.offset_right = _left_orig_right
-	var out := -ROPE_BEND_OFFSET  # 左外側へ
+	var existing: Tween = get(tween_var)
+	if existing and existing.is_valid():
+		existing.kill()
+	rect.offset_left = orig_l
+	rect.offset_right = orig_r
+	var out := -ROPE_BEND_OFFSET if is_left else ROPE_BEND_OFFSET
 	var t := create_tween()
-	_left_tween = t
-	t.tween_property(rope_left, "offset_left", _left_orig_left + out, ROPE_BEND_TIME_OUT)
-	t.parallel().tween_property(rope_left, "offset_right", _left_orig_right + out, ROPE_BEND_TIME_OUT)
-	t.tween_property(rope_left, "offset_left", _left_orig_left, ROPE_BEND_TIME_BACK)
-	t.parallel().tween_property(rope_left, "offset_right", _left_orig_right, ROPE_BEND_TIME_BACK)
+	set(tween_var, t)
+	t.tween_property(rect, "offset_left", orig_l + out, ROPE_BEND_TIME_OUT)
+	t.parallel().tween_property(rect, "offset_right", orig_r + out, ROPE_BEND_TIME_OUT)
+	t.tween_property(rect, "offset_left", orig_l, ROPE_BEND_TIME_BACK)
+	t.parallel().tween_property(rect, "offset_right", orig_r, ROPE_BEND_TIME_BACK)
 
-func _bend_right() -> void:
-	if not rope_right:
+func _bend_vertical(rect: ColorRect, orig_top: float, orig_bottom: float, is_top: bool, tween_var: String) -> void:
+	if not rect:
 		return
-	if _right_tween and _right_tween.is_valid():
-		_right_tween.kill()
-	rope_right.offset_left = _right_orig_left
-	rope_right.offset_right = _right_orig_right
-	var out := ROPE_BEND_OFFSET  # 右外側へ
+	var existing: Tween = get(tween_var)
+	if existing and existing.is_valid():
+		existing.kill()
+	rect.offset_top = orig_top
+	rect.offset_bottom = orig_bottom
+	var out := -ROPE_BEND_OFFSET if is_top else ROPE_BEND_OFFSET
 	var t := create_tween()
-	_right_tween = t
-	t.tween_property(rope_right, "offset_left", _right_orig_left + out, ROPE_BEND_TIME_OUT)
-	t.parallel().tween_property(rope_right, "offset_right", _right_orig_right + out, ROPE_BEND_TIME_OUT)
-	t.tween_property(rope_right, "offset_left", _right_orig_left, ROPE_BEND_TIME_BACK)
-	t.parallel().tween_property(rope_right, "offset_right", _right_orig_right, ROPE_BEND_TIME_BACK)
+	set(tween_var, t)
+	t.tween_property(rect, "offset_top", orig_top + out, ROPE_BEND_TIME_OUT)
+	t.parallel().tween_property(rect, "offset_bottom", orig_bottom + out, ROPE_BEND_TIME_OUT)
+	t.tween_property(rect, "offset_top", orig_top, ROPE_BEND_TIME_BACK)
+	t.parallel().tween_property(rect, "offset_bottom", orig_bottom, ROPE_BEND_TIME_BACK)

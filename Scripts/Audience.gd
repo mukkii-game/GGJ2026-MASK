@@ -76,11 +76,7 @@ func _spawn_top_bottom() -> void:
 			idx += 1
 
 func _process(_delta: float) -> void:
-	# 観客の見え方：普通モード=明るいオレンジ、カクカクモード=明るい黄色
-	var audience_color := Color(1.0, 0.7, 0.3, 1.0)  # 明るいオレンジ
-	if GameManager.use_grid_mode:
-		audience_color = Color(1.0, 1.0, 0.5, 1.0)  # 明るい黄色
-	
+	var audience_color := Color(1.0, 0.7, 0.3, 1.0)
 	for group_name in ["Left", "Right", "Top", "Bottom"]:
 		var n = get_node_or_null(group_name)
 		if not n:

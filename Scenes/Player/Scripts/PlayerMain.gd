@@ -18,8 +18,6 @@ const CAM_CENTER := Vector2(640, 360)
 
 ## 2Pかどうか（true=2P。入力と見た目を変える）
 @export var is_player_two: bool = false
-## false=滑らか（初期） / true=カクカク。Gキーでトグル（1Pのみがトグル可能）
-var use_grid_movement := false
 ## Nボタン/左クリックで自動走行開始時に Moving に渡すフラグ
 var start_auto_run := false
 ## 自動走行中か（風エフェクト表示用・ロープバウンド連携）
@@ -40,25 +38,10 @@ const DASH_DURATION := 0.5
 const DASH_SPEED_MULT := 3.0
 ## ジャンプ中か（当たり判定スキップ・Yクランプしない）
 var is_jumping := false
-## コーナーポストの上にいる（触れて登った状態）
-var on_corner_post := false
-## ポストからジャンプで降りた直後＝着地ダメージ2倍
-var leave_post_2x_jump := false
 ## 着地した直後1フレームだけ体当たりをスキップ（ジャンプ着地時の二重発火防止）
 var _just_landed_frame := false
-## 炎ダッシュ中は敵への与ダメージ倍率（2倍）
-var fire_dash_damage_mult: float = 1.0
-## 炎ダッシュ中は受けるダメージ倍率（2倍・ハイリスクハイリターン）
-var fire_dash_damage_taken_mult: float = 1.0
-
-## パワーエサ取得：一定時間プレイヤー速度2倍
-func apply_power_bait_speed(duration_sec: float) -> void:
-	power_bait_speed_mult = 2.0
-	power_bait_speed_until = duration_sec
-
-## パワーエサ取得：一定時間敵からダメージを受けない
-func apply_power_bait_enemy_immune(duration_sec: float) -> void:
-	power_bait_enemy_damage_immune_until = duration_sec
+## ロープダッシュ攻撃の与ダメ倍率（Phase A: 1.5倍・連打間隔も短縮）
+const ROPE_DASH_DAMAGE_MULT := 1.5
 
 ## 敵からのダメージ（体当たり・敵攻撃）。パワーエサ効果中は無効
 func take_damage_from_enemy(amount: int) -> void:
@@ -83,8 +66,8 @@ const BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR := 0.1
 const PUSH_PLAYER_KNOCKBACK_HALFCAR := 6.0
 ## 正面／半キャラの境：ずれが32未満＝正面、32以上＝半キャラ or かすり
 const HALF_OVERLAP_DIST := 32.0
-## 半キャラずらしの上限：ずれ 32〜58 未満＝半キャラ、58以上64未満＝かすり
-const SEMI_CAR_MAX := 58.0
+## 半キャラずらしの上限：ずれ 32〜52 未満＝半キャラ（左右接近のみ）、52以上64未満＝かすり
+const SEMI_CAR_MAX := 52.0
 ## ずれ64以上＝当たってない（体当たり処理しない）
 const BODY_CONTACT_MAX_ALIGNMENT := 64.0
 ## かすり時：斜めにすっ飛ばす距離（X,Y両方ずれて離れる方向・まあまあ大きく）
@@ -111,6 +94,25 @@ var power_bait_enemy_damage_immune_until: float = 0.0
 ## アリーナマット（ロープの見た目をたわませる用）
 var _arena_mat: Node2D = null
 
+## ジャンプ入力（1P: M/Space/Enter/左クリック※2Pモード時は左クリック無効、2P: 右クリック）
+func wants_jump() -> bool:
+	if is_player_two:
+		return Input.is_action_just_pressed("Jump2")
+	if Input.is_action_just_pressed("Jump") or Input.is_action_just_pressed("ui_accept"):
+		return true
+	if not GameManager.two_player_mode and Input.is_action_just_pressed("JumpClick1P"):
+		return true
+	return false
+
+func _get_body_damage_mult() -> float:
+	return ROPE_DASH_DAMAGE_MULT if rope_bounce_running else 1.0
+
+func _get_push_damage_interval() -> float:
+	return PUSH_DAMAGE_INTERVAL / ROPE_DASH_DAMAGE_MULT if rope_bounce_running else PUSH_DAMAGE_INTERVAL
+
+func apply_power_bait_enemy_immune(duration_sec: float) -> void:
+	power_bait_enemy_damage_immune_until = duration_sec
+
 func _enter_tree() -> void:
 	# 2P: 木に入った瞬間に表示（元の挙動。1Pのときだけ _ready で隠す）
 	if is_player_two:
@@ -127,7 +129,6 @@ func _ready():
 	# 2P: 専用キャラ画像（m_man_gr_l1 / m_man_gr_l2）に差し替え
 	if is_player_two and sprite and sprite.sprite_frames:
 		_apply_2p_sprite_frames()
-	use_grid_movement = GameManager.use_grid_mode
 	# 一旦ロープ以外の背景コリジョン（ロープ外の壁）を無効化：layer1 のみ当たる
 	collision_mask = 1
 	# アリーナマット（ロープ見た目）参照を取っておく（なくても動作はする）
@@ -204,7 +205,7 @@ func _process(delta: float):
 		var flying := is_jumping
 		if fsm and fsm.current_state:
 			var state_name: StringName = fsm.current_state.name
-			flying = flying or state_name == "RopeLaunched" or state_name == "FireDash"
+			flying = flying or state_name == "RopeLaunched"
 		if flying:
 			sprite.speed_scale = 4.0
 		elif is_run_dashing:
@@ -213,12 +214,8 @@ func _process(delta: float):
 			sprite.speed_scale = 2.0
 		else:
 			sprite.speed_scale = 1.0
-	# グリッドモードトグルは1Pのみ（Gキー）
-	if not is_player_two and Input.is_action_just_pressed("ToggleGridMove"):
-		GameManager.use_grid_mode = not GameManager.use_grid_mode
-		use_grid_movement = GameManager.use_grid_mode
 
-	# ロープバウンス中に「新しく」キーを押したときだけ停止（押しっぱなしでは解除しない＝パワーエサ後も跳ね返る）
+	# ロープバウンス中に「新しく」キーを押したときだけ停止
 	if rope_bounce_running:
 		var mv_left := "MoveLeft" if not is_player_two else "Move2Left"
 		var mv_right := "MoveRight" if not is_player_two else "Move2Right"
@@ -237,8 +234,8 @@ func _process(delta: float):
 	var flying := is_jumping
 	if fsm and fsm.current_state:
 		var state_name: StringName = fsm.current_state.name
-		flying = flying or state_name == "RopeLaunched" or state_name == "FireDash"
-	# 空中（ジャンプ・ロープ飛ばされ・炎ダッシュ）は地上より前面に描画
+		flying = flying or state_name == "RopeLaunched"
+	# 空中（ジャンプ・ロープ飛ばされ）は地上より前面に描画
 	if not flying and global_position.y >= 550:
 		z_index = -10
 	elif flying:
@@ -292,7 +289,16 @@ func _physics_process(delta: float) -> void:
 		rope_bounce_target = Vector2(MAT_LEFT, p.y)
 		_face_horizontal(rope_bounce_direction.x)
 		_notify_rope_bounce("right")
-	# 上下ロープはクランプのみ（跳ね返りは左右だけ＝プロレスのロープワーク）
+	elif p.y <= MAT_TOP:
+		rope_bounce_running = true
+		rope_bounce_direction = Vector2.DOWN
+		rope_bounce_target = Vector2(p.x, MAT_BOTTOM)
+		_notify_rope_bounce("top")
+	elif p.y >= MAT_BOTTOM:
+		rope_bounce_running = true
+		rope_bounce_direction = Vector2.UP
+		rope_bounce_target = Vector2(p.x, MAT_TOP)
+		_notify_rope_bounce("bottom")
 	global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
 	_body_contact(delta)
 
@@ -310,13 +316,6 @@ func _face_horizontal(dir_x: float) -> void:
 func _notify_rope_bounce(side: String) -> void:
 	if _arena_mat and _arena_mat.has_method("bend_rope"):
 		_arena_mat.bend_rope(side)
-
-## コーナーポストに触れたときに呼ばれる。大ジャンプ（通常ジャンプの長い版・回転あり）を即発動
-func trigger_corner_post_jump() -> void:
-	if is_dead or is_jumping:
-		return
-	on_corner_post = true
-	fsm.force_change_state("Jump")
 
 ## ノックバックでロープ外に出たときに呼ばれる。反対側に放物線移動
 func trigger_rope_launch() -> void:
@@ -426,16 +425,17 @@ func _body_contact(delta: float) -> void:
 		var is_cardinal: bool = absf(input_dir.x) < 0.01 or absf(input_dir.y) < 0.01
 		var pressing_toward: bool = input_dir.length() > 0.3 and input_dir.dot(to_enemy) > 0.5
 		var pressing_toward_ok: bool = is_cardinal and pressing_toward
-		# ずれ：左右接近時はY差、上下接近時はX差。32未満＝正面、32〜58未満＝半キャラ、58〜64未満＝かすり、64以上＝当たってない
+		# ずれ：左右接近時はY差、上下接近時はX差。半キャラは左右接近のみ（上下はかすり扱い）
+		var horizontal_approach: bool = absf(to_enemy.x) >= absf(to_enemy.y)
 		var alignment_diff: float
-		if absf(to_enemy.x) >= absf(to_enemy.y):
+		if horizontal_approach:
 			alignment_diff = absf(p_pos.y - e_pos.y)
 		else:
 			alignment_diff = absf(p_pos.x - e_pos.x)
 		if alignment_diff >= BODY_CONTACT_MAX_ALIGNMENT:
 			continue
-		var shoulder_ok: bool = pressing_toward_ok and alignment_diff >= HALF_OVERLAP_DIST and alignment_diff < SEMI_CAR_MAX
-		var kasuri_ok: bool = pressing_toward_ok and alignment_diff >= SEMI_CAR_MAX and alignment_diff < BODY_CONTACT_MAX_ALIGNMENT
+		var shoulder_ok: bool = horizontal_approach and pressing_toward_ok and alignment_diff >= HALF_OVERLAP_DIST and alignment_diff < SEMI_CAR_MAX
+		var kasuri_ok: bool = pressing_toward_ok and alignment_diff >= (SEMI_CAR_MAX if horizontal_approach else HALF_OVERLAP_DIST) and alignment_diff < BODY_CONTACT_MAX_ALIGNMENT
 		# 敵状態の参照（Angry=半キャラ無効 / Weak=どの角度でも一方的）: SPEC §7.2
 		var enemy_angry: bool = enemy is EnemyMain and (enemy as EnemyMain).is_shoulder_immune()
 		var enemy_weak: bool = enemy is EnemyMain and (enemy as EnemyMain).is_weak_state()
@@ -446,7 +446,7 @@ func _body_contact(delta: float) -> void:
 				GameManager.body_contact_type_text = "半キャラ無効(怒り)"
 				GameManager.body_contact_type_timer = 1.5
 			if _push_damage_timer <= 0:
-				_push_damage_timer = PUSH_DAMAGE_INTERVAL
+				_push_damage_timer = _get_push_damage_interval()
 				var repel: Vector2 = _axis_knockback(-to_enemy, PUSH_KNOCKBACK * 0.5)
 				var repel_pos := global_position + repel
 				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR + 0.1)
@@ -480,22 +480,16 @@ func _body_contact(delta: float) -> void:
 				enemy.halfcar_white_until = Time.get_ticks_msec() / 1000.0 + 1.0
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
-				_push_damage_timer = PUSH_DAMAGE_INTERVAL
+				_push_damage_timer = _get_push_damage_interval()
 				GameManager.notify_stage1_shoulder_tackle()
 
-				# ダメージ計算（コーナージャンプ特攻を含む）。ロープダッシュ中（rope_bounce_running）は2倍。炎ダッシュと重複時は高い方のみ（乗算しない）
-				var rope_dash_mult: float = 2.0 if rope_bounce_running else 1.0
-				var damage_mult: float = maxf(fire_dash_damage_mult, rope_dash_mult)
+				var damage_mult: float = _get_body_damage_mult()
 				var damage: int = int(PUSH_DAMAGE_PER_TICK * damage_mult)
-				# ステージ4: 異論マスク、コーナージャンプ特攻
-				if GameManager.current_stage == 4 and leave_post_2x_jump:
-					damage = 50  # 特攻ダメージ
-					leave_post_2x_jump = false  # 1回だけ
 
 				enemy._take_damage(damage)
 
 				# 半キャラずらし：敵の方にエフェクトを出す（ロープダッシュ攻撃中は強化）
-				if damage_mult > 1.5:
+				if rope_bounce_running:
 					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 				if enemy.hit_particles:
 					if rope_bounce_running:
@@ -555,17 +549,12 @@ func _body_contact(delta: float) -> void:
 			# かすり＝黄フラッシュ（敵のみ・プレイヤーはダメージなしなので光らせない）。黄を少し長く維持
 			var enemy_sprite_kasuri: CanvasItem = enemy.sprite if enemy.sprite else enemy
 			_flash_modulate(enemy_sprite_kasuri, Color(1.8, 1.8, 0.2, 1.0), 0.56)
-			# ロープダッシュ中（rope_bounce_running）は2倍。炎ダッシュと重複時は高い方のみ（乗算しない）
-			var rope_dash_mult: float = 2.0 if rope_bounce_running else 1.0
-			var damage_mult: float = maxf(fire_dash_damage_mult, rope_dash_mult)
+			var damage_mult: float = _get_body_damage_mult()
 			var damage: int = int(PUSH_DAMAGE_PER_TICK * damage_mult)
-			if GameManager.current_stage == 4 and leave_post_2x_jump:
-				damage = 50
-				leave_post_2x_jump = false
 			enemy._take_damage(damage)
 			if enemy.has_method("notify_graze_hit"):
 				enemy.notify_graze_hit()
-			if damage_mult > 1.5:
+			if rope_bounce_running:
 				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 			if enemy.hit_particles:
 				if rope_bounce_running:
@@ -645,30 +634,24 @@ func _body_contact(delta: float) -> void:
 			else:
 				# 通常の正面衝突（KI: 誤学習防止ヒントの累計カウントはステージ1・本番プレイのみ）
 				GameManager.notify_stage1_front_collision()
-				var damage_to_enemy: int = int(BODY_DAMAGE_DEALT * fire_dash_damage_mult)
-				
-				# ステージ4: 異論マスク、コーナージャンプ特攻
-				if GameManager.current_stage == 4 and leave_post_2x_jump:
-					damage_to_enemy = 50
-					leave_post_2x_jump = false
+				var damage_mult: float = _get_body_damage_mult()
+				var damage_to_enemy: int = int(BODY_DAMAGE_DEALT * damage_mult)
 				
 				enemy._take_damage(damage_to_enemy)
 				# 弱り状態の敵からは正面でもダメージを受けない（SPEC §7.2 Weak）
 				if not enemy_weak:
-					take_damage_from_enemy(int(BODY_DAMAGE_TAKEN * fire_dash_damage_taken_mult))
+					take_damage_from_enemy(BODY_DAMAGE_TAKEN)
 			
-			# 正面衝突：血のエフェクトを2倍大きく、2倍長く
-			if fire_dash_damage_mult > 1.5:
+			# 正面衝突：血のエフェクト
+			if rope_bounce_running:
 				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 				if enemy.hit_particles:
-					enemy.hit_particles.amount = 40  # 2倍
-					enemy.hit_particles.lifetime = 0.8  # 2倍長く
+					enemy.hit_particles.amount = 40
+					enemy.hit_particles.lifetime = 0.8
 					enemy.hit_particles.emitting = true
-			if fire_dash_damage_taken_mult > 1.5:
-				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
 				if hit_particles:
-					hit_particles.amount = 40  # 2倍
-					hit_particles.lifetime = 0.8  # 2倍長く
+					hit_particles.amount = 40
+					hit_particles.lifetime = 0.8
 					hit_particles.emitting = true
 			else:
 				# 通常の正面衝突でも血のエフェクトを強く

@@ -169,6 +169,13 @@
 - **SPEC更新**: §9.1（新規：ステージ1クリア条件の実際の仕組み）、§12（HUD/ヒットの追記）、B.11.1（新規：生存敵数HUD実装詳細）、B.11.2（新規：誤学習防止ヒント実装詳細）
 - **テスト**: headless（`GameWrapper.tscn`）600フレーム実行でエラーなしを確認
 
+### 2026-07-13: Phase A システム変更（Sonnet中断 → Composer完成）
+- **変更内容**: グリッド/炎ダッシュ/コーナーポスト廃止、半キャラ左右限定、SEMI_CAR_MAX 52、四辺ロープバウンド、ロープダッシュ1.5倍、パワーエサ統一、ジャンプ多重バインド
+- **変更理由**: Fable Phase A 設計（`DESIGN_CHANGELOG.md`）
+- **影響範囲**: PlayerMain/States, PowerBait, ArenaMat, CornerPost, StageIntro, project.godot, SPEC, HANDOFF, TODO
+- **SPEC更新**: B.0 / B.0.1 / B.5.1 / §3 / §5 / §6
+- **テスト**: headless 主要6シーン ALL_OK
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:
