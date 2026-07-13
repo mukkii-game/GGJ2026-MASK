@@ -518,6 +518,7 @@ Enemy は以下の状態（Status）を持つ。
   - Nボタン（2Pは左クリック）押しっぱなしで **炎ダッシュ状態（`PlayerFireDashState`）** を維持する（Idle/Moving どちらからでも遷移）。  
   - このモードでは Nボタンは自動走行のトリガーにはならない。
 - **補足（2026-07-13 修正）**: 旧コードは存在しないアクション名 `AttackPunch`/`AttackKick` を参照しており、1P では Attacking 遷移も FireDash 遷移も発動していなかった。現在は Idle/Walk 両ステートで上記入力仕様どおりに動作し、通常攻撃（Attacking）への遷移は削除された。
+- **補足（2026-07-13 追記）**: `PlayerFireDashState` の維持判定は **`Dash`（1P）/ `Punch2`（2P）** を参照する（Idle/Walk の遷移トリガーと同一）。旧実装の `Punch` 参照は入力マップ上 Nキーが `Dash`/`Punch` 両方に割り当てられていたため表面化しにくかった。
 
 **ロープとの連携**
 

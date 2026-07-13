@@ -352,7 +352,7 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 				_set_zako_behavior(enemy, pos)
 		4:  # 異論マスク（同上・バトル中は iron_mask_title4 は使わない＝前後用）
 			if is_boss:
-				enemy.health = stage_params.get("boss_hp", 250)
+				enemy.health = stage_params.get("boss_hp", 180)
 				enemy.stage_number = 4
 				enemy.is_boss = true
 				enemy.use_qte_on_defeat = true

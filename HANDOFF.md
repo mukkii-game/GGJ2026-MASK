@@ -1,16 +1,16 @@
 # HANDOFF.md — AI間の開発引き継ぎ
 
 **作成日**: 2026-07-13  
-**最終更新**: 2026-07-13 13:15（デスクトップ側AI・Fable 5 自律作業中）  
+**最終更新**: 2026-07-13 13:25（デスクトップ側AI・自律作業中）  
 **目的**: どのAI（モデル）が中断しても、別のAIがそのまま再開できるようにする
 
 ---
 
-## 現在の状況（2026-07-13 13:15 時点）
+## 現在の状況（2026-07-13 13:25 時点）
 
-- 進行率 **78%**（`PROGRESS.md` 参照・確度:中）
-- 直近: バランス第1弾、Ending.tscnパースエラー修正、headless煙テスト（Title/GameWrapper/StageClear/Ending/StageIntro/QTE）
-- **次**: 炎ダッシュ/2P/Angry-Weakの実プレイ確認、バランス第2弾（必要なら）
+- 進行率 **79%**（`PROGRESS.md` 参照・確度:中）
+- 直近: トレーニング弱り/怒りラベル、AudioManagerプール16、S4ボスHPフォールバック整合、主要シーンheadless煙テスト
+- **次**: 炎ダッシュ/2P/Angry-Weakの**実プレイ確認**（最重要）、バランス第2弾（必要なら）
 - 検証用 Godot: `C:\Program Files\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe`
   - headless 実行での動作確認方法:  
     `& "<上記exe>" --headless --path "e:\GodotProjects\GGJ2026-MASK" "res://Scenes/Levels/GameWrapper.tscn" --quit-after 600`

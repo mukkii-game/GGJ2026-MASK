@@ -132,6 +132,17 @@
 - **SPEC更新**: 不要（数値の正は StageController）
 - **テスト**: headless で Title/GameWrapper/StageClear/Ending/StageIntro/QTE 起動確認
 
+### 2026-07-13: トレーニングラベル・AudioManager・S4フォールバック修正
+- **変更内容**:
+  1. トレーニングモードの体当たり種別表示に `弱り(正面/半キャラ/かすり)` / `半キャラ無効(怒り)` を追加
+  2. `AudioManager.max_players` 8→16（TD-09 暫定対処）
+  3. `StageController._spawn_enemy_at` S4ボスHPフォールバック 250→180（`_setup_normal_params` と整合）
+  4. `PlayerFireDashState` 維持判定を `Dash`/`Punch2` に統一（KI-13）
+- **変更理由**: トレーニングでの状態確認を容易に。SE途切れ低減。パラメータ不整合の防御
+- **影響範囲**: `PlayerMain.gd`, `AudioManager.gd`, `StageController.gd`, `PROGRESS.md`, `TECHNICAL_DEBT.md`
+- **SPEC更新**: 不要（トレーニング表示はUI補助。数値は StageController が正）
+- **テスト**: headless GameWrapper 起動確認
+
 ---
 
 ## 変更記録テンプレート

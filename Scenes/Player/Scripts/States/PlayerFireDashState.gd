@@ -37,7 +37,7 @@ func Exit() -> void:
 func Update(delta: float) -> void:
 	if not player or not player_main:
 		return
-	var hold_action := "Punch"
+	var hold_action := "Dash"
 	var mv_left := "MoveLeft"
 	var mv_right := "MoveRight"
 	var mv_up := "MoveUp"

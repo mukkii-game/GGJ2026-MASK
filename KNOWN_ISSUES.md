@@ -22,6 +22,11 @@
 - 修正: 通常攻撃（Attacking）遷移を削除（NON_NEGOTIABLES #1 準拠）。
   グリッドモード時の Nボタン（2Pは左クリック）＝炎ダッシュ遷移を Idle/Walk 両方に実装（SPEC B.5.1 準拠）
 
+### ~~KI-13: FireDashState が誤った hold アクションを参照~~ → **修正済み（2026-07-13）**
+- `PlayerFireDashState` が維持判定に `Punch` を使っていた（遷移は `Dash` / `Punch2`）
+- Nキーが `Punch`/`Dash` 両方に割り当てられていたため実害は出にくかったが、入力変更時に即 Idle 復帰する潜在バグ
+- 修正: 1P=`Dash`、2P=`Punch2` に統一
+
 ---
 
 ## 重大度: 中
