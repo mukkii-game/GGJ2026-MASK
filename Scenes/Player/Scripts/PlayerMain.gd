@@ -74,8 +74,6 @@ const BODY_CONTACT_HALF := 32.0
 const BODY_CONTACT_HALF_TOLERANCE := 1.0
 const BODY_DAMAGE_DEALT := 10
 const BODY_DAMAGE_TAKEN := 8
-## ノックバック＝キャラ1人分の幅を一瞬で移動（64に合わせて60前後）
-const BODY_PUSH_PIXELS := 60.0
 ## 正面衝突（両方ダメージ）時のノックバック＝キャラ約1.5人分・実際に移動で飛ばす
 const BODY_PUSH_PIXELS_FRONTAL := 120.0
 ## 通常・半キャラのノックバックを数フレームで動かす時間（その間無敵）
@@ -95,8 +93,8 @@ const KASURI_COOLDOWN := 0.4
 ## かすり：移動＋縦軸回転のティーン時間（バレリーナのように回転しながら飛ぶ）
 const KASURI_TWEEN_DURATION := 0.28
 const KASURI_SPIN_DEGREES := 720.0
-## 半キャラずらし時：ノックバック量（約1.5キャラ分）・連続ダメージ間隔・1回あたりダメージ
-const PUSH_KNOCKBACK := 90.0
+## 半キャラずらし時：ノックバック量（キャラ1人分・連打で押し込み続けられる値）・連続ダメージ間隔・1回あたりダメージ
+const PUSH_KNOCKBACK := 60.0
 const PUSH_DAMAGE_INTERVAL := 0.2
 const PUSH_DAMAGE_PER_TICK := 6
 var _push_damage_timer := 0.0
@@ -227,7 +225,8 @@ func _process(delta: float):
 		var mv_up := "MoveUp" if not is_player_two else "Move2Up"
 		var mv_down := "MoveDown" if not is_player_two else "Move2Down"
 		var jump_act := "Jump" if not is_player_two else "Jump2"
-		if Input.is_action_just_pressed(mv_left) or Input.is_action_just_pressed(mv_right) or Input.is_action_just_pressed(mv_up) or Input.is_action_just_pressed(mv_down) or Input.is_action_just_pressed(jump_act) or Input.is_action_just_pressed("Dash"):
+		var dash_act := "Dash" if not is_player_two else "Punch2"
+		if Input.is_action_just_pressed(mv_left) or Input.is_action_just_pressed(mv_right) or Input.is_action_just_pressed(mv_up) or Input.is_action_just_pressed(mv_down) or Input.is_action_just_pressed(jump_act) or Input.is_action_just_pressed(dash_act):
 			rope_bounce_running = false
 			rope_bounce_direction = Vector2.ZERO
 	
@@ -464,7 +463,10 @@ func _body_contact(delta: float) -> void:
 			break
 		if shoulder_ok:
 			if GameManager.training_mode:
-				GameManager.body_contact_type_text = "弱り(半キャラ)" if enemy_weak else "半キャラ"
+				if rope_bounce_running:
+					GameManager.body_contact_type_text = "ロープ(半キャラ)"
+				else:
+					GameManager.body_contact_type_text = "弱り(半キャラ)" if enemy_weak else "半キャラ"
 				GameManager.body_contact_type_timer = 1.5
 			# 半キャラずらし＝白エフェクト画像でピカピカ（用意されていれば）。なければ modulate で白
 			var flash_tex: Texture2D = enemy.get("flash_effect_white_texture") as Texture2D
@@ -480,21 +482,27 @@ func _body_contact(delta: float) -> void:
 			if _push_damage_timer <= 0:
 				_push_damage_timer = PUSH_DAMAGE_INTERVAL
 				
-				# ダメージ計算（コーナージャンプ特攻を含む）
-				var damage: int = int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult)
+				# ダメージ計算（コーナージャンプ特攻を含む）。ロープダッシュ中（rope_bounce_running）は2倍。炎ダッシュと重複時は高い方のみ（乗算しない）
+				var rope_dash_mult: float = 2.0 if rope_bounce_running else 1.0
+				var damage_mult: float = maxf(fire_dash_damage_mult, rope_dash_mult)
+				var damage: int = int(PUSH_DAMAGE_PER_TICK * damage_mult)
 				# ステージ4: 異論マスク、コーナージャンプ特攻
 				if GameManager.current_stage == 4 and leave_post_2x_jump:
 					damage = 50  # 特攻ダメージ
 					leave_post_2x_jump = false  # 1回だけ
-				
+
 				enemy._take_damage(damage)
-				
-				# 半キャラずらし：敵の方にエフェクトを出す（通常サイズ）
-				if fire_dash_damage_mult > 1.5:
+
+				# 半キャラずらし：敵の方にエフェクトを出す（ロープダッシュ攻撃中は強化）
+				if damage_mult > 1.5:
 					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 				if enemy.hit_particles:
-					enemy.hit_particles.amount = 20
-					enemy.hit_particles.lifetime = 0.4  # 通常
+					if rope_bounce_running:
+						enemy.hit_particles.amount = 40
+						enemy.hit_particles.lifetime = 0.8
+					else:
+						enemy.hit_particles.amount = 20
+						enemy.hit_particles.lifetime = 0.4  # 通常
 					enemy.hit_particles.emitting = true
 				
 				# ノックバック量：ステージ4では超反動。半キャラ時は敵を倍速で飛ばし・プレイヤーは半分だけ後ずさり（追撃しやすく）
@@ -502,10 +510,10 @@ func _body_contact(delta: float) -> void:
 				var player_push: float = PUSH_PLAYER_KNOCKBACK_HALFCAR  # 6.0（従来12の半分）
 				var tween_dur: float = BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR  # 0.1秒＝敵ノックバック倍速
 				
-				# ステージ4: 異論マスクの超反動（150px）
+				# ステージ4: 異論マスクの超反動（90px。半キャラ用は正面ノックバックより控えめ）
 				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
-					knock_amount = 150.0
-				
+					knock_amount = 90.0
+
 				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）。数フレームで動かし、その間無敵
 				var knock: Vector2 = _axis_knockback(to_enemy, knock_amount)
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
@@ -538,21 +546,33 @@ func _body_contact(delta: float) -> void:
 			# かすり：一方的にダメージ、両者斜めにすっ飛ばして離れる。繋がらない（クールダウンで連打防止）
 			body_contact_cooldown = KASURI_COOLDOWN
 			if GameManager.training_mode:
-				GameManager.body_contact_type_text = "弱り(かすり)" if enemy_weak else "かすり"
+				if rope_bounce_running:
+					GameManager.body_contact_type_text = "ロープ(かすり)"
+				else:
+					GameManager.body_contact_type_text = "弱り(かすり)" if enemy_weak else "かすり"
 				GameManager.body_contact_type_timer = 1.5
 			# かすり＝黄フラッシュ（敵のみ・プレイヤーはダメージなしなので光らせない）。黄を少し長く維持
 			var enemy_sprite_kasuri: CanvasItem = enemy.sprite if enemy.sprite else enemy
 			_flash_modulate(enemy_sprite_kasuri, Color(1.8, 1.8, 0.2, 1.0), 0.56)
-			var damage: int = int(PUSH_DAMAGE_PER_TICK * fire_dash_damage_mult)
+			# ロープダッシュ中（rope_bounce_running）は2倍。炎ダッシュと重複時は高い方のみ（乗算しない）
+			var rope_dash_mult: float = 2.0 if rope_bounce_running else 1.0
+			var damage_mult: float = maxf(fire_dash_damage_mult, rope_dash_mult)
+			var damage: int = int(PUSH_DAMAGE_PER_TICK * damage_mult)
 			if GameManager.current_stage == 4 and leave_post_2x_jump:
 				damage = 50
 				leave_post_2x_jump = false
 			enemy._take_damage(damage)
 			if enemy.has_method("notify_graze_hit"):
 				enemy.notify_graze_hit()
+			if damage_mult > 1.5:
+				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 			if enemy.hit_particles:
-				enemy.hit_particles.amount = 16
-				enemy.hit_particles.lifetime = 0.3
+				if rope_bounce_running:
+					enemy.hit_particles.amount = 40
+					enemy.hit_particles.lifetime = 0.8
+				else:
+					enemy.hit_particles.amount = 16
+					enemy.hit_particles.lifetime = 0.3
 				enemy.hit_particles.emitting = true
 			# 斜めに一定距離移動＋縦軸回転（バレリーナのように）で遅く目立たせる
 			var away: Vector2 = (-to_enemy) * KASURI_KNOCKBACK_DIAGONAL
@@ -599,10 +619,11 @@ func _body_contact(delta: float) -> void:
 					GameManager.body_contact_type_text = "正面"
 					GameManager.body_contact_type_timer = 1.5
 					_flash_modulate(sprite if sprite else self, Color(2.0, 0.2, 0.2, 1.0))
-					_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(2.0, 0.2, 0.2, 1.0))
 				take_damage_from_enemy(20)
 				if not GameManager.training_mode:
 					_flash_white_body_contact()
+				# ボス側には「ガードされた」ことが伝わる青白フラッシュを常に出す（トレーニング/本番問わず・ダメージの赤と区別）
+				_flash_modulate(enemy.sprite if enemy.sprite else enemy, Color(0.7, 0.9, 2.0, 1.0))
 				
 				# プレイヤーを大きく吹っ飛ばす（200px）。数フレームで動かしその間無敵
 				var away: Vector2 = _axis_knockback(-to_enemy, 200.0)

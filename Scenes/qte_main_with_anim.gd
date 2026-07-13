@@ -110,6 +110,7 @@ func _process(delta):
 	var qte_pressed := (
 		Input.is_action_just_pressed("ui_accept") or
 		Input.is_action_just_pressed("Punch") or
+		Input.is_action_just_pressed("Punch2") or
 		Input.is_action_just_pressed("Kick") or
 		Input.is_action_just_pressed("Dash") or
 		Input.is_action_just_pressed("Enter")

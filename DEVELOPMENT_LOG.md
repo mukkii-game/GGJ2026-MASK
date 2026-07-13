@@ -143,6 +143,21 @@
 - **SPEC更新**: 不要（トレーニング表示はUI補助。数値は StageController が正）
 - **テスト**: headless GameWrapper 起動確認
 
+### 2026-07-13: 半キャラ連打復活・ロープダッシュ攻撃・敵の脅威付与・実害バグ修正・2P整合
+- **変更内容**:
+  1. **半キャラ連打の復活**（`PlayerMain.gd`）: `PUSH_KNOCKBACK` を 90→60 に戻す。`PAST_DESIGN_DECISIONS.md` #3 で「60が良い」と実証済みの値。90だと体当たり用AABB（中心差66以内）に対してノックバックが大きすぎ、毎ティック接触が切れて半キャラ連打による押し込みが成立していなかった。あわせてステージ4の半キャラ超反動を 150→90 に修正（正面の150pxより控えめにして連打を優先）。未使用の残骸定数 `BODY_PUSH_PIXELS` を削除。
+  2. **ロープダッシュ攻撃**（没案#2の復活。`PlayerMain.gd`）: `rope_bounce_running`（ロープバウンド自動横断中、約800px/s）中にショルダー/かすりがヒットするとダメージ2倍。炎ダッシュ（`fire_dash_damage_mult`）と重複時は乗算せず高い方のみ採用。ヒット時にSE強化＋`hit_particles`強化（amount 40 / lifetime 0.8）。トレーニング表示は「ロープ(半キャラ)」「ロープ(かすり)」で区別。
+  3. **初見導線**: ステージ1イントロに半キャラずらしの導線（「敵の真横に半分ずれてぶつかれ！一方的に押し込める」＋Gキー案内）を追加。ステージ2イントロの「ジャンプ中は止まる」表現を「ジャンプすると逃げ足が止まる」に明確化（`EnemyFleeState` の実装と一致する表現に）。
+  4. **敵の脅威付与**（バランス第2弾）: `EnemyChaseState.move_speed` 80→140、検知半径（`DetectionShape`）87.4→120、`EnemyFleeState.move_speed` 600→440（`super_flee_speed`は1400のまま）。いずれも `Enemy.tscn` 側の同名オーバーライドも合わせて修正（@exportのためシーン側の値が優先されるため）。
+  5. **AudioManagerプール拡張バグ**（KI-14/TD-09）: `play_sound()` の `available_player` 初期値が `audio_players[0]` で「新規作成」分岐に実質到達できず、全員再生中だと再生中の音を問答無用で上書きしていた。初期値を`null`にし、空き探索→新規作成→フォールバックの順に修正。
+  6. **無敵期限の強制解除バグ**（KI-15）: `CharacterBase.after_damage_iframes()` の末尾 `invincible = false` が `set_invincible_for()` の期限管理を無視していた。同じ `_invincible_until_ms` 期限方式に統一し、より長い無敵が設定されていれば解除しないよう修正。
+  7. **S3ボス正面ガード演出**（KI-16）: 敵側への赤フラッシュがトレーニングモード限定になっており、本番プレイでガード演出が一切出ていなかった。トレーニング/本番問わず、ボス側に青白フラッシュ（`Color(0.7, 0.9, 2.0)`）を常に出すよう修正（ダメージの赤と区別）。
+  8. **2P整合**（KI-17/KI-18）: ロープバウンス解除判定の `Input.is_action_just_pressed("Dash")` が2Pでも1Pキーを見ていたのを `is_player_two` で `Punch2` に分岐。QTE（`qte_main_with_anim.gd`）の成功判定に `Punch2` を追加。
+- **変更理由**: 「半キャラ連打」という中核の攻略ループが未実装同然だった（最優先で復旧）。ロープワークと戦闘を繋げる没案の復活でプレイの幅を広げる。敵が弱すぎ・検知が狭すぎて脅威になっていなかった問題の是正。実プレイに影響する既知バグ（SE上書き、無敵期限の早期解除、ボス側演出欠落、2Pの一部操作無効）の解消。
+- **影響範囲**: `Scenes/Player/Scripts/PlayerMain.gd`, `Scripts/StageIntro.gd`, `Scenes/NPC's/Enemy/Scripts/States/EnemyChaseState.gd`, `Scenes/NPC's/Enemy/Scripts/States/EnemyFleeState.gd`, `Scenes/NPC's/Enemy/Enemy.tscn`, `Scripts/Managers/AudioManager.gd`, `Scripts/CharacterBase.gd`, `Scenes/qte_main_with_anim.gd`, `CLAUDE.md`, `docs/SPEC.md`, `TECHNICAL_DEBT.md`, `KNOWN_ISSUES.md`, `OPEN_QUESTIONS.md`
+- **SPEC更新**: B.0（PUSH_KNOCKBACK 60、S4半キャラ超反動90、本文/表の90/60矛盾を60で統一）、B.0.1（新規: ロープダッシュ攻撃）、8.1（新規: 敵の速度・検知範囲の現行値）、B.5.1（2Pロープバウンス解除キー）、B.9（QTE入力にPunch2追記）、まとめ節のS3ガード演出更新
+- **テスト**: headless（`GameWrapper.tscn` / `TitleScreen.tscn`）600フレーム実行でエラーなしを確認予定（本エントリ追記時点、詳細は本セッションの報告を参照）
+
 ---
 
 ## 変更記録テンプレート

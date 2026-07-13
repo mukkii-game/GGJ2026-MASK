@@ -110,6 +110,12 @@ func damage_effects():
 #After we are done flashing red, we can take damage again（ピカピカ明るめ・大きめ・少し長く）
 func after_damage_iframes():
 	invincible = true
+	# set_invincible_for() などで、この演出より長い無敵期限が設定されている場合に上書きしないよう、
+	# 自分の分の期限も登録しておく（期限管理方式: KI-06 と同じ仕組み）
+	var my_duration := 0.1 + 0.1 + 0.1 + 0.1 + 0.08 + 0.12
+	var my_until := Time.get_ticks_msec() + int(my_duration * 1000.0)
+	if my_until > _invincible_until_ms:
+		_invincible_until_ms = my_until
 	var target = sprite if sprite else self
 	var flash_bright := Color(1.45, 0.55, 0.55, 1.0)
 	var tween = create_tween()
@@ -124,7 +130,9 @@ func after_damage_iframes():
 	await tween.finished
 	if target and is_instance_valid(target):
 		target.modulate = Color.WHITE
-	invincible = false
+	# 自分より後に、より長い無敵（set_invincible_for等）が設定されていたら解除しない
+	if Time.get_ticks_msec() >= _invincible_until_ms - 10:
+		invincible = false
 	
 func _take_damage(amount):
 	if(invincible == true || is_dead == true):

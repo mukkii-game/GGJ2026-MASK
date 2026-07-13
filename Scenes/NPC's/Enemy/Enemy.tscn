@@ -79,7 +79,7 @@ radius = 16.0
 height = 32.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_imcar"]
-radius = 87.4371
+radius = 120.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x6b3o"]
 bg_color = Color(0.0352941, 0.0156863, 0.00784314, 0.427451)
@@ -334,7 +334,7 @@ script = ExtResource("24_pg8mu")
 animator = NodePath("../../AnimationPlayer")
 chase_duration = 3.0
 attack_range = 50.0
-move_speed = 80.0
+move_speed = 140.0
 
 [node name="enemy_attack_state" type="Node" parent="FSM" node_paths=PackedStringArray("attack", "animator")]
 script = ExtResource("25_osvb1")
@@ -352,7 +352,7 @@ animator = NodePath("../../AnimationPlayer")
 
 [node name="enemy_flee_state" type="Node" parent="FSM"]
 script = ExtResource("31_flee")
-move_speed = 600.0
+move_speed = 440.0
 flee_distance = 200.0
 
 [node name="enemy_launched_state" type="Node" parent="FSM"]

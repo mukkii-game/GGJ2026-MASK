@@ -26,7 +26,7 @@ func _ready() -> void:
 #AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0.25, 1)
 func play_sound(audiostream : AudioStreamOggVorbis, offset : float, volume : float):
 	#Loop through and find an available player currently not playing a sound
-	var available_player = audio_players[0]
+	var available_player = null
 	for player in audio_players:
 		if not player.is_playing():
 			available_player = player
@@ -37,6 +37,10 @@ func play_sound(audiostream : AudioStreamOggVorbis, offset : float, volume : flo
 		available_player = AudioStreamPlayer.new()
 		audio_players.append(available_player)
 		add_child(available_player)
+
+	# 上限に達していて全員再生中なら、やむを得ず最初のプレイヤーを上書きする
+	if available_player == null:
+		available_player = audio_players[0]
 
 	available_player.stream = audiostream
 	available_player.pitch_scale = randf_range(0.9, 1.1)

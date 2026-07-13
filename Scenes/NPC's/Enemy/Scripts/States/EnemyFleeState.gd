@@ -3,7 +3,7 @@ class_name EnemyFleeState
 
 ## ステージ2ボス「マスクメロンナ」専用：スピーディに距離を取る。被弾で超高速離脱。ジャンプ中は鈍足。
 
-@export var move_speed: float = 600.0
+@export var move_speed: float = 440.0
 @export var flee_distance: float = 220.0  # プレイヤーがこの距離内に入ったら逃げる
 @export var super_flee_speed: float = 1400.0  # 被弾後の超高速
 

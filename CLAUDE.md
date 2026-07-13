@@ -71,7 +71,7 @@ GGJ2026-MASK/
 │   ├── Player/Scripts/PlayerMain.gd    ← ★体当たり判定の全ロジック
 │   ├── Player/Scripts/States/          ← FSMステート×7
 │   ├── NPC's/Enemy/Scripts/EnemyMain.gd ← 敵AI・状態管理
-│   ├── NPC's/Enemy/Scripts/States/     ← FSMステート×12
+│   ├── NPC's/Enemy/Scripts/States/     ← FSMステート×10（＋孤立ファイル2: EnemyChargeState/EnemyBounceState 未使用）
 │   ├── Levels/                         ← ステージ・リング
 │   ├── Interactables/                  ← コイン・コーナーポスト等
 │   ├── UI/                             ← ステージ演出・クリア画面

@@ -52,12 +52,12 @@ func _get_stage_data(stage: int) -> Dictionary:
 		1:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title1.png",
-				"description": "弱いが数が多い！\nどんどん増援が来るぞ！"
+				"description": "弱いが数が多い！\nどんどん増援が来るぞ！\n敵の真横に半分ずれてぶつかれ！一方的に押し込める\nGキーで細かい移動に切替"
 			}
 		2:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title2.png",
-				"description": "すばしっこい逃げ足！\nジャンプ中は止まる！\n雑魚を召喚してくる！"
+				"description": "すばしっこい逃げ足！\nジャンプすると逃げ足が止まる！\n雑魚を召喚してくる！"
 			}
 		3:
 			return {

@@ -51,6 +51,26 @@
 - `_ready()` 中の `add_child()` が「親がセットアップ中」で失敗していた
 - `add_child.call_deferred()` + `set_deferred()` に変更
 
+### KI-14: AudioManagerのプール拡張コードが到達不能 → **修正済み（2026-07-13）**
+- `play_sound()` の `available_player` 初期値が `audio_players[0]` だったため、「空きが無ければ新規作成」の分岐が実質発火せず、全員再生中だと再生中の音を問答無用で上書きしていた
+- 修正: 初期値を `null` にし、空き探索→上限未満なら新規作成→それでも無ければ `audio_players[0]` にフォールバックの順に変更（TD-09参照）
+
+### KI-15: after_damage_iframes() が無敵期限を無視して強制解除 → **修正済み（2026-07-13）**
+- `CharacterBase.after_damage_iframes()` の末尾で `invincible = false` を無条件に実行しており、`set_invincible_for()` で長い無敵（例: ロープ飛ばされ後の1.5秒無敵）を設定していても、被弾フラッシュの演出（約0.5秒）が終わった時点で無敵が解除されてしまっていた
+- 修正: `set_invincible_for()` と同じ期限管理方式（`_invincible_until_ms`）を使い、自分より後により長い無敵期限が設定されていたら解除しないように変更
+
+### KI-16: ステージ3ボスの正面ガード演出が本番で出ない → **修正済み（2026-07-13）**
+- `PlayerMain._body_contact()` のステージ3正面ガード処理で、敵側への赤フラッシュが `GameManager.training_mode` の分岐内にしかなく、本番プレイではボス側に「ガードされた」ことが伝わる演出が一切出ていなかった
+- 修正: トレーニングモードに関係なく、ボス側に青白系フラッシュ（`Color(0.7, 0.9, 2.0)`）を常に出すよう変更。ダメージの赤フラッシュと区別するため専用色にした
+
+### KI-17: ロープバウンス解除判定が2Pでも1Pのキーを見ていた → **修正済み（2026-07-13）**
+- `PlayerMain._process()` のロープバウンス解除判定で `Input.is_action_just_pressed("Dash")` が固定で使われており、2P（`is_player_two`）でも1Pの `Dash`（Nキー）を見ていた
+- 修正: 他の移動キーと同じパターンで `is_player_two` なら `Punch2` を見るよう分岐
+
+### KI-18: QTEの入力判定に2P用アクションが無かった → **修正済み（2026-07-13）**
+- `qte_main_with_anim.gd` のQTE成功判定が `Punch` / `Kick` / `Dash` / `Enter` / `ui_accept` のみを見ており、2P専用の `Punch2` が含まれていなかった
+- 修正: `Input.is_action_just_pressed("Punch2")` を追加（`project.godot` に定義済みであることを確認済み）
+
 ---
 
 ## 重大度: 低
