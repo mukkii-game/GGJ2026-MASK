@@ -36,7 +36,7 @@ texture = ExtResource("2_tohhu")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TwoColumn" type="HBoxContainer" parent="." unique_id=2col_end]
+[node name="TwoColumn" type="HBoxContainer" parent="." unique_id=200000001]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -46,12 +46,12 @@ grow_vertical = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="LeftSpacer" type="Control" parent="TwoColumn" unique_id=left_sp]
+[node name="LeftSpacer" type="Control" parent="TwoColumn" unique_id=200000002]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.5
 
-[node name="TextColumn" type="VBoxContainer" parent="TwoColumn" unique_id=text_col]
+[node name="TextColumn" type="VBoxContainer" parent="TwoColumn" unique_id=200000003]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.5

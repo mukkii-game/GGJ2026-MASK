@@ -471,10 +471,9 @@ func _body_contact(delta: float) -> void:
 			if flash_tex and (enemy.sprite or enemy):
 				var flash: Node2D = FlashPikaPikaScript.new()
 				flash.call("setup", flash_tex)
-				flash.call("start")
 				var parent: Node2D = enemy.sprite if enemy.sprite else enemy
 				parent.add_child(flash)
-				flash.start()
+				flash.call("start")
 			else:
 				enemy.halfcar_white_until = Time.get_ticks_msec() / 1000.0 + 1.0
 			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く

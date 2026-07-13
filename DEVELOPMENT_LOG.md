@@ -122,6 +122,16 @@
 - **SPEC更新**: §7.2 Status（Angry/Weakの効果・発生条件・実装箇所を明記）
 - **テスト**: headless 600フレーム実行でエラーなし。実プレイでの体感バランスは未検証
 
+### 2026-07-13: バランス第1弾・Ending修正・半キャラフラッシュ修正
+- **変更内容**:
+  1. ステージ本番パラメータ調整（S1: max6/spawn10s、S2ボスHP100、S3ボス120、S4ボス180）
+  2. `Ending.tscn` の invalid unique_id（文字列）を数値に修正（S4クリア後遷移ブロッカー解消）
+  3. `FlashPikaPika` の二重 start 呼び出しを修正
+- **変更理由**: 半キャラDPS（30/秒）とボスHPの整合、エンディング到達不能バグの解消
+- **影響範囲**: `Scripts/StageController.gd`, `Scenes/UI/Ending.tscn`, `Scenes/Player/Scripts/PlayerMain.gd`, `PROGRESS.md`
+- **SPEC更新**: 不要（数値の正は StageController）
+- **テスト**: headless で Title/GameWrapper/StageClear/Ending/StageIntro/QTE 起動確認
+
 ---
 
 ## 変更記録テンプレート

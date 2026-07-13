@@ -123,11 +123,11 @@ func _setup_test_params() -> void:
 ## 本番モード（スタート）：全ステージで雑魚を定期的に落とす・敵HPは半分
 func _setup_normal_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団（雑魚のみ・数発で死ぬ）
+		1:  # 雑魚マスク軍団（雑魚のみ・半キャラ5発≈1秒で撃破）
 			stage_params = {
 				"initial_count": 2,
-				"max_count": 7,
-				"spawn_interval": 11.0,
+				"max_count": 6,
+				"spawn_interval": 10.0,
 				"enemy_hp": 27,
 				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
@@ -137,7 +137,7 @@ func _setup_normal_params() -> void:
 				"initial_count": 1,
 				"max_minions": 3,
 				"spawn_interval": 18.0,
-				"boss_hp": 110,
+				"boss_hp": 100,
 				"boss_speed": 750.0,
 				"minion_hp": 25,
 				"behavior": 4  # Flee
@@ -147,7 +147,7 @@ func _setup_normal_params() -> void:
 				"initial_count": 1,
 				"max_count": 4,
 				"spawn_interval": 14.0,
-				"boss_hp": 130,
+				"boss_hp": 120,
 				"boss_speed": 400.0,
 				"enemy_hp": 25,
 				"behavior": 3  # RandomRange
@@ -157,7 +157,7 @@ func _setup_normal_params() -> void:
 				"initial_count": 1,
 				"max_count": 4,
 				"spawn_interval": 14.0,
-				"boss_hp": 200,
+				"boss_hp": 180,
 				"boss_speed": 200.0,
 				"enemy_hp": 25,
 				"behavior": 3  # RandomRange

@@ -4,7 +4,9 @@ extends Control
 @onready var bgm_player: AudioStreamPlayer = null
 
 func _ready() -> void:
-	# endding_pic.png を表示（シーンの TextureRect に既に設定されていればそのまま。なければここで設定）
+	process_mode = PROCESS_MODE_ALWAYS
+	set_process_input(true)
+	# endding_pic.png を表示
 	var godot_face = get_node_or_null("GodotMask")
 	if godot_face and godot_face.texture == null:
 		var pic_path := "res://Art/Sprites/endding_pic.png"
