@@ -216,6 +216,13 @@
 - **SPEC更新**: タイトル（v0.4）/ §3.1-3.5 / §7.1 / §7.2 / §9.0 / B.0注記 / B.0.1定数表
 - **テスト**: headless S1〜S4起動 ALL_OK＋戦闘シムS1 13/13 PASS・S4ボス 8/8 PASS
 
+### 2026-07-17: 技名ポップアップ＋ボス面初期ザコ＋F-5/KI-20修正
+- **変更内容**: 大技コールアウト（ブラスト/場外KO/ヘッドバット/ボディプレス/カウンター）を `GameManager.show_callout()` で実装。S2/S3/S4に初期ザコ追加。ロープ跳ね返り開始時の回転Tween残留（逆さ向き・KI-21）とかすりクランプ漏れ（KI-20）を修正
+- **変更理由**: 設計原則#6（技名で快感倍化）／号令・周回を序盤から機能させる／既知バグ解消
+- **影響範囲**: GameManager, PlayerMain, PlayerJumpState, EnemyMain, StageController, CombatSim(sim=clear追加)
+- **SPEC更新**: §12（技名ポップアップ）
+- **テスト**: sim=combat 13/13・sim=boss 8/8・sim=clear S1〜S4 全PASS
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

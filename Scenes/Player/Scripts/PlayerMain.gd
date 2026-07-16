@@ -499,6 +499,7 @@ func _body_contact(delta: float) -> void:
 					GameManager.body_contact_type_text = "直角カウンター！"
 					GameManager.body_contact_type_timer = 1.5
 				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
+				GameManager.show_callout(em, "カウンター！", Color(0.4, 1.0, 0.5, 1.0))
 				em.stop_rope_run()
 				em._take_damage(int(BODY_DAMAGE_DEALT * 1.5))
 				flash_aerial_hit(em)
@@ -717,6 +718,7 @@ func _body_contact(delta: float) -> void:
 						if enemy.is_dead:
 							em.fly_out_visual(blast_dir)
 						elif enemy.health > 0:
+							GameManager.show_callout(enemy, "ブラスト！")
 							em.blast_to_down(blast_dir)
 					body_contact_cooldown = BODY_CONTACT_INTERVAL
 			elif stage3_front_guard:

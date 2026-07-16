@@ -148,6 +148,7 @@ func _headbutt_hit(enemy: CharacterBase) -> void:
 		if enemy.is_dead:
 			em.fly_out_visual(headbutt_dir)
 		elif enemy.health > 0:
+			GameManager.show_callout(enemy, "ヘッドバット！", Color(1.0, 0.6, 0.2, 1.0))
 			em.stop_rope_run()
 			em.blast_to_down(headbutt_dir)
 	if GameManager.training_mode:
@@ -183,6 +184,7 @@ func _land(skip_damage: bool = false) -> void:
 				if enemy.is_dead:
 					em.fly_out_visual(Vector2(cos(randf() * TAU), sin(randf() * TAU)))
 				else:
+					GameManager.show_callout(enemy, "ボディプレス！", Color(0.9, 0.5, 1.0, 1.0))
 					em.down_remaining = maxf(em.down_remaining, 1.2)
 				if GameManager.training_mode:
 					GameManager.body_contact_type_text = "ボディプレス！"

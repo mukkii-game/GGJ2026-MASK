@@ -91,6 +91,31 @@ func load_title():
 	training_mode = false
 	get_tree().change_scene_to_file("res://Scenes/Misc/TitleScreen.tscn")
 
+## 技名ポップアップ（実況風・確定仕様 設計原則#6）: 大技が決まった位置に技名を出して浮かせフェード
+## anchor のいるワールド（SubViewport内）に直接追加するので、ゲーム画面内に正しく出る
+func show_callout(anchor: Node2D, text: String, color: Color = Color(1.0, 0.85, 0.2, 1.0)) -> void:
+	if not is_instance_valid(anchor):
+		return
+	var parent := anchor.get_parent()
+	if not parent:
+		return
+	var label := Label.new()
+	label.text = text
+	label.z_index = 200
+	label.add_theme_font_size_override("font_size", 34)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color(color.r * 0.6, color.g * 0.5, color.b * 0.1, 1.0))
+	label.add_theme_constant_override("outline_size", 8)
+	parent.add_child(label)
+	label.position = anchor.global_position + Vector2(-140.0, -100.0)
+	label.size = Vector2(280.0, 40.0)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var tw := label.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(label, "position:y", label.position.y - 46.0, 1.0)
+	tw.tween_property(label, "modulate:a", 0.0, 1.0).set_delay(0.45)
+	tw.chain().tween_callback(label.queue_free)
+
 ## ステージ1の誤学習防止ヒント判定用カウンタをリセット（StageController._ready から毎ステージ開始時に呼ぶ）
 func reset_stage1_hint_tracking() -> void:
 	stage1_front_collision_count = 0

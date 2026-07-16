@@ -403,6 +403,7 @@ func _on_blast_to_down_done() -> void:
 ## 現在フレームのコピーを生成して飛ばす。マスク飛び演出とは併存する。QTEボスには使わない）
 func fly_out_visual(dir: Vector2) -> void:
 	AudioManager.play_sound(AudioManager.KILL_MASK, 0, 3)
+	GameManager.show_callout(self, "場外KO！", Color(1.0, 0.4, 0.3, 1.0))
 	if not sprite or not is_instance_valid(sprite) or not sprite.sprite_frames:
 		return
 	var d: Vector2 = dir.normalized() if dir.length() > 0.1 else Vector2.RIGHT
