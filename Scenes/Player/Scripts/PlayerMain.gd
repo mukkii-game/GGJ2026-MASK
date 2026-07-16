@@ -337,6 +337,11 @@ func _physics_process(delta: float) -> void:
 		rope_bounce_direction = Vector2.UP
 		rope_bounce_target = Vector2(p.x, MAT_TOP)
 		_notify_rope_bounce("bottom")
+	if rope_bounce_running:
+		# ロープ跳ね返り開始時: かすり回転などの移動系Tweenを止め、逆さ向きのまま走るのを防ぐ（F-5）
+		kill_motion_tweens()
+		if sprite and is_instance_valid(sprite):
+			sprite.rotation_degrees = 0.0
 	global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
 	_body_contact(delta)
 
@@ -673,6 +678,7 @@ func _body_contact(delta: float) -> void:
 			tw_e.set_parallel(true)
 			tw_e.tween_property(enemy, "global_position", new_enemy_pos, KASURI_TWEEN_DURATION)
 			tw_e.tween_property(enemy_sprite_node, "rotation_degrees", spin_from_e + KASURI_SPIN_DEGREES, KASURI_TWEEN_DURATION)
+			tw_e.chain().tween_callback(_clamp_enemy_to_mat.bind(enemy))  # KI-20: かすりトドメ時のドリフト防止
 			enemy.register_motion_tween(tw_e)
 			break
 		# 正面など（半キャラ・かすり以外の接触）: 敵状態と向きで分岐（確定仕様v1.0）

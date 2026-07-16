@@ -19,6 +19,8 @@ func _run() -> void:
 	match mode:
 		"boss":
 			await _run_boss_tests()
+		"clear":
+			await _run_clear_tests()
 		_:
 			await _run_combat_tests()
 	print("========== [SIM] RESULTS ==========")
@@ -226,6 +228,54 @@ func _run_combat_tests() -> void:
 
 	_release_all()
 	GameManager.enemies_frozen = false
+
+## ============ クリア導線E2E: 撃破→(QTE)→StageClear遷移 ============
+func _run_clear_tests() -> void:
+	var stage: int = GameManager.current_stage
+	_stop_reinforcements()
+	if stage == 1:
+		# S1: 全ザコ撃破→クリア
+		await _wait_until(func() -> bool: return _find_zakos().size() >= 1, 10.0)
+		for e in _find_zakos([]):
+			e.use_qte_on_defeat = false
+			e._take_damage(9999)
+		# リングイン中の敵も含めて全滅させる
+		await get_tree().create_timer(0.5).timeout
+		for node in get_tree().get_nodes_in_group("Enemy"):
+			var e2 := node as EnemyMain
+			if e2 and not e2.is_dead:
+				e2._take_damage(9999)
+	else:
+		var ok := await _wait_until(func() -> bool: return _find_boss() != null, 10.0)
+		_check("S%d ボス出現" % stage, ok)
+		if not ok:
+			return
+		var boss := _find_boss()
+		# 弱り正面ブラスト経由でHP0に落とす（実戦経路に近い形）
+		boss.set_weak_for(10.0)
+		boss.health = 10
+		boss._take_damage(40)  # QTEボスは defeated_for_qte が発火するはず
+		var qte_shown := await _wait_until(func() -> bool: return get_tree().root.find_child("qte_core", true, false) != null or _find_qte() != null, 5.0)
+		_check("S%d QTE表示" % stage, qte_shown)
+		var qte := _find_qte()
+		if qte and qte.has_signal("qte_succeeded"):
+			qte.emit_signal("qte_succeeded")
+		else:
+			results.append("SKIP: S%d QTEノード直接成功発火（未発見）" % stage)
+	var cleared := await _wait_until(func() -> bool:
+		var cs := get_tree().current_scene
+		return cs != null and String(cs.scene_file_path).contains("StageClear"), 8.0)
+	_check("S%d クリア画面へ遷移" % stage, cleared,
+		String(get_tree().current_scene.scene_file_path) if get_tree().current_scene else "?")
+
+func _find_qte() -> Node:
+	var root := get_tree().current_scene
+	if not root:
+		return null
+	for c in root.get_children():
+		if c.has_signal("qte_succeeded"):
+			return c
+	return null
 
 ## ============ S4: ボスギミック ============
 func _run_boss_tests() -> void:

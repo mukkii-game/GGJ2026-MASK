@@ -155,9 +155,9 @@ func _setup_normal_params() -> void:
 				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
-		2:  # マスクメロンナ（足速く・近づくと距離取り・被弾で超高速離脱）
+		2:  # マスクメロンナ（足速く・近づくと距離取り・被弾で超高速離脱）。初期からザコ1体（ガブリ教材）
 			stage_params = {
-				"initial_count": 1,
+				"initial_count": 2,
 				"max_minions": 3,
 				"spawn_interval": 18.0,
 				"boss_hp": 100,
@@ -165,9 +165,9 @@ func _setup_normal_params() -> void:
 				"minion_hp": 25,
 				"behavior": 4  # Flee
 			}
-		3:  # ユニ帝仮面（ボスはランダム移動・雑魚／ときどきロープ往復）
+		3:  # ユニ帝仮面（ボス＋初期ザコ2体: ヒートマン/ジョバーを最初から見せる）
 			stage_params = {
-				"initial_count": 1,
+				"initial_count": 3,
 				"max_count": 4,
 				"spawn_interval": 14.0,
 				"boss_hp": 120,
@@ -175,9 +175,9 @@ func _setup_normal_params() -> void:
 				"enemy_hp": 25,
 				"behavior": 3  # RandomRange
 			}
-		4:  # 異論マスク（同上）
+		4:  # 異論マスク（ボス＋初期ザコ2体: 号令・取り巻き周回が序盤から機能する）
 			stage_params = {
-				"initial_count": 1,
+				"initial_count": 3,
 				"max_count": 4,
 				"spawn_interval": 14.0,
 				"boss_hp": 180,
