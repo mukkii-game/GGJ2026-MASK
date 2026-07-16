@@ -14,6 +14,26 @@ var _player_scene: PackedScene = preload("res://Scenes/Player/Player.tscn")
 var spawn_timer: float = 0.0
 var stage_cleared: bool = false
 var initial_spawn_done: bool = false  # 初期配置完了前はクリア判定しない
+## ザコの種類サイクル用インデックス（ステージごとの型配列を順番に消化）
+var _reinforce_index: int = 0
+## S4ボスギミック（号令とロープ走行を交互）
+var _gimmick_timer: float = 0.0
+var _gimmick_toggle: bool = false
+var _shout_pending: float = -1.0
+const S4_GIMMICK_INTERVAL := 12.0
+const S4_SHOUT_TELEGRAPH := 1.0
+const S4_SHOUT_ANGRY_SEC := 4.0
+const S4_ROPE_RUN_SPEED := 280.0
+const S4_ROPE_RUN_SEC := 6.0
+
+## ステージごとのザコ種類サイクル（確定仕様v1.0 ザコ図鑑）
+## S1=ジョバーのみ / S2=ジョバー+ガブリ / S3=ヒートマン・デブ初出 / S4=混成
+const STAGE_ZAKO_CYCLE := {
+	1: [EnemyMain.EnemyType.Jobber],
+	2: [EnemyMain.EnemyType.Jobber, EnemyMain.EnemyType.Gaburi],
+	3: [EnemyMain.EnemyType.Heatman, EnemyMain.EnemyType.Jobber, EnemyMain.EnemyType.Debu, EnemyMain.EnemyType.Jobber],
+	4: [EnemyMain.EnemyType.Jobber, EnemyMain.EnemyType.Gaburi, EnemyMain.EnemyType.Heatman],
+}
 ## トレーニングモード：ダミー撃破後の復活待ち（>=0でカウント中、1.2秒で再スポーン）
 var _training_respawn_timer: float = -1.0
 
@@ -126,9 +146,9 @@ func _setup_test_params() -> void:
 ## 本番モード（スタート）：全ステージで雑魚を定期的に落とす・敵HPは半分
 func _setup_normal_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団（雑魚のみ・半キャラ5発≈1秒で撃破）
+		1:  # 雑魚マスク軍団（雑魚のみ・半キャラ3発で弱り→正面ブラストの教習場）
 			stage_params = {
-				"initial_count": 2,
+				"initial_count": 3,
 				"max_count": 6,
 				"spawn_interval": 10.0,
 				"enemy_hp": 27,
@@ -190,9 +210,88 @@ func _process(delta: float) -> void:
 	if spawn_timer >= interval:
 		spawn_timer = 0.0
 		_spawn_reinforcement()
-	
+
+	# S4ボスギミック: 号令（全ザコ一時強化）とロープ走行を交互に仕掛ける（確定仕様）
+	if GameManager.current_stage == 4:
+		_update_stage4_boss_gimmicks(delta)
+
+	# 取り巻き周回（確定仕様）: ボス存命＆ザコ残2体以下 → ザコはボスの周囲を回る
+	_update_orbit_assignment()
+
 	# クリア判定
 	_check_stage_clear()
+
+## S4ボス: 12秒ごとに「号令（予告1秒→全ザコ4秒強化）」と「ロープ走行（強い状態・直角カウンターの的）」を交互に
+func _update_stage4_boss_gimmicks(delta: float) -> void:
+	var boss := _find_alive_boss()
+	if not boss or current_qte_boss != null:
+		return
+	# 号令の予告中: 時間が来たら発動
+	if _shout_pending >= 0.0:
+		_shout_pending -= delta
+		if _shout_pending < 0.0:
+			_do_shout()
+		return
+	if boss.is_in_down_state():
+		return
+	_gimmick_timer += delta
+	if _gimmick_timer >= S4_GIMMICK_INTERVAL:
+		_gimmick_timer = 0.0
+		_gimmick_toggle = not _gimmick_toggle
+		if _gimmick_toggle:
+			_start_shout_telegraph(boss)
+		elif not boss.rope_running:
+			boss.start_rope_run(randi() % 2 == 0, S4_ROPE_RUN_SPEED, S4_ROPE_RUN_SEC)
+			AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, 3)
+
+## 号令の予告: ボスが黄色く光り、警告SE。1秒後に全ザコ強化
+func _start_shout_telegraph(boss: EnemyMain) -> void:
+	_shout_pending = S4_SHOUT_TELEGRAPH
+	if boss.sprite:
+		var tw := boss.create_tween()
+		tw.tween_property(boss.sprite, "modulate", Color(2.2, 2.0, 0.4, 1.0), 0.15)
+		tw.tween_property(boss.sprite, "modulate", Color.WHITE, 0.6)
+	AudioManager.play_sound(AudioManager.MASK_WARNING, 0, 2)
+
+func _do_shout() -> void:
+	var npcs = _get_npcs_node()
+	if not npcs:
+		return
+	for child in npcs.get_children():
+		var em := child as EnemyMain
+		if em and not em.is_dead and not em.is_boss:
+			em.set_angry_for(S4_SHOUT_ANGRY_SEC)
+
+func _find_alive_boss() -> EnemyMain:
+	var npcs = _get_npcs_node()
+	if not npcs:
+		return null
+	for child in npcs.get_children():
+		var em := child as EnemyMain
+		if em and not em.is_dead and em.is_boss:
+			return em
+	return null
+
+## 取り巻き周回の割り当て: ボス存命＆ザコ残り2体以下のとき、ザコにボスを周回させる
+func _update_orbit_assignment() -> void:
+	if GameManager.current_stage < 2:
+		return
+	var npcs = _get_npcs_node()
+	if not npcs:
+		return
+	var boss: EnemyMain = null
+	var zako: Array[EnemyMain] = []
+	for child in npcs.get_children():
+		var em := child as EnemyMain
+		if not em or em.is_dead:
+			continue
+		if em.is_boss:
+			boss = em
+		else:
+			zako.append(em)
+	var enable: bool = boss != null and zako.size() > 0 and zako.size() <= 2
+	for z in zako:
+		z.orbit_boss = boss if enable else null
 
 func _input(_event: InputEvent) -> void:
 	if stage_cleared:
@@ -318,7 +417,11 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	var enemy := enemy_scene.instantiate() as EnemyMain
 	if not enemy:
 		return
-	
+	# ザコの種類をステージサイクルから決定（ボスは対象外）
+	var zako_type: EnemyMain.EnemyType = EnemyMain.EnemyType.Jobber
+	if not is_boss:
+		zako_type = _next_zako_type()
+
 	# ステージごとのパラメータ設定
 	match GameManager.current_stage:
 		1:  # 雑魚マスク（いままでどおり＋ときどきロープ往復）
@@ -367,6 +470,10 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 				enemy.use_qte_on_defeat = false
 				_set_zako_behavior(enemy, pos)
 	
+	# ザコ種類のパラメータ（HP・速度）を適用（add_childの前＝max_health記録前）
+	if not is_boss:
+		_apply_zako_type_params(enemy, zako_type)
+
 	# ステージ3ボスだけは移動速度を半分に落とす
 	if GameManager.current_stage == 3 and enemy.is_boss:
 		var wander = enemy.get_node_or_null("FSM/enemy_wander_state")
@@ -400,9 +507,23 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 				main_floor.add_child(enemy)
 				enemy.global_position = spawn_pos
 	
-	# ステージ・ボス/雑魚に応じた絵を適用（res://Art/Sprites/）
+	# ステージ・ボス/雑魚に応じた絵を適用（res://Art/Sprites/）。ザコは種類ごとの色＋サイズ差
 	var tex_path := _get_enemy_texture_path(GameManager.current_stage, is_boss)
+	if not is_boss:
+		tex_path = _get_zako_texture_path(zako_type)
 	_apply_enemy_sprite(enemy, tex_path)
+	if not is_boss:
+		_apply_zako_type_visual(enemy, zako_type)
+
+## ザコ種類ごとのスプライト（見た目差: ジョバー/デブ=青、ガブリ=青髪小型、ヒートマン=赤）
+func _get_zako_texture_path(type: EnemyMain.EnemyType) -> String:
+	match type:
+		EnemyMain.EnemyType.Gaburi:
+			return "res://Art/Sprites/m_man_g_l1.png"
+		EnemyMain.EnemyType.Heatman:
+			return "res://Art/Sprites/m_man_r_l1.png"
+		_:
+			return "res://Art/Sprites/m_man_b_l1.png"
 
 ## リングイン：画面右端／左端スポーン位置（マットより外側・右端か左端から走り込む）
 const MAT_LEFT := 296.0
@@ -439,15 +560,53 @@ func _pick_empty_spot_on_mat(main_floor: Node) -> Vector2:
 			return p
 	return Vector2((MAT_LEFT + MAT_RIGHT) * 0.5, (MAT_TOP + MAT_BOTTOM) * 0.5)
 
+## 確定仕様v1.0: ロープを走るのはボスだけ。ザコのロープ往復は廃止し、種類（挙動）で差別化する
 func _set_zako_behavior(enemy: EnemyMain, _pos: Vector2) -> void:
-	if randf() < 0.35:  # 35%でロープ往復
-		enemy.behavior_type = (1 if randi() % 2 == 0 else 2) as EnemyMain.Behavior  # VerticalLoop or HorizontalLoop
-		enemy.patrol_distance_override = ROPE_PATROL_DISTANCE
-		enemy.patrol_speed_override = ROPE_PATROL_SPEED
-	else:
-		enemy.behavior_type = stage_params.get("behavior", 3) as EnemyMain.Behavior
-		enemy.patrol_distance_override = 0.0
-		enemy.patrol_speed_override = 0.0
+	enemy.behavior_type = stage_params.get("behavior", 3) as EnemyMain.Behavior
+	enemy.patrol_distance_override = 0.0
+	enemy.patrol_speed_override = 0.0
+
+## ザコの種類をステージのサイクルから順番に取る
+func _next_zako_type() -> EnemyMain.EnemyType:
+	var cycle: Array = STAGE_ZAKO_CYCLE.get(GameManager.current_stage, [EnemyMain.EnemyType.Jobber])
+	var t: EnemyMain.EnemyType = cycle[_reinforce_index % cycle.size()]
+	_reinforce_index += 1
+	return t
+
+## ザコ種類のパラメータ適用（add_childの前に呼ぶ: HP・速度。max_healthは_readyで記録されるため）
+func _apply_zako_type_params(enemy: EnemyMain, type: EnemyMain.EnemyType) -> void:
+	enemy.enemy_type = type
+	match type:
+		EnemyMain.EnemyType.Gaburi:
+			# 常時弱り・小型・低HP: 正面一発で場外へ飛ぶ「気持ちいい係」
+			enemy.health = maxi(1, int(enemy.health * 0.6))
+			_scale_enemy_speed(enemy, 0.9)
+		EnemyMain.EnemyType.Heatman:
+			# 放置すると発熱（強い化）する時限爆弾
+			_scale_enemy_speed(enemy, 1.1)
+		EnemyMain.EnemyType.Debu:
+			# 大型高HP: 半キャラだけだと長い。弱り正面→ダウン→プレスのコンボ場
+			enemy.health = maxi(2, enemy.health * 5)
+			_scale_enemy_speed(enemy, 0.55)
+
+## ザコ種類の見た目適用（スプライト適用後に呼ぶ: サイズ差）
+func _apply_zako_type_visual(enemy: EnemyMain, type: EnemyMain.EnemyType) -> void:
+	var sprite := enemy.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if not sprite:
+		return
+	match type:
+		EnemyMain.EnemyType.Gaburi:
+			sprite.scale *= 0.75
+		EnemyMain.EnemyType.Debu:
+			sprite.scale *= 1.35
+
+func _scale_enemy_speed(enemy: EnemyMain, mult: float) -> void:
+	var wander = enemy.get_node_or_null("FSM/enemy_wander_state")
+	if wander and "move_speed" in wander:
+		wander.move_speed *= mult
+	var chase = enemy.get_node_or_null("FSM/enemy_chase_state")
+	if chase and "move_speed" in chase:
+		chase.move_speed *= mult
 
 ## ステージ・ボス/雑魚に応じた敵スプライトパス（SPEC: zako/melon_chan/uni_chan/elon_musk）
 func _get_enemy_texture_path(stage: int, is_boss: bool) -> String:

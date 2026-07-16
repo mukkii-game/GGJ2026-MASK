@@ -46,12 +46,13 @@ func Update(delta: float):
 		body.velocity = Vector2.ZERO
 		body.move_and_slide()
 		return
-	# プレイヤーが範囲内なら接近・攻撃（チェース）へ
-	if body is EnemyMain and (body as EnemyMain).player_in_range:
+	var rope_run: bool = body is EnemyMain and (body as EnemyMain).rope_running
+	# プレイヤーが範囲内なら接近・攻撃（チェース）へ（ボスのロープ走行中は走り続ける）
+	if body is EnemyMain and (body as EnemyMain).player_in_range and not rope_run:
 		state_transition.emit(self, "enemy_chase_state")
 		return
-	# 上下/左右ループの場合はIdleに戻らない（patrol_duration 無視）
-	var is_loop := body is EnemyMain and ((body as EnemyMain).behavior_type == EnemyMain.Behavior.VerticalLoop or (body as EnemyMain).behavior_type == EnemyMain.Behavior.HorizontalLoop)
+	# 上下/左右ループ・ロープ走行の場合はIdleに戻らない（patrol_duration 無視）
+	var is_loop := rope_run or (body is EnemyMain and ((body as EnemyMain).behavior_type == EnemyMain.Behavior.VerticalLoop or (body as EnemyMain).behavior_type == EnemyMain.Behavior.HorizontalLoop))
 	if not is_loop and patrol_duration > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:

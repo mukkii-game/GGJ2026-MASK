@@ -37,6 +37,26 @@ var front_collision_hint_timer: float = 0.0
 #NOTE This class is our game manager and handles the players money and loading scenes
 #These functions can be called globally from anywhere
 
+## 開発用: `godot --headless ... -- stage=N [sim=combat|boss]` で起動すると
+## 該当ステージのGameWrapperを直接開く（自動テスト用）。sim指定時はCombatSimを注入
+var _dev_sim: bool = false
+func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("stage="):
+			current_stage = clampi(int(arg.get_slice("=", 1)), 1, 4)
+			call_deferred("_dev_load_game_wrapper")
+		elif arg.begins_with("sim="):
+			_dev_sim = true
+
+func _dev_load_game_wrapper() -> void:
+	get_tree().change_scene_to_file.call_deferred("res://Scenes/Levels/GameWrapper.tscn")
+	if _dev_sim:
+		var sim_script := load("res://Scripts/Dev/CombatSim.gd")
+		if sim_script:
+			var sim: Node = (sim_script as GDScript).new()
+			sim.name = "CombatSim"
+			get_tree().root.add_child.call_deferred(sim)
+
 func reset_money():
 	money = 0
 

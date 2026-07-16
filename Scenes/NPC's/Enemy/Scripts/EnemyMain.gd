@@ -4,8 +4,11 @@ class_name EnemyMain
 ## 静止・上下ループ・左右ループ・一定範囲ランダム・逃走の5種
 enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee }
 
-## 敵の状態（攻略性向上）：通常・怒り・弱り
+## 敵の状態（攻略性向上）：通常・怒り（=強い）・弱り
 enum EnemyState { Normal, Angry, Weak }
+
+## 敵タイプ（確定仕様v1.0）: Jobber=白ザコ / Gaburi=常時弱り小型 / Heatman=無被弾で自己強化 / Debu=大型高HP
+enum EnemyType { Jobber, Gaburi, Heatman, Debu }
 
 ## 敵のマット範囲（PlayerMainより片側16px狭い＝敵がロープ端に張り付かない）
 const MAT_LEFT := 296.0
@@ -58,6 +61,33 @@ const ANGRY_TIME_DURATION := 8.0
 const WEAK_DURATION_SEC := 8.0
 var _state_timer: float = 0.0
 var _weak_until: float = 0.0
+
+## ===== 確定仕様v1.0: 状態経済 =====
+## 敵タイプ
+var enemy_type: EnemyType = EnemyType.Jobber
+## 強い（Angry）の明示タイマー（>0の間 強い）。号令・ヒートマン発熱でセット
+var _angry_until: float = 0.0
+## ヒートマン: 無被弾でこの秒数経過すると発熱（強い化）→ HEAT_DURATION_SEC 後に自然冷却の周期
+const HEAT_IGNITE_SEC := 10.0
+const HEAT_DURATION_SEC := 10.0
+var _heat_timer: float = 0.0
+## 半キャラ被弾の累積カウント。HALFCAR_HITS_TO_WEAK 発で弱り（青）化（P4）
+const HALFCAR_HITS_TO_WEAK := 3
+var halfcar_hit_count: int = 0
+## ダウン残り秒数（enemy_down_state が減算し、0で起き上がり→2秒弱り）
+const DOWN_DURATION_SEC := 3.0
+const WAKEUP_WEAK_SEC := 2.0
+var down_remaining: float = 0.0
+## 取り巻き周回: 対象ボス（StageControllerが設定。ボス存命＆ザコ残少で周回移動）
+var orbit_boss: EnemyMain = null
+var _orbit_angle: float = 0.0
+const ORBIT_RADIUS := 110.0
+const ORBIT_ANGULAR_SPEED := 1.6
+## ボスのロープ走行（S4）: この間は強い扱い＋直角カウンター対象
+var rope_running: bool = false
+## ロープ走行の軸（true=左右往復）。直角カウンター判定に使う
+var rope_run_horizontal: bool = true
+var _rope_run_remaining: float = 0.0
 ## 怒り時の色（体当たり赤と区別するためマゼンタ系）
 const STATE_ANGRY_MODULATE := Color(1.35, 0.45, 0.55, 1.0)
 ## 弱り時の色
@@ -77,9 +107,27 @@ func _process(delta: float) -> void:
 	if _player_contact_timer > 0.0:
 		_player_contact_timer = maxf(0.0, _player_contact_timer - delta)
 	_weak_until = maxf(0.0, _weak_until - delta)
+	_angry_until = maxf(0.0, _angry_until - delta)
+	# ヒートマン: 無被弾が続くと発熱（強い化）。被弾でタイマーリセット（_on_took_damage）
+	if enemy_type == EnemyType.Heatman and not is_training_dummy and not is_dead:
+		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state():
+			_heat_timer += delta
+			if _heat_timer >= HEAT_IGNITE_SEC:
+				_heat_timer = 0.0
+				_ignite()
+	# ボスのロープ走行: 時間切れで停止（直角カウンターでも停止する）
+	if rope_running and not is_dead:
+		_rope_run_remaining -= delta
+		if _rope_run_remaining <= 0.0:
+			stop_rope_run()
 	if not is_training_dummy:
 		_state_timer += delta
 		_update_enemy_state()
+	# 取り巻き周回: 通常移動系ステートならチェースに寄せて周回移動させる
+	if orbit_active() and fsm and fsm.current_state:
+		var _sn := String(fsm.current_state.name).to_lower()
+		if _sn == "enemy_idle_state" or _sn == "enemy_patrol_state" or _sn == "enemy_wander_state":
+			fsm.force_change_state("enemy_chase_state")
 	super._process(delta)
 	if is_dead or GameManager.enemies_frozen:
 		return
@@ -190,8 +238,9 @@ func _ready():
 		set("flash_effect_white_texture", load("res://Art/Sprites/Effect/effect_white_m_man_r_l1.png") as Texture2D)
 	took_damage.connect(_on_took_damage)
 	await get_tree().process_frame
-	# ダウン状態で開始（動かず・赤フラッシュのまま）
+	# ダウン状態で開始（トレーニング用デモ：動かず・赤フラッシュのまま。自動では起き上がらない）
 	if is_down:
+		down_remaining = 999999.0
 		fsm.force_change_state("enemy_down_state")
 		return
 	# リングイン着地目標が設定されていれば右端から走り込み→山なりジャンプ（最優先）
@@ -222,19 +271,21 @@ func _get_state_modulate() -> Color:
 		_:
 			return Color.WHITE
 
+## 確定仕様v1.0: 弱り＝タイマー or ガブリ常時。強い＝明示タイマー（発熱・号令）/ボスのロープ走行/S3ボスのHP怒りのみ。
+## ザコの自動怒り（旧: HP40%・15秒周期）は廃止（強い状態は個体トリガー限定）
 func _update_enemy_state() -> void:
-	if _weak_until > 0.0:
+	if _weak_until > 0.0 or enemy_type == EnemyType.Gaburi:
 		enemy_state = EnemyState.Weak
 		return
-	var max_hp := maxf(1.0, float(max_health))
-	var hp_ratio := float(health) / max_hp
-	# HP起因の怒りは継続。時間起因の怒りは一定時間で収まり、タイマーがリセットされて再び通常に（波状）
-	if _state_timer >= ANGRY_TIME_SEC + ANGRY_TIME_DURATION:
-		_state_timer = 0.0
-	if hp_ratio <= ANGRY_HP_RATIO or _state_timer >= ANGRY_TIME_SEC:
+	if _angry_until > 0.0 or rope_running:
 		enemy_state = EnemyState.Angry
-	else:
-		enemy_state = EnemyState.Normal
+		return
+	if is_boss and stage_number == 3:
+		var hp_ratio := float(health) / maxf(1.0, float(max_health))
+		if hp_ratio <= ANGRY_HP_RATIO:
+			enemy_state = EnemyState.Angry
+			return
+	enemy_state = EnemyState.Normal
 
 ## 状態による移動速度倍率（Angry=速い / Weak=遅い）。各ステートの移動処理で乗算する
 func state_speed_mult() -> float:
@@ -270,6 +321,133 @@ func notify_stepped_on() -> void:
 func set_weak_for(duration_sec: float) -> void:
 	_weak_until = maxf(_weak_until, duration_sec)
 
+## ===== 確定仕様v1.0: 状態経済 API =====
+
+## 半キャラずらしを1発食らった（P4: 累計3発で弱り化）。通常状態のときだけカウント
+func notify_halfcar_hit() -> void:
+	if enemy_state != EnemyState.Normal:
+		return
+	halfcar_hit_count += 1
+	if halfcar_hit_count >= HALFCAR_HITS_TO_WEAK:
+		halfcar_hit_count = 0
+		set_weak_for(WEAK_DURATION_SEC)
+		# ぐらつき演出（青くなる瞬間を目立たせる）
+		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, 3)
+
+## 指定秒数だけ強い（Angry）状態にする（号令・発熱）
+func set_angry_for(duration_sec: float) -> void:
+	_angry_until = maxf(_angry_until, duration_sec)
+
+## 強い状態を強制解除（頭突きダウン・直角カウンター）
+func clear_angry() -> void:
+	_angry_until = 0.0
+	_heat_timer = 0.0
+
+## ヒートマン発熱（強い化）。閃光＋SEで予告的に目立たせる
+func _ignite() -> void:
+	set_angry_for(HEAT_DURATION_SEC)
+	if sprite:
+		var tw := create_tween()
+		tw.tween_property(sprite, "modulate", Color(2.2, 1.2, 0.6, 1.0), 0.1)
+		tw.tween_property(sprite, "modulate", Color.WHITE, 0.2)
+	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -6)
+
+## ダウン（寝）状態に入る。強化は解除・半キャラカウントもリセット
+func enter_down(duration_sec: float = DOWN_DURATION_SEC) -> void:
+	if is_dead:
+		return
+	down_remaining = duration_sec
+	halfcar_hit_count = 0
+	clear_angry()
+	if rope_running:
+		rope_running = false
+		patrol_speed_override = 0.0
+	fsm.force_change_state("enemy_down_state")
+
+## 弱り正面ブラスト／頭突きで生き残った敵：リング内ランダム地点へ吹き飛ばし→ダウン（P5/P7）
+const BLAST_DOWN_TWEEN_DURATION := 0.45
+func blast_to_down(from_dir: Vector2 = Vector2.ZERO) -> void:
+	if is_dead:
+		return
+	_aerial_knockback_animating = true
+	var base_angle: float = from_dir.angle() if from_dir.length() > 0.1 else randf() * TAU
+	var angle: float = base_angle + randf_range(-0.6, 0.6)
+	var dist: float = randf_range(150.0, 300.0)
+	var target: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * dist
+	target.x = clampf(target.x, MAT_LEFT + 20.0, MAT_RIGHT - 20.0)
+	target.y = clampf(target.y, MAT_TOP + 20.0, MAT_BOTTOM - 20.0)
+	velocity = Vector2.ZERO
+	knockback_stun_remaining = BLAST_DOWN_TWEEN_DURATION + 0.1
+	set_invincible_for(BLAST_DOWN_TWEEN_DURATION + 0.2)
+	var sprite_node := sprite
+	var spin_from: float = sprite_node.rotation_degrees if sprite_node else 0.0
+	var tw := create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(self, "global_position", target, BLAST_DOWN_TWEEN_DURATION)
+	if sprite_node:
+		tw.tween_property(sprite_node, "rotation_degrees", spin_from + 1080.0, BLAST_DOWN_TWEEN_DURATION)
+	tw.chain().tween_callback(_on_blast_to_down_done)
+	register_motion_tween(tw)
+	z_index = 100
+
+func _on_blast_to_down_done() -> void:
+	_aerial_knockback_animating = false
+	z_index = 0
+	if sprite and is_instance_valid(sprite):
+		sprite.rotation_degrees = 0.0
+	global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
+	global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
+	enter_down()
+
+## 撃破ブラスト演出: 場外方向へ本体が吹っ飛ぶ（見た目のみ。_die()が本体スプライトを隠すため、
+## 現在フレームのコピーを生成して飛ばす。マスク飛び演出とは併存する。QTEボスには使わない）
+func fly_out_visual(dir: Vector2) -> void:
+	AudioManager.play_sound(AudioManager.KILL_MASK, 0, 3)
+	if not sprite or not is_instance_valid(sprite) or not sprite.sprite_frames:
+		return
+	var d: Vector2 = dir.normalized() if dir.length() > 0.1 else Vector2.RIGHT
+	var body_fly := Sprite2D.new()
+	body_fly.texture = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	body_fly.global_transform = sprite.global_transform
+	body_fly.z_index = 120
+	get_tree().root.add_child(body_fly)
+	var target: Vector2 = body_fly.global_position + d * 700.0
+	var tw := body_fly.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(body_fly, "global_position", target, 0.7)
+	tw.tween_property(body_fly, "rotation_degrees", body_fly.rotation_degrees + 1440.0, 0.7)
+	tw.tween_property(body_fly, "modulate", Color(1, 1, 1, 0.0), 0.7)
+	tw.chain().tween_callback(body_fly.queue_free)
+
+## ボスのロープ走行を開始（S4: 走行中は強い扱い。直角カウンターで停止＋ダウン）
+func start_rope_run(vertical: bool, speed: float, duration_sec: float) -> void:
+	if is_dead or is_in_down_state():
+		return
+	rope_running = true
+	rope_run_horizontal = not vertical
+	patrol_vertical = vertical
+	patrol_speed_override = speed
+	_rope_run_remaining = duration_sec
+	fsm.force_change_state("enemy_patrol_state")
+
+func stop_rope_run() -> void:
+	if not rope_running:
+		return
+	rope_running = false
+	patrol_speed_override = 0.0
+	_rope_run_remaining = 0.0
+	if not is_dead and not is_in_down_state() and fsm:
+		fsm.force_change_state("enemy_idle_state")
+
+## 取り巻き周回が有効か（ボス存命・自分はザコ）
+func orbit_active() -> bool:
+	return is_instance_valid(orbit_boss) and not orbit_boss.is_dead and not is_boss
+
+## 周回の目標位置（ボス中心の円周上を回る）
+func orbit_target_pos(delta: float) -> Vector2:
+	_orbit_angle += ORBIT_ANGULAR_SPEED * delta
+	return orbit_boss.global_position + Vector2(cos(_orbit_angle), sin(_orbit_angle)) * ORBIT_RADIUS
+
 ## リングイン演出中（スポーン〜着地まで）は true。この間は当たり判定なし・敵として認識しない
 func is_ring_in_effect_only() -> bool:
 	return fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state"
@@ -282,10 +460,11 @@ func is_rope_launched() -> bool:
 func is_in_down_state() -> bool:
 	return fsm.current_state and fsm.current_state.name.to_lower() == "enemy_down_state"
 
-## ボスがダメージを受けたら超高速離脱フラグを立てる
+## ボスがダメージを受けたら超高速離脱フラグを立てる。ヒートマンは被弾で発熱タイマーがリセットされる
 func _on_took_damage(_amount: int) -> void:
 	if is_boss:
 		super_flee_remaining = 2.5
+	_heat_timer = 0.0
 
 # 攻撃後は必ずIdleに戻す
 func finished_attacking():

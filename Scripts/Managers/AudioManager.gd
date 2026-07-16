@@ -10,6 +10,10 @@ const COIN_PICK = preload("res://Art/Audio/Effects/coin_pick.ogg")
 const QUEST_SOUND = preload("res://Art/Audio/Effects/QuestSound.ogg")
 ## パワーエサ取得時（バクッ／ボワーン／強くなった系）。差し替え用に別定数
 const POWER_BAIT_GET = preload("res://Art/Audio/Effects/QuestSound.ogg")
+## 場外KOブラスト（撃破して場外へ吹っ飛ばしたとき）
+const KILL_MASK = preload("res://Art/Audio/Effects/kill_mask.wav")
+## 警告音（S4ボスの号令予告など）
+const MASK_WARNING = preload("res://Art/Audio/Effects/mask_ambient1.wav")
 
 const BGM_BATTLE := preload("res://Art/Audio/MainThemeNew.mp3")
 const BGM_INTRO := preload("res://Art/Audio/Intro.mp3")
@@ -80,7 +84,7 @@ func _on_bgm_finished() -> void:
 #Arguments(audio_clip, offset, volume)
 #Example when calling this function:
 #AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0.25, 1)
-func play_sound(audiostream : AudioStreamOggVorbis, offset : float, volume : float):
+func play_sound(audiostream : AudioStream, offset : float, volume : float):
 	#Loop through and find an available player currently not playing a sound
 	var available_player = null
 	for player in audio_players:

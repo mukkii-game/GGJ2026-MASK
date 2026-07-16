@@ -202,6 +202,20 @@
 - **SPEC更新**: B.0 / B.0.1 / B.5.1 / §3 / §5 / §6
 - **テスト**: headless 主要6シーン ALL_OK
 
+### 2026-07-17: 確定仕様v1.0 実装（状態経済・敵タイプ・ボスギミック一新）
+- **変更内容**:
+  - 状態経済: 半キャラ累計3発→弱り8秒／弱り正面ブラスト（40ダメ・撃破は場外・生存はリング内ダウン）／強い敵は半キャラ・正面とも弾く／向き規則（向いていない接触=一方的被弾）／ダウン本実装（3秒→起き上がり2秒弱り）
+  - 新技: 空中頭突き（走行中ジャンプ・420px/s・強い敵にも通る唯一の技）／ダウン敵プレス（30ダメ・KOで場外）
+  - 敵タイプ4種: ジョバー/ガブリ（常時弱り・小型）/ヒートマン（無被弾10秒で自己強化）/デブ（HP5倍・大型）＋見た目差（m_man_g/r・スケール）
+  - ボス: S4に号令（全ザコ4秒強化・予告1秒）とロープ走行（強い状態・直角カウンターで転ばす）を12秒交互で実装。ザコの自動怒り（HP40%/15秒周期）とザコのロープ往復は廃止（ロープを走るのはボスだけ）
+  - 取り巻き周回（ボス存命＆ザコ残2以下でボスの衛星化）／ロープダッシュ倍率2.0→1.25（連打間隔半減で回数に差を出す）／かすりは状態変化なしのレア技として存続
+  - SE: kill_mask.wav（場外KO）・mask_ambient1.wav（号令警告）を登録。play_sound の型を AudioStream に拡張（WAV対応）
+  - 開発基盤: `-- stage=N sim=combat|boss` のheadless自動テスト（Scripts/Dev/CombatSim.gd）
+- **変更理由**: ユーザー確定のルールセット16条＋監督裁定（GAME_DESIGN_BRUSHUP.md ★★確定仕様v1.0）
+- **影響範囲**: PlayerMain, PlayerJumpState, PlayerWalkState, EnemyMain, EnemyDownState, EnemyChaseState, EnemyPatrolState, StageController, AudioManager, GameManager, Scripts/Dev/CombatSim.gd（新規）
+- **SPEC更新**: タイトル（v0.4）/ §3.1-3.5 / §7.1 / §7.2 / §9.0 / B.0注記 / B.0.1定数表
+- **テスト**: headless S1〜S4起動 ALL_OK＋戦闘シムS1 13/13 PASS・S4ボス 8/8 PASS
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

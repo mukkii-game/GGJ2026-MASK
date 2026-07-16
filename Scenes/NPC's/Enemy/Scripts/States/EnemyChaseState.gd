@@ -29,6 +29,19 @@ func Update(delta: float):
 		body.velocity = Vector2.ZERO
 		body.move_and_slide()
 		return
+	# 取り巻き周回（確定仕様v1.0）: ボスの周囲を回る。攻撃や離脱はしない
+	if body is EnemyMain and (body as EnemyMain).orbit_active():
+		var em := body as EnemyMain
+		var orbit_target: Vector2 = em.orbit_target_pos(delta)
+		var to_orbit: Vector2 = orbit_target - body.global_position
+		if to_orbit.length() > 4.0:
+			body.velocity = to_orbit.normalized() * minf(move_speed * 1.3 * em.state_speed_mult(), to_orbit.length() / maxf(delta, 0.001))
+		else:
+			body.velocity = Vector2.ZERO
+		body.move_and_slide()
+		_chase_timer = chase_duration
+		return
+
 	_chase_timer -= delta
 	if _chase_timer <= 0.0:
 		# プレイヤーがまだ範囲内ならチェースを延長（ボスが攻め続ける）
