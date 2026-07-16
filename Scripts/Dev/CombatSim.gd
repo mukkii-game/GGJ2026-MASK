@@ -178,9 +178,11 @@ func _run_combat_tests() -> void:
 		_check("ダウン敵へのプレスで大ダメージ", e3.health <= hp_before - 30 or e3.is_dead,
 			"hp %d->%d" % [hp_before, e3.health])
 
-		# --- TEST 5: 起き上がり弱り ---
+		# --- TEST 5: 起き上がり弱り（ダウンは凍結中カウント停止のため一時解除して確認） ---
 		e3.down_remaining = 0.1
+		GameManager.enemies_frozen = false
 		var woke_weak := await _wait_until(func() -> bool: return (not e3.is_in_down_state()) and e3.is_weak_state(), 2.0)
+		GameManager.enemies_frozen = true
 		_check("起き上がり直後2秒弱り", woke_weak)
 
 	# --- TEST 6: 空中頭突き（P7）: 命中で吹き飛び→ダウン。強い敵にも通る ---

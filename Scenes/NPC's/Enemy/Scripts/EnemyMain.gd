@@ -362,6 +362,7 @@ func enter_down(duration_sec: float = DOWN_DURATION_SEC) -> void:
 	if rope_running:
 		rope_running = false
 		patrol_speed_override = 0.0
+		_rope_run_remaining = 0.0
 	fsm.force_change_state("enemy_down_state")
 
 ## 弱り正面ブラスト／頭突きで生き残った敵：リング内ランダム地点へ吹き飛ばし→ダウン（P5/P7）
@@ -501,6 +502,17 @@ func _die():
 func trigger_rope_launch() -> void:
 	if is_dead:
 		return
+	# ブラスト/空中ノックバック演出の途中で飛ばされた場合、演出Tweenのコールバックが
+	# killされてフラグ類が残留しないよう防御的にリセット（レビュー指摘#9）
+	if _aerial_knockback_animating:
+		_aerial_knockback_animating = false
+		var body_shape_node := get_node_or_null("BodyCollider") as CollisionShape2D
+		if body_shape_node:
+			body_shape_node.disabled = false
+		collision_mask = 3
+		z_index = 0
+		if sprite and is_instance_valid(sprite):
+			sprite.rotation_degrees = 0.0
 	fsm.force_change_state("enemy_launched_state")
 
 ## 空中攻撃で踏まれたとき：かすり同様の距離でランダム方向にティーン＋回転（緑フラッシュは呼び元で実施）

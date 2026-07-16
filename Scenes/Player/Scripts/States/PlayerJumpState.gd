@@ -126,7 +126,7 @@ func _check_headbutt_hit() -> void:
 			continue
 		if enemy is EnemyMain:
 			var em0 := enemy as EnemyMain
-			if em0.is_ring_in_effect_only() or em0.is_rope_launched() or em0.is_in_down_state():
+			if em0.is_ring_in_effect_only() or em0.is_rope_launched() or em0.is_in_down_state() or em0._aerial_knockback_animating:
 				continue
 		if absf(player.global_position.x - enemy.global_position.x) <= 2.0 * half and absf(player.global_position.y - enemy.global_position.y) <= 2.0 * half:
 			_headbutt_hit(enemy)
@@ -139,6 +139,9 @@ func _headbutt_hit(enemy: CharacterBase) -> void:
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 	if player_main.has_method("flash_aerial_hit"):
 		player_main.flash_aerial_hit(enemy)
+	# ロープ走行停止はダメージより先に（QTE発火でスキップされないように。カウンター経路と同順序）
+	if em:
+		em.stop_rope_run()
 	enemy._take_damage(HEADBUTT_DAMAGE)
 	if enemy.hit_particles:
 		enemy.hit_particles.amount = 50
@@ -149,7 +152,6 @@ func _headbutt_hit(enemy: CharacterBase) -> void:
 			em.fly_out_visual(headbutt_dir)
 		elif enemy.health > 0:
 			GameManager.show_callout(enemy, "ヘッドバット！", Color(1.0, 0.6, 0.2, 1.0))
-			em.stop_rope_run()
 			em.blast_to_down(headbutt_dir)
 	if GameManager.training_mode:
 		GameManager.body_contact_type_text = "空中頭突き！"

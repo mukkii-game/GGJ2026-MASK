@@ -223,6 +223,13 @@
 - **SPEC更新**: §12（技名ポップアップ）
 - **テスト**: sim=combat 13/13・sim=boss 8/8・sim=clear S1〜S4 全PASS
 
+### 2026-07-17: Opus品質レビュー反映（QTE×ロープ走行の状態残留ほか5件）
+- **変更内容**: ①頭突きの `stop_rope_run` をダメージ前に移動（QTE発火時のrope_running残留防止）②QTE中は `enemies_frozen=true` で敵全員静止（失敗時解除・成功時はクリア凍結に接続）③頭突きが吹き飛び中の敵に二重ヒットしないよう除外 ④ロープ飛ばし強制遷移時の演出フラグ残留を防御的にリセット ⑤ダウンは凍結中カウント停止 ⑥enter_downで_rope_run_remainingもクリア
+- **変更理由**: マイルストーンのOpus品質レビュー11件をFableが裏取りし、実バグ6件を採用（S1バランス指摘・ガブリ無害・かすり帯の正面扱いは意図通り/実プレイ確認事項として不採用）
+- **影響範囲**: PlayerJumpState, StageController, EnemyMain, EnemyDownState, CombatSim
+- **SPEC更新**: 変更は実装細部のため§3/§9の記述と整合（追記なし）
+- **テスト**: sim=combat 13/13・sim=boss 8/8・sim=clear S2/S3/S4 全PASS
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

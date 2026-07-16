@@ -717,6 +717,13 @@ func _on_boss_defeated_for_qte(who: CharacterBase) -> void:
 		return
 	current_qte_boss = who
 	who.is_dead = true  # 気絶扱いで動かさない
+	# QTE中は敵全員を静止させる（FSMはis_deadを見ないため、凍結で確実に止める）。
+	# 成功時は _on_stage_clear が frozen を立て直し、失敗時は _on_qte_failed で解除する
+	GameManager.enemies_frozen = true
+	if who is EnemyMain:
+		var boss_em := who as EnemyMain
+		boss_em.stop_rope_run()
+		boss_em.velocity = Vector2.ZERO
 	
 	qte_node = qte_scene.instantiate() as Node2D
 	if qte_node:
@@ -746,6 +753,8 @@ func _on_qte_succeeded() -> void:
 	_on_stage_clear()
 
 func _on_qte_failed() -> void:
+	# QTE失敗＝戦闘続行なので凍結解除
+	GameManager.enemies_frozen = false
 	if current_qte_boss and is_instance_valid(current_qte_boss):
 		var restore := ceili(current_qte_boss.max_health * 0.2)
 		restore = maxi(restore, 1)

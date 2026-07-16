@@ -29,6 +29,9 @@ func Exit() -> void:
 func Update(delta: float) -> void:
 	if not body:
 		return
+	# QTE中・クリア演出中はダウンのまま静止（起き上がりカウントも止める）
+	if GameManager.enemies_frozen:
+		return
 	body.down_remaining -= delta
 	if body.down_remaining <= 0.0:
 		body.down_remaining = 0.0
