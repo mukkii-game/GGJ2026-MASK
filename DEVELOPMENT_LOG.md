@@ -237,6 +237,18 @@
 - **SPEC更新**: §9.0 S2行 / §12（BGM暫定・ポスト絵）
 - **テスト**: 全シム回帰PASS（combat 13/13, clear S2/S3, boss 8/8）。パーチ位置(y=52)は実プレイで要目視調整
 
+### 2026-07-17: ポーズ実効化・S1ノルマ方式・場外KO演出一本化・音量調整ほか（ユーザー実プレイFB第1弾）
+- **変更内容**:
+  - **ポーズ修正（重要）**: GameWrapperPause.gd がルートに付いていてルートごと PROCESS_MODE_ALWAYS 化→ポーズしても全ゲームが裏で動いていた。ポーズメニューを子ノード PauseMenu に分離（sim=pauseで敵停止を実測確認）
+  - S1を「1体ずつ登場→約10秒毎に同時数+1（最大4）→倒すと即補充→合計10体でクリア」のノルマ方式に。HUDは「のこり敵 X体」
+  - 場外KOの直線吹っ飛び（本体コピー）を廃止し、マスク飛び（拡大しながら飛ぶ）に一本化
+  - タイトルのステージ直接選択でクリアした場合はタイトルへ戻る（`single_stage_mode`）
+  - やられ声を `EnemyMain._die()` に一元化（半キャラ連打死で鳴らないことがあった）。被弾声 BLOODY_HIT -3→-9、大技 5→-1、弱り化SE 3→-3 と全体に音量半減（在庫の声はEnemy_hit/bloody_hitの2種のみ。差し替えは音源支給待ち）
+- **変更理由**: ユーザー実プレイフィードバック（2026-07-17）
+- **影響範囲**: GameWrapper.tscn, GameWrapperPause, StageController, GameManager, GameUI, TitleScreen, EnemyMain, CharacterBase, PlayerMain, PlayerJumpState, CombatSim(sim=pause追加)
+- **SPEC更新**: §9.0 S1行 / §9.1（ノルマ方式） / §12（HUD文言）
+- **テスト**: sim=pause 2/2・combat 13/13・clear S1/S2/S4・boss 8/8 全PASS
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

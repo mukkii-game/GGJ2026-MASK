@@ -281,15 +281,17 @@ func _on_training_pressed() -> void:
 	_start_game()
 
 func _start_game() -> void:
-	# ステージ1登場画面へ
+	# ステージ1登場画面へ（通常進行＝ステージ直接選択モード解除）
+	GameManager.single_stage_mode = false
 	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
 
-## ステージ1〜4直接選択（テスト用）
+## ステージ1〜4直接選択（テスト用）。選んだステージが終わったらタイトルへ戻る
 func _on_stage_pressed(stage_num: int) -> void:
 	_play_decision_sound()
 	GameManager.test_mode = true
 	GameManager.two_player_mode = false
 	GameManager.current_stage = stage_num
+	GameManager.single_stage_mode = true
 	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
 
 ## エンディングへ直接

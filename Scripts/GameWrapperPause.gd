@@ -1,6 +1,8 @@
 extends Control
 ## ゲーム中のESCでポーズ。メニューは縦4択（バトルに戻る / ステージ開始から / タイトルから / やめる）。
 ## ポーズ中も入力を受け取るため PROCESS_MODE_ALWAYS を使用。
+## ⚠️ このスクリプトは GameWrapper の「子ノード PauseMenu」に付けること。
+## ルートに付けるとルートごと ALWAYS になり、ポーズしてもゲーム全体が裏で動き続ける（2026-07-17修正）
 
 var _pause_layer: CanvasLayer
 var _panel: PanelContainer

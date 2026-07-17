@@ -21,6 +21,8 @@ func _run() -> void:
 			await _run_boss_tests()
 		"clear":
 			await _run_clear_tests()
+		"pause":
+			await _run_pause_test()
 		_:
 			await _run_combat_tests()
 	print("========== [SIM] RESULTS ==========")
@@ -231,22 +233,50 @@ func _run_combat_tests() -> void:
 	_release_all()
 	GameManager.enemies_frozen = false
 
+## ============ ポーズ検証: paused=true で敵・プレイヤーが止まるか ============
+func _run_pause_test() -> void:
+	await _wait_until(func() -> bool: return _find_zakos().size() >= 2, 10.0)
+	var zakos := _find_zakos([])
+	_check("ザコ出現", zakos.size() >= 1)
+	if zakos.is_empty():
+		return
+	await get_tree().create_timer(1.0).timeout
+	var before: Array[Vector2] = []
+	for z in zakos:
+		before.append(z.global_position)
+	get_tree().paused = true
+	for k in range(3):
+		await get_tree().create_timer(0.5).timeout
+		var z0 := zakos[0]
+		if is_instance_valid(z0):
+			print("[PAUSEDBG] t=%.1f paused=%s pos=%s can_process=%s procmode=%d state=%s physproc=%s" % [
+				0.5 * (k + 1), str(get_tree().paused), str(z0.global_position), str(z0.can_process()), z0.process_mode,
+				(z0.fsm.current_state.name if z0.fsm and z0.fsm.current_state else "?"), str(z0.is_physics_processing())])
+	var moved := 0.0
+	for i in zakos.size():
+		if is_instance_valid(zakos[i]):
+			moved += (zakos[i].global_position - before[i]).length()
+	get_tree().paused = false
+	_check("ポーズ中に敵が動かない", moved < 2.0, "moved=%.1fpx" % moved)
+
 ## ============ クリア導線E2E: 撃破→(QTE)→StageClear遷移 ============
 func _run_clear_tests() -> void:
 	var stage: int = GameManager.current_stage
 	_stop_reinforcements()
 	if stage == 1:
-		# S1: 全ザコ撃破→クリア
+		# S1: ノルマ方式（倒すと即補充・合計quota体）。クリア画面に遷移するまで倒し続ける
 		await _wait_until(func() -> bool: return _find_zakos().size() >= 1, 10.0)
-		for e in _find_zakos([]):
-			e.use_qte_on_defeat = false
-			e._take_damage(9999)
-		# リングイン中の敵も含めて全滅させる
-		await get_tree().create_timer(0.5).timeout
-		for node in get_tree().get_nodes_in_group("Enemy"):
-			var e2 := node as EnemyMain
-			if e2 and not e2.is_dead:
-				e2._take_damage(9999)
+		for _round in range(80):
+			for node in get_tree().get_nodes_in_group("Enemy"):
+				var e := node as EnemyMain
+				if e and not e.is_dead:
+					e.use_qte_on_defeat = false
+					e.invincible = false
+					e._take_damage(9999)
+			await get_tree().create_timer(0.4).timeout
+			var cs := get_tree().current_scene
+			if cs and String(cs.scene_file_path).contains("StageClear"):
+				break
 	else:
 		var ok := await _wait_until(func() -> bool: return _find_boss() != null, 10.0)
 		_check("S%d ボス出現" % stage, ok)

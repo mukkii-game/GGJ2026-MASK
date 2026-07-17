@@ -344,7 +344,7 @@ func notify_halfcar_hit() -> void:
 		halfcar_hit_count = 0
 		set_weak_for(WEAK_DURATION_SEC)
 		# ぐらつき演出（青くなる瞬間を目立たせる）
-		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, 3)
+		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -3)
 
 ## 指定秒数だけ強い（Angry）状態にする（号令・発熱）
 func set_angry_for(duration_sec: float) -> void:
@@ -412,26 +412,11 @@ func _on_blast_to_down_done() -> void:
 	global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
 	enter_down()
 
-## 撃破ブラスト演出: 場外方向へ本体が吹っ飛ぶ（見た目のみ。_die()が本体スプライトを隠すため、
-## 現在フレームのコピーを生成して飛ばす。マスク飛び演出とは併存する。QTEボスには使わない）
-func fly_out_visual(dir: Vector2) -> void:
-	AudioManager.play_sound(AudioManager.KILL_MASK, 0, 3)
+## 場外KO演出: SE＋技名のみ。吹っ飛び本体は _die() のマスク飛び（拡大しながら飛ぶ）に一本化
+## （旧: 本体コピーの直線吹っ飛びは「直線で飛ぶのは無くす」指示で廃止 2026-07-17）
+func fly_out_visual(_dir: Vector2) -> void:
+	AudioManager.play_sound(AudioManager.KILL_MASK, 0, 0)
 	GameManager.show_callout(self, "場外KO！", Color(1.0, 0.4, 0.3, 1.0))
-	if not sprite or not is_instance_valid(sprite) or not sprite.sprite_frames:
-		return
-	var d: Vector2 = dir.normalized() if dir.length() > 0.1 else Vector2.RIGHT
-	var body_fly := Sprite2D.new()
-	body_fly.texture = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
-	body_fly.global_transform = sprite.global_transform
-	body_fly.z_index = 120
-	get_tree().root.add_child(body_fly)
-	var target: Vector2 = body_fly.global_position + d * 700.0
-	var tw := body_fly.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(body_fly, "global_position", target, 0.7)
-	tw.tween_property(body_fly, "rotation_degrees", body_fly.rotation_degrees + 1440.0, 0.7)
-	tw.tween_property(body_fly, "modulate", Color(1, 1, 1, 0.0), 0.7)
-	tw.chain().tween_callback(body_fly.queue_free)
 
 ## ボスのロープ走行を開始（S4: 走行中は強い扱い。直角カウンターで停止＋ダウン）
 func start_rope_run(vertical: bool, speed: float, duration_sec: float) -> void:
@@ -528,6 +513,9 @@ func _on_detection_area_body_exited(body: Node2D) -> void:
 		player_in_range = false
 
 func _die():
+	# やられ声を必ず鳴らす（半キャラ連打死は damage_effects を通らないため、ここで一元化）
+	if not is_dead:
+		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -4)
 	super() #calls _die() on base-class CharacterBase
 	fsm.force_change_state("enemy_death_state")
 

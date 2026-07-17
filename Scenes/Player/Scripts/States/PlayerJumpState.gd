@@ -135,7 +135,7 @@ func _check_headbutt_hit() -> void:
 func _headbutt_hit(enemy: CharacterBase) -> void:
 	_headbutt_hit_done = true
 	var em := enemy as EnemyMain
-	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
+	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 	if player_main.has_method("flash_aerial_hit"):
 		player_main.flash_aerial_hit(enemy)
@@ -175,7 +175,7 @@ func _land(skip_damage: bool = false) -> void:
 			var em := enemy as EnemyMain
 			if em and em.is_in_down_state():
 				# ダウン敵へのプレス（P6）: 大ダメージ。KOなら場外へ吹っ飛ぶ
-				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
+				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 				enemy._take_damage(PRESS_DAMAGE)
 				if player_main.has_method("flash_aerial_hit"):
 					player_main.flash_aerial_hit(enemy)

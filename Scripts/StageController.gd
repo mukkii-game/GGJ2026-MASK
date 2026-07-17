@@ -16,6 +16,10 @@ var stage_cleared: bool = false
 var initial_spawn_done: bool = false  # 初期配置完了前はクリア判定しない
 ## ザコの種類サイクル用インデックス（ステージごとの型配列を順番に消化）
 var _reinforce_index: int = 0
+## S1ウェーブ管理: 累計スポーン数・現在の同時数上限・上限引き上げタイマー
+var _s1_spawned: int = 0
+var _s1_cap: int = 1
+var _s1_ramp_timer: float = 0.0
 ## S4ボスギミック（号令とロープ走行を交互）
 var _gimmick_timer: float = 0.0
 var _gimmick_toggle: bool = false
@@ -109,13 +113,13 @@ func _setup_stage_params() -> void:
 ## テストモード：一撃で死ぬ（シーケンス確認用）
 func _setup_test_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団（テスト＝一撃）
+		1:  # 雑魚マスク軍団（テスト＝一撃・少数）
 			stage_params = {
-				"initial_count": 2,
-				"max_count": 6,
-				"spawn_interval": 12.0,
+				"initial_count": 1,
+				"total_quota": 6,
+				"cap_max": 3,
+				"ramp_interval": 6.0,
 				"enemy_hp": 2,
-				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
 		2:  # マスクメロンナ（テスト＝一撃）
@@ -152,13 +156,13 @@ func _setup_test_params() -> void:
 ## 本番モード（スタート）：全ステージで雑魚を定期的に落とす・敵HPは半分
 func _setup_normal_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団（雑魚のみ・半キャラ3発で弱り→正面ブラストの教習場）
+		1:  # 雑魚マスク軍団: 1体ずつ登場→約10秒毎に同時数+1（最大4）→倒すと即補充。合計10体倒すとクリア
 			stage_params = {
-				"initial_count": 3,
-				"max_count": 6,
-				"spawn_interval": 10.0,
+				"initial_count": 1,
+				"total_quota": 10,
+				"cap_max": 4,
+				"ramp_interval": 10.0,
 				"enemy_hp": 27,
-				"enemy_speed": 300.0,
 				"behavior": 3  # RandomRange
 			}
 		2:  # マスクメロンナ（足速く・近づくと距離取り・被弾で超高速離脱）。初期からザコ1体（ガブリ教材）
@@ -210,12 +214,16 @@ func _process(delta: float) -> void:
 				_training_respawn_timer = -1.0
 		return
 	
-	# 全ステージで雑魚を定期的に落とす
-	spawn_timer += delta
-	var interval: float = stage_params.get("spawn_interval", 10.0)
-	if spawn_timer >= interval:
-		spawn_timer = 0.0
-		_spawn_reinforcement()
+	# S1: 1体ずつ→約10秒毎に同時数を引き上げ→倒したら即補充（合計quota体でクリア）
+	if GameManager.current_stage == 1:
+		_update_stage1_waves(delta)
+	else:
+		# S2〜S4は従来どおり定期増援
+		spawn_timer += delta
+		var interval: float = stage_params.get("spawn_interval", 10.0)
+		if spawn_timer >= interval:
+			spawn_timer = 0.0
+			_spawn_reinforcement()
 
 	# S4ボスギミック: 号令（全ザコ一時強化）とロープ走行を交互に仕掛ける（確定仕様）
 	if GameManager.current_stage == 4:
@@ -358,6 +366,19 @@ func _spawn_initial_enemies() -> void:
 		var pos: Vector2 = spawn_points[i % spawn_points.size()]
 		_spawn_enemy_at(pos, has_boss_stage and i == 0)
 
+## S1ウェーブ: 同時数上限まで即補充。上限はramp_intervalごとに+1（最大cap_max）。累計total_quota体で打ち止め
+func _update_stage1_waves(delta: float) -> void:
+	var quota: int = stage_params.get("total_quota", 10)
+	var cap_max: int = stage_params.get("cap_max", 4)
+	if _s1_cap < cap_max:
+		_s1_ramp_timer += delta
+		if _s1_ramp_timer >= float(stage_params.get("ramp_interval", 10.0)):
+			_s1_ramp_timer = 0.0
+			_s1_cap += 1
+	if _s1_spawned < quota and _get_alive_enemy_count() < _s1_cap:
+		var random_point := spawn_points[randi() % spawn_points.size()]
+		_spawn_enemy_at(random_point, false)
+
 ## 増援（雑魚を定期的に落とす）
 func _spawn_reinforcement() -> void:
 	if GameManager.training_mode:
@@ -457,12 +478,13 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 
 	# ステージごとのパラメータ設定
 	match GameManager.current_stage:
-		1:  # 雑魚マスク（いままでどおり＋ときどきロープ往復）
+		1:  # 雑魚マスク
 			enemy.health = stage_params.get("enemy_hp", 30)
 			enemy.stage_number = 1
 			enemy.is_boss = false
 			enemy.use_qte_on_defeat = false
 			_set_zako_behavior(enemy, pos)
+			_s1_spawned += 1
 		2:  # マスクメロンナ
 			if is_boss:
 				enemy.health = stage_params.get("boss_hp", 100)
@@ -740,11 +762,13 @@ func _check_stage_clear() -> void:
 	if not initial_spawn_done or current_qte_boss != null:
 		return
 	var alive := _get_alive_enemy_count()
-	# ステージ1 HUD用：クリア条件不透明対策（KI）。増援は無限湧きで「場の敵が0になった瞬間」にクリアなので、
-	# 固定の「残り総数」ではなく現在の生存数＋同時湧き上限を毎フレーム GameManager に反映する
+	# ステージ1: クリア条件＝合計 total_quota 体を倒し切る（倒すと即補充されるため「のこり総数」をHUDへ）
 	if GameManager.current_stage == 1:
+		var quota: int = stage_params.get("total_quota", 10)
 		GameManager.stage1_alive_enemy_count = alive
-		GameManager.stage1_max_concurrent_enemy_count = stage_params.get("max_count", 6)
+		GameManager.stage1_remaining_total = quota - _s1_spawned + alive
+		if _s1_spawned < quota:
+			return  # まだ全部出し切っていない（倒しても即補充される段階）
 	if alive == 0 and not stage_cleared:
 		stage_cleared = true
 		_on_stage_clear()

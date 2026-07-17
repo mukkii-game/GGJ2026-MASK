@@ -498,7 +498,7 @@ func _body_contact(delta: float) -> void:
 				if GameManager.training_mode:
 					GameManager.body_contact_type_text = "直角カウンター！"
 					GameManager.body_contact_type_timer = 1.5
-				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
+				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 				GameManager.show_callout(em, "カウンター！", Color(0.4, 1.0, 0.5, 1.0))
 				em.stop_rope_run()
 				em._take_damage(int(BODY_DAMAGE_DEALT * 1.5))
@@ -707,7 +707,7 @@ func _body_contact(delta: float) -> void:
 					var blast_mult: float = _get_body_damage_mult()
 					var blast_dir: Vector2 = _axis_knockback(to_enemy, 1.0)
 					enemy._take_damage(int(WEAK_FRONTAL_DAMAGE * blast_mult))
-					AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
+					AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 					if enemy.hit_particles:
 						enemy.hit_particles.amount = 60
@@ -810,7 +810,7 @@ func _body_contact(delta: float) -> void:
 				if boosted_frontal:
 					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
 				if boosted_frontal or rope_bounce_running:
-					AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, 5)
+					AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 				if enemy.hit_particles:
 					enemy.hit_particles.amount = 40
 					enemy.hit_particles.lifetime = 0.8

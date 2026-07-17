@@ -69,13 +69,11 @@ func _process(delta: float) -> void:
 			_training_contact_label.visible = false
 
 	if _stage1_enemy_label:
-		var alive: int = GameManager.stage1_alive_enemy_count
-		var cap: int = GameManager.stage1_max_concurrent_enemy_count
-		# 初期スポーン完了前（cap未設定=0）は非表示（「敵0体・全滅でクリア」という誤解を防ぐ）
-		_stage1_enemy_label.visible = cap > 0
-		# 増援は無限湧き（場の同時出現数の上限のみ固定）なので「残り総数」ではなく
-		# 「今何体いるか」＋「全滅した瞬間にクリア」という正直な表現にする
-		_stage1_enemy_label.text = "敵 %d体（最大%d体・全滅でクリア）" % [alive, cap]
+		var remaining: int = GameManager.stage1_remaining_total
+		# 初期スポーン完了前（0）は非表示（「敵0体」という誤解を防ぐ）
+		_stage1_enemy_label.visible = remaining > 0
+		# v0.4: S1は「合計ノルマを倒し切る」方式（倒すと即補充）。のこり総数を表示
+		_stage1_enemy_label.text = "のこり敵 %d体" % remaining
 
 	if _stage1_hint_label:
 		GameManager.front_collision_hint_timer -= delta
