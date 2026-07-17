@@ -7,6 +7,8 @@ var _can_advance := false
 func _ready() -> void:
 	process_mode = PROCESS_MODE_ALWAYS
 	set_process_input(true)
+	# クリア画面は一旦無音（専用曲は後日用意）。戦闘BGMを止める
+	AudioManager.stop_bgm()
 	# ステージ番号表示（右上1/4のモザイク上）
 	var stage_label = get_node_or_null("FaceCover/TextPanel/VBox/StageNumber")
 	if stage_label:

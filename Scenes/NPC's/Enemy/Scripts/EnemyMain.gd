@@ -83,6 +83,9 @@ var orbit_boss: EnemyMain = null
 var _orbit_angle: float = 0.0
 const ORBIT_RADIUS := 110.0
 const ORBIT_ANGULAR_SPEED := 1.6
+## ポスト上待機（S2ボス）: 実際の青ポールの上に立ち、降りてくるまで当たり判定なし
+var is_perched: bool = false
+var _perch_pos := Vector2.ZERO
 ## ボスのロープ走行（S4）: この間は強い扱い＋直角カウンター対象
 var rope_running: bool = false
 ## ロープ走行の軸（true=左右往復）。直角カウンター判定に使う
@@ -151,6 +154,11 @@ func _process(delta: float) -> void:
 			sprite.speed_scale = 2.0
 		else:
 			sprite.speed_scale = 1.0
+	# ポスト上待機中は位置を固定（FSMが動かそうとしても毎フレーム戻す）・マットクランプもしない
+	if is_perched:
+		velocity = Vector2.ZERO
+		global_position = _perch_pos
+		return
 	# 敵が絶対にロープ外に出ないようにクランプ（リングイン・空中ノックバック・ダウン・ノックバック中はスキップ）
 	if not in_ring_in and not _aerial_knockback_animating and not in_down and not in_knockback_stun:
 		global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
@@ -201,7 +209,7 @@ func _push_apart_from_other_enemies() -> void:
 		var other := node as CharacterBase
 		if not other or other.is_dead:
 			continue
-		if other is EnemyMain and (other as EnemyMain).is_rope_launched():
+		if other is EnemyMain and ((other as EnemyMain).is_rope_launched() or (other as EnemyMain).is_perched):
 			continue
 		var o_pos := other.global_position
 		var dx := my_pos.x - o_pos.x
@@ -238,6 +246,10 @@ func _ready():
 		set("flash_effect_white_texture", load("res://Art/Sprites/Effect/effect_white_m_man_r_l1.png") as Texture2D)
 	took_damage.connect(_on_took_damage)
 	await get_tree().process_frame
+	# ポスト上待機で開始（S2ボス: StageControllerがadd_child直後にstart_perchを呼ぶ）
+	if is_perched:
+		fsm.force_change_state("enemy_idle_state")
+		return
 	# ダウン状態で開始（トレーニング用デモ：動かず・赤フラッシュのまま。自動では起き上がらない）
 	if is_down:
 		down_remaining = 999999.0
@@ -441,6 +453,27 @@ func stop_rope_run() -> void:
 	if not is_dead and not is_in_down_state() and fsm:
 		fsm.force_change_state("enemy_idle_state")
 
+## ポスト上待機を開始（S2ボス）。降りてくるまで当たり判定なし・不動
+func start_perch(pos: Vector2) -> void:
+	is_perched = true
+	_perch_pos = pos
+	velocity = Vector2.ZERO
+	global_position = pos
+	z_index = 20  # ロープ・背景より手前に立って見せる
+	if fsm and fsm.current_state:
+		fsm.force_change_state("enemy_idle_state")
+
+## ポスト上待機を終了して、リングインの山なりジャンプで指定位置へ降臨
+func end_perch(landing: Vector2) -> void:
+	if not is_perched:
+		return
+	is_perched = false
+	z_index = 0
+	ring_in_landing_pos = landing
+	if fsm:
+		fsm.force_change_state("enemy_ring_in_state")
+		ring_in_landing_pos = Vector2.ZERO
+
 ## 取り巻き周回が有効か（ボス存命・自分はザコ）
 func orbit_active() -> bool:
 	return is_instance_valid(orbit_boss) and not orbit_boss.is_dead and not is_boss
@@ -475,8 +508,8 @@ func finished_attacking():
 
 func _on_detection_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("Player"):
-		if is_training_dummy:
-			return  # トレーニング用ダミーは攻撃・接近しない
+		if is_training_dummy or is_perched or is_dead:
+			return  # ダミー・ポスト上待機・気絶(QTE)中は攻撃・接近しない
 		# リングイン中は最優先で入場のみ。ダウン中・リングイン中はプレイヤー検知でチェースに移行しない
 		if fsm.current_state:
 			var sn: String = String(fsm.current_state.name).to_lower()

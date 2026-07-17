@@ -126,7 +126,7 @@ func _check_headbutt_hit() -> void:
 			continue
 		if enemy is EnemyMain:
 			var em0 := enemy as EnemyMain
-			if em0.is_ring_in_effect_only() or em0.is_rope_launched() or em0.is_in_down_state() or em0._aerial_knockback_animating:
+			if em0.is_ring_in_effect_only() or em0.is_rope_launched() or em0.is_in_down_state() or em0._aerial_knockback_animating or em0.is_perched:
 				continue
 		if absf(player.global_position.x - enemy.global_position.x) <= 2.0 * half and absf(player.global_position.y - enemy.global_position.y) <= 2.0 * half:
 			_headbutt_hit(enemy)
@@ -169,7 +169,7 @@ func _land(skip_damage: bool = false) -> void:
 		var enemy = node as CharacterBase
 		if not is_instance_valid(enemy) or enemy.is_dead:
 			continue
-		if enemy is EnemyMain and (enemy as EnemyMain).is_ring_in_effect_only():
+		if enemy is EnemyMain and ((enemy as EnemyMain).is_ring_in_effect_only() or (enemy as EnemyMain).is_perched):
 			continue
 		if absf(land_pos.x - enemy.global_position.x) <= 2.0 * half and absf(land_pos.y - enemy.global_position.y) <= 2.0 * half:
 			var em := enemy as EnemyMain

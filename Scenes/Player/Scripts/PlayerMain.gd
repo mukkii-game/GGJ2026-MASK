@@ -453,7 +453,7 @@ func _body_contact(delta: float) -> void:
 		var e := node as CharacterBase
 		if not is_instance_valid(e) or e.is_dead:
 			continue
-		if e is EnemyMain and ((e as EnemyMain).is_ring_in_effect_only() or (e as EnemyMain).is_rope_launched() or (e as EnemyMain).is_in_down_state()):
+		if e is EnemyMain and ((e as EnemyMain).is_ring_in_effect_only() or (e as EnemyMain).is_rope_launched() or (e as EnemyMain).is_in_down_state() or (e as EnemyMain).is_perched):
 			continue
 		if _aabb_overlap(p_pos, e.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
 			in_contact = true
@@ -465,8 +465,8 @@ func _body_contact(delta: float) -> void:
 		var enemy = node as CharacterBase
 		if not is_instance_valid(enemy) or enemy.is_dead:
 			continue
-		# ダウン（寝）中・吹き飛ばされ中（空中）の敵は体当たり対象外（プレス・頭突きの追撃対象。確定仕様P6）
-		if enemy is EnemyMain and ((enemy as EnemyMain).is_ring_in_effect_only() or (enemy as EnemyMain).is_rope_launched() or (enemy as EnemyMain).is_in_down_state() or (enemy as EnemyMain)._aerial_knockback_animating):
+		# ダウン（寝）中・吹き飛ばされ中（空中）・ポスト上待機中の敵は体当たり対象外
+		if enemy is EnemyMain and ((enemy as EnemyMain).is_ring_in_effect_only() or (enemy as EnemyMain).is_rope_launched() or (enemy as EnemyMain).is_in_down_state() or (enemy as EnemyMain)._aerial_knockback_animating or (enemy as EnemyMain).is_perched):
 			continue
 		if not _aabb_overlap(p_pos, enemy.global_position, BODY_CONTACT_HALF + BODY_CONTACT_HALF_TOLERANCE):
 			continue

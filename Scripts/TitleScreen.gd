@@ -14,7 +14,8 @@ var _confirm_visible := false
 var _confirm_index := 0  # 0=はい 1=いいえ
 
 func _ready() -> void:
-	AudioManager.play_battle_bgm()
+	# タイトルは一旦無音（専用曲は後日用意）。ゲームから戻ってきたときの戦闘BGMも止める
+	AudioManager.stop_bgm()
 	# 選択中ボタン用スタイル（目立つ色）
 	_style_selected = StyleBoxFlat.new()
 	_style_selected.bg_color = Color(0.95, 0.75, 0.15, 1)

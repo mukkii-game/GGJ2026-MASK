@@ -230,6 +230,13 @@
 - **SPEC更新**: 変更は実装細部のため§3/§9の記述と整合（追記なし）
 - **テスト**: sim=combat 13/13・sim=boss 8/8・sim=clear S2/S3/S4 全PASS
 
+### 2026-07-17: タイトル/クリア無音化・ポスト重ね絵削除・S2ボスのポール上待機
+- **変更内容**: ①タイトルとステージクリア画面のBGMを停止（専用曲は後日）②MainFloor.tscnのCornerPosts（黄ポリゴン2本＋cormar_top.png重ねスプライト2枚）を削除 ③S2メロンナが開幕は青ポール上（296/984, y52）で待機＝当たり判定・検知・プレス/頭突き対象外、ザコ全滅（最低4秒）or 20秒でリングイン演出流用の山なりジャンプで降臨
+- **変更理由**: ユーザー指示（2026-07-17）
+- **影響範囲**: TitleScreen, StageClear, MainFloor.tscn, EnemyMain(is_perched/start_perch/end_perch), EnemyIdleState, PlayerMain, PlayerJumpState, StageController
+- **SPEC更新**: §9.0 S2行 / §12（BGM暫定・ポスト絵）
+- **テスト**: 全シム回帰PASS（combat 13/13, clear S2/S3, boss 8/8）。パーチ位置(y=52)は実プレイで要目視調整
+
 ## 変更記録テンプレート
 
 今後の変更時は以下のフォーマットで追記:

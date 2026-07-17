@@ -25,6 +25,12 @@ const S4_SHOUT_TELEGRAPH := 1.0
 const S4_SHOUT_ANGRY_SEC := 4.0
 const S4_ROPE_RUN_SPEED := 280.0
 const S4_ROPE_RUN_SEC := 6.0
+## S2ボスのポスト上待機（青ポールの上に立つ。実背景のポール位置に合わせて調整可）
+const PERCH_POS_LEFT := Vector2(296.0, 52.0)
+const PERCH_POS_RIGHT := Vector2(984.0, 52.0)
+const PERCH_MIN_SEC := 4.0    # 最低これだけは待機
+const PERCH_MAX_SEC := 20.0   # ザコが残っていてもこれで降臨
+var _perch_timer: float = 0.0
 
 ## ステージごとのザコ種類サイクル（確定仕様v1.0 ザコ図鑑）
 ## S1=ジョバーのみ / S2=ジョバー+ガブリ / S3=ヒートマン・デブ初出 / S4=混成
@@ -215,6 +221,10 @@ func _process(delta: float) -> void:
 	if GameManager.current_stage == 4:
 		_update_stage4_boss_gimmicks(delta)
 
+	# S2ボス: ポスト上待機→ザコが片付く（or 時間経過）とリングへ降臨
+	if GameManager.current_stage == 2:
+		_update_stage2_perch(delta)
+
 	# 取り巻き周回（確定仕様）: ボス存命＆ザコ残2体以下 → ザコはボスの周囲を回る
 	_update_orbit_assignment()
 
@@ -262,6 +272,29 @@ func _do_shout() -> void:
 		if em and not em.is_dead and not em.is_boss:
 			em.set_angry_for(S4_SHOUT_ANGRY_SEC)
 
+## S2: ポスト上のボスを監視。ザコ全滅（最低4秒待機後）or 20秒で山なりジャンプ降臨
+func _update_stage2_perch(delta: float) -> void:
+	var boss := _find_alive_boss()
+	if not boss or not boss.is_perched:
+		return
+	_perch_timer += delta
+	var zako_alive := 0
+	var npcs = _get_npcs_node()
+	if npcs:
+		for child in npcs.get_children():
+			var em := child as EnemyMain
+			if em and not em.is_dead and not em.is_boss:
+				zako_alive += 1
+	if _perch_timer >= PERCH_MAX_SEC or (_perch_timer >= PERCH_MIN_SEC and zako_alive == 0):
+		var subvp := get_node_or_null("../SubViewportContainer/SubViewport")
+		var landing := Vector2(640.0, 360.0)
+		if subvp:
+			var main_floor := subvp.get_node_or_null("MainFloor")
+			if main_floor:
+				landing = _pick_empty_spot_on_mat(main_floor)
+		boss.end_perch(landing)
+		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, 2)
+
 func _find_alive_boss() -> EnemyMain:
 	var npcs = _get_npcs_node()
 	if not npcs:
@@ -289,7 +322,7 @@ func _update_orbit_assignment() -> void:
 			boss = em
 		else:
 			zako.append(em)
-	var enable: bool = boss != null and zako.size() > 0 and zako.size() <= 2
+	var enable: bool = boss != null and not boss.is_perched and zako.size() > 0 and zako.size() <= 2
 	for z in zako:
 		z.orbit_boss = boss if enable else null
 
@@ -514,6 +547,11 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	_apply_enemy_sprite(enemy, tex_path)
 	if not is_boss:
 		_apply_zako_type_visual(enemy, zako_type)
+
+	# S2ボスは開幕ポスト上待機（実際の青ポールの上・降りてくるまで当たり判定なし）
+	if is_boss and GameManager.current_stage == 2 and not GameManager.training_mode:
+		_perch_timer = 0.0
+		enemy.start_perch(PERCH_POS_LEFT if randf() < 0.5 else PERCH_POS_RIGHT)
 
 ## ザコ種類ごとのスプライト（見た目差: ジョバー/デブ=青、ガブリ=青髪小型、ヒートマン=赤）
 func _get_zako_texture_path(type: EnemyMain.EnemyType) -> String:

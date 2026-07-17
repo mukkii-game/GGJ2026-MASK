@@ -16,6 +16,9 @@ func Update(delta: float):
 	# 敵全員凍結モード時は動かない
 	if GameManager.enemies_frozen:
 		return
+	# ポスト上待機中はIdleのまま（StageControllerのend_perchで降臨するまで動かない）
+	if enemy and enemy.is_perched:
+		return
 	# プレイヤーが範囲内なら接近・攻撃（チェース）へ
 	if enemy and enemy.player_in_range:
 		state_transition.emit(self, "enemy_chase_state")
