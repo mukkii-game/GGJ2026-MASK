@@ -751,7 +751,7 @@ Enemy は以下の状態（Status）を持つ。
   - タイトル: `MainThemeNew.mp3` ループ（`_ready` 即再生）  
   - ステージIntro: `Intro.mp3`（非ループ）→ 終了でゴング SE（1回）
   - 登場画面: 攻略テキストパネルは非表示。キャラごとに **吹き出し一言**（仮文言・`StageIntro.gd`）を大きめに表示
-  - バトル: `MainThemeNew.mp3` ループ（`StageController._ready` 先頭で即再生）  
+  - バトル: `MainThemeNew.mp3` ループ（`StageController._ready` 先頭で即再生）＋開始ゴング1回（カーン）
   - エンディング: `Ending.mp3`（なければ `MainTheme.mp3`）  
   - MainFloor 内 `BGMFromOffset` は互換ノードのみ（再生しない）
 - **タイトル画面（現行）**: `Scenes/Misc/TitleScreen.tscn` + `Scripts/TitleScreen.gd`

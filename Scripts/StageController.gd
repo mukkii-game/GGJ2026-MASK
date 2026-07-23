@@ -78,10 +78,12 @@ var _pending_clear_stage: int = 0
 var _clear_timer: Timer = null
 
 func _ready() -> void:
-	AudioManager.play_battle_bgm()
 	# 前ステージのクリア演出でフリーズしたままにならないよう解除
 	GameManager.enemies_frozen = false
 	AudioManager.unmute_sfx()
+	AudioManager.play_battle_bgm()
+	# 試合開始のカーン
+	AudioManager.play_gong_once()
 	# ステージ1誤学習防止ヒントのカウンタを毎ステージ開始時にリセット（KI: 正面衝突の誤学習対処）
 	GameManager.reset_stage1_hint_tracking()
 	# 既存の敵を全て削除（SubViewport内のNPCsを直接参照）
