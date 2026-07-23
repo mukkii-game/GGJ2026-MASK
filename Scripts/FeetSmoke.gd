@@ -31,6 +31,10 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if not _player_main:
 		return
+	if _player_main.is_dead:
+		_particles.emitting = false
+		_particles.visible = false
+		return
 	var show_smoke := _player_main.is_run_dashing
 	_particles.emitting = show_smoke
 	_particles.visible = show_smoke

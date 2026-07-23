@@ -15,6 +15,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _player_main:
 		return
+	if _player_main.is_dead:
+		visible = false
+		return
 	visible = _player_main.is_run_dashing
 	if visible:
 		rotation += delta * ROTATE_SPEED

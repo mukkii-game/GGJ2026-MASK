@@ -10,6 +10,7 @@ var enemies_frozen: bool = false
 ## ゲームオーバー時: 敵をその場で待機（Idle）に固定。移動・攻撃しない
 func freeze_battle_for_game_over() -> void:
 	enemies_frozen = true
+	AudioManager.stop_all_sfx()
 	var tree := get_tree()
 	if tree == null:
 		return
@@ -92,6 +93,8 @@ func load_next_level(next_scene : PackedScene):
 	get_tree().change_scene_to_packed(next_scene)
 
 func load_same_level():
+	AudioManager.unmute_sfx()
+	enemies_frozen = false
 	get_tree().reload_current_scene()
 
 ## ステージクリア処理
@@ -114,6 +117,8 @@ func load_next_stage():
 
 ## タイトルへ戻る
 func load_title():
+	AudioManager.unmute_sfx()
+	enemies_frozen = false
 	current_stage = 1
 	stage_cleared = [false, false, false, false]
 	training_mode = false

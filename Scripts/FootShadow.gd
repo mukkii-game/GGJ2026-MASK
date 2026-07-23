@@ -9,7 +9,10 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if not player:
 		return
-	
+	if player.is_dead:
+		visible = false
+		return
+	visible = true
 	# 影は常にキャラ本体の位置に追従（本体＝影の位置）
 	# ジャンプ中もキャラ本体は地面レベルで移動し、スプライトだけが上にオフセット
 	global_position = player.global_position

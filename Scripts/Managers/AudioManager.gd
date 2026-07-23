@@ -124,6 +124,8 @@ func _on_bgm_finished() -> void:
 #Example when calling this function:
 #AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0.25, 1)
 func play_sound(audiostream : AudioStream, offset : float, volume : float):
+	if _sfx_muted:
+		return
 	#Loop through and find an available player currently not playing a sound
 	var available_player = null
 	for player in audio_players:
@@ -148,6 +150,22 @@ func play_sound(audiostream : AudioStream, offset : float, volume : float):
 	available_player.pitch_scale = randf_range(0.9, 1.1)
 	available_player.volume_db = volume
 	available_player.play(offset)
+
+## SE全停止（ゲームオーバー等）。BGMは止めない
+var _sfx_muted: bool = false
+
+func stop_all_sfx() -> void:
+	_sfx_muted = true
+	for player in audio_players:
+		if player and is_instance_valid(player):
+			player.stop()
+	# ゴング用などプール外の一時プレイヤーも止める
+	for child in get_children():
+		if child is AudioStreamPlayer and child != _bgm_player:
+			(child as AudioStreamPlayer).stop()
+
+func unmute_sfx() -> void:
+	_sfx_muted = false
 
 #Instantiate audiostreams into the scene
 func initiate_audio_stream():

@@ -220,6 +220,10 @@ func _apply_2p_sprite_frames() -> void:
 
 func _process(delta: float):
 	super(delta)
+	if is_dead:
+		rope_bounce_running = false
+		velocity = Vector2.ZERO
+		return
 	# パワーエサ速度アップの残り時間
 	if power_bait_speed_until > 0.0:
 		power_bait_speed_until -= delta
@@ -295,6 +299,11 @@ func is_airborne_for_draw() -> bool:
 
 
 func _physics_process(delta: float) -> void:
+	# 死亡後はロープ往復・体当たりを一切しない（影の残留走り防止）
+	if is_dead:
+		rope_bounce_running = false
+		velocity = Vector2.ZERO
+		return
 	# ロープ跳ね返り・マット内クランプは移動の後に実行（SubViewport でも確実に動く）
 	if is_jumping:
 		return
@@ -855,10 +864,36 @@ func _clamp_enemy_to_mat(enemy_ref: CharacterBase) -> void:
 		enemy_ref.global_position.y = clampf(enemy_ref.global_position.y, MAT_TOP, MAT_BOTTOM)
 
 func _die():
-	# ゲームオーバー中はバトルを止める（敵は待機モーションのみ）
+	# ロープ往復・走り・接触を即停止（影だけ走り続けるバグ対策）
+	_stop_all_motion_on_death()
+	# ゲームオーバー中はバトルを止める（敵は待機モーションのみ）＋SE全停止
 	GameManager.freeze_battle_for_game_over()
 	super() #calls _die() on base-class CharacterBase
 	
 	fsm.force_change_state("Die")
 	var death_scene = DEATH_SCREEN.instantiate()
 	add_child(death_scene)
+
+## 死亡時: ロープバウンス等の残留動作と足元エフェクトを止める
+func _stop_all_motion_on_death() -> void:
+	rope_bounce_running = false
+	rope_bounce_direction = Vector2.ZERO
+	is_auto_running = false
+	is_run_dashing = false
+	run_dash_direction = Vector2.ZERO
+	start_auto_run = false
+	is_jumping = false
+	velocity = Vector2.ZERO
+	kill_motion_tweens()
+	var we := get_node_or_null("WindEffect")
+	if we:
+		we.visible = false
+	var shadow := get_node_or_null("FootShadow")
+	if shadow:
+		shadow.visible = false
+	var smoke := get_node_or_null("FeetSmoke")
+	if smoke:
+		smoke.visible = false
+	var spiral := get_node_or_null("FeetSpiral")
+	if spiral:
+		spiral.visible = false
