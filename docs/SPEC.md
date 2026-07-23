@@ -729,8 +729,8 @@ Enemy は以下の状態（Status）を持つ。
   - QTE成功時のボス消滅は `CharacterBase._die()` に一元化（マスク飛び演出→1秒後に自動 `queue_free`）。  
   - `StageClear.gd` で 1秒後に入力受付し、キー/クリックで `GameManager.load_next_stage()` を呼ぶ。  
   - `load_next_stage()` は `StageIntro.tscn` →（入力で）`GameWrapper.tscn` へ遷移。ステージ4の次は `Ending.tscn`。
-- **Lose（現行）**: Player HP==0 で `PlayerMain._die()` が `GameManager.freeze_battle_for_game_over()` を呼び、場の敵を **Idle 待機に固定（移動・攻撃停止）** したうえで `Scenes/Misc/DeathScreen.tscn` を表示。
-  - DeathScreen は **コンティニュー / タイトルに戻る / 終了する** を上下で選択（`Scripts/Reset.gd`）。
+- **Lose（現行）**: Player HP==0 で `PlayerMain._die()` がロープ往復・走りを即停止し影を消し、`GameManager.freeze_battle_for_game_over()` で敵を **Idle 待機に固定**＋**SE全停止**したうえで `Scenes/Misc/DeathScreen.tscn` を表示。
+  - DeathScreen は **コンティニュー / タイトルに戻る / 終了する** を上下で選択（`Scripts/Reset.gd`）。再戦・タイトル復帰で SE ミュート解除。
 - **Clear 演出（現行）**: クリア確定後に `AudioManager.play_gong_triple()`（カンカンカン）→ 約 **2.2秒** 後にクリア画面。
 
 **触るファイル**
