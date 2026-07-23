@@ -82,8 +82,8 @@ const HEAT_DURATION_SEC := 10.0
 var _heat_timer: float = 0.0
 var halfcar_hit_count: int = 0
 ## かすりダウン秒数 / 通常ダウン
-const GRAZE_DOWN_SEC := 5.0
-const DOWN_DURATION_SEC := 5.0
+const GRAZE_DOWN_SEC := 2.5
+const DOWN_DURATION_SEC := 2.5
 const WAKEUP_WEAK_SEC := 0.0
 var down_remaining: float = 0.0
 ## ボスHP0後、ジャンプ待ち

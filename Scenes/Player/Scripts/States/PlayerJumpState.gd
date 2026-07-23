@@ -135,7 +135,7 @@ func _land() -> void:
 				player_main.trampoline_combo = 0
 			else:
 				GameManager.show_callout(enemy, "フライングボディ！", Color(0.9, 0.5, 1.0, 1.0))
-				em.down_remaining = maxf(em.down_remaining, 1.2)
+				# ダウン時間は伸ばさない（連続ジャンプ台でも残り時間はそのまま）
 				player_main.trampoline_combo = mini(player_main.trampoline_combo + 1, TRAMPOLINE_COMBO_MAX)
 			if GameManager.training_mode:
 				GameManager.body_contact_type_text = "フライングボディ！"
