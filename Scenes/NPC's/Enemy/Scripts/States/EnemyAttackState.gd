@@ -11,8 +11,17 @@ const ATTACK_MODULATE := Color(1.18, 0.55, 0.55, 1.0)
 func Enter():
 	if enemy.sprite:
 		enemy.sprite.modulate = ATTACK_MODULATE
+	if GameManager.enemies_frozen:
+		enemy.finished_attacking()
+		return
 	animator.play(attack.anim)
-	await animator.animation_finished
+	# 攻撃中にゲームオーバー等で凍結されたら即座に待機へ
+	while animator.is_playing():
+		if GameManager.enemies_frozen:
+			animator.stop()
+			enemy.finished_attacking()
+			return
+		await get_tree().process_frame
 	enemy.finished_attacking()
 
 func Exit():
@@ -21,11 +30,15 @@ func Exit():
 	
 #During attack animation, Hitbox is activated and tries to find the player
 func _on_hit_box_body_entered(body):
+	if GameManager.enemies_frozen:
+		return
 	if body.is_in_group("Player"):
 		deal_damage_to_player(body)
 
 #Connect and deal damage to the player（突進時は倍率適用。炎ダッシュ中はプレイヤー受けるダメージ2倍。怒り中は1.5倍・弱り中は攻撃無効）
 func deal_damage_to_player(player : PlayerMain):
+	if GameManager.enemies_frozen:
+		return
 	if enemy is EnemyMain and (enemy as EnemyMain).is_weak_state():
 		return  # 弱り状態の敵は攻撃してもダメージを与えられない
 	hit_particles.emitting = true

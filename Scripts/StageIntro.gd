@@ -1,43 +1,39 @@
 extends Control
-## ステージ登場画面。ステージ番号、ボス顔、ボス名を表示。Intro.mp3を再生。
+## ステージ登場画面。背景の書き文字を隠さないよう、攻略テキストパネルは出さない。
+## 代わりに登場人物の吹き出しで一言（仮文言・あとで差し替え可）。
 
 var _can_advance := false
 
 func _ready() -> void:
-	# GameManagerのcurrent_stageを参照してステージ情報を設定
 	var stage_data := _get_stage_data(GameManager.current_stage)
 	
-	# ステージ番号表示
 	var stage_label = get_node_or_null("StageNumber")
 	if stage_label:
 		stage_label.text = "STAGE " + str(GameManager.current_stage)
 	
-	# 敵名（ボス名）は表示しない
 	var boss_label = get_node_or_null("BossName")
 	if boss_label:
 		boss_label.visible = false
 	
-	# ボス顔画像
 	var boss_face = get_node_or_null("BossFace")
 	if boss_face and ResourceLoader.exists(stage_data["boss_texture"]):
 		boss_face.texture = load(stage_data["boss_texture"]) as Texture2D
 	
-	# ステージ4: ボス（iron_mask_title4）の顔にぴかぴかエフェクト
 	var face_sparkle = get_node_or_null("FaceSparkle")
 	if face_sparkle:
 		face_sparkle.visible = GameManager.current_stage == 4
 		if GameManager.current_stage == 4:
 			_start_face_sparkle(face_sparkle)
 	
-	# ボス説明表示（DescriptionPanel 内の Description に設定、1秒後にパネル表示）
-	var desc_label = get_node_or_null("DescriptionPanel/Description")
-	if desc_label:
-		desc_label.text = stage_data.get("description", "")
+	# 攻略テキストパネルはカット（書き文字が見えなくなるため）
+	var desc_panel = get_node_or_null("DescriptionPanel")
+	if desc_panel:
+		desc_panel.visible = false
 	
-	# Intro.mp3を再生。終了時にプロレス風ゴングを1回長めに鳴らす
+	# 吹き出しで一言
+	_setup_speech_bubble(str(stage_data.get("speech", "……！")))
+	
 	AudioManager.play_intro_bgm(_on_intro_finished)
-	
-	# 1秒間は進めない
 	get_tree().create_timer(1.0).timeout.connect(_on_advance_allowed)
 
 func _get_stage_data(stage: int) -> Dictionary:
@@ -45,51 +41,79 @@ func _get_stage_data(stage: int) -> Dictionary:
 		1:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title1.png",
-				"description": "弱いが数が多い！\nどんどん増援が来るぞ！\n敵の真横に半分ずれてぶつかれ！一方的に押し込める\nロープに触れると反対側まで走れる！"
+				"speech": "てめえら、まとめてかかってこい！"
 			}
 		2:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title2.png",
-				"description": "すばしっこい逃げ足！\nコーナーを取って追い詰めろ！\n雑魚を召喚してくる！"
+				"speech": "つかまえるもんか〜！"
 			}
 		3:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title3.png",
-				"description": "正面は無敵！反撃が痛い！\n半キャラずらしのショルダータックルで攻撃！"
+				"speech": "正面から来るなよ…"
 			}
 		4:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title4.png",
-				"description": "高HP！攻撃すると大きく吹っ飛ぶ！\n直角に当ててピヨらせ、半キャラで追い込め！"
+				"speech": "異論あるかァ！？"
 			}
 		_:
 			return {
 				"boss_texture": "res://Art/Sprites/m_man_b_l1.png",
-				"description": ""
+				"speech": "……！"
 			}
+
+func _setup_speech_bubble(line: String) -> void:
+	var bubble := get_node_or_null("SpeechBubble") as Control
+	if bubble == null:
+		bubble = PanelContainer.new()
+		bubble.name = "SpeechBubble"
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(1, 1, 1, 0.92)
+		style.border_color = Color(0.1, 0.1, 0.1, 1)
+		style.set_border_width_all(4)
+		style.set_corner_radius_all(16)
+		style.content_margin_left = 22
+		style.content_margin_right = 22
+		style.content_margin_top = 14
+		style.content_margin_bottom = 14
+		bubble.add_theme_stylebox_override("panel", style)
+		bubble.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+		bubble.anchor_left = 0.55
+		bubble.anchor_right = 0.96
+		bubble.anchor_top = 0.42
+		bubble.anchor_bottom = 0.62
+		bubble.offset_left = 0
+		bubble.offset_right = 0
+		bubble.offset_top = 0
+		bubble.offset_bottom = 0
+		add_child(bubble)
+		var label := Label.new()
+		label.name = "SpeechText"
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 42)
+		label.add_theme_color_override("font_color", Color(0.08, 0.08, 0.1, 1))
+		bubble.add_child(label)
+	bubble.visible = true
+	var speech_label := bubble.get_node_or_null("SpeechText") as Label
+	if speech_label:
+		speech_label.text = line
+	# ぽよんと出す（レイアウト確定後）
+	await get_tree().process_frame
+	bubble.pivot_offset = bubble.size * 0.5
+	bubble.scale = Vector2(0.7, 0.7)
+	var tw := create_tween()
+	tw.tween_property(bubble, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _on_advance_allowed() -> void:
 	_can_advance = true
-	var desc_panel = get_node_or_null("DescriptionPanel")
-	if desc_panel:
-		desc_panel.visible = true
 
-## Intro終了時：カーンというプロレス風ゴングを1回長めに再生
+## Intro終了時：ゴング1回
 func _on_intro_finished() -> void:
-	var path_ogg := "res://Art/Audio/Effects/gong.ogg"
-	var path_wav := "res://Art/Audio/Effects/gong.wav"
-	var stream: AudioStream = null
-	if ResourceLoader.exists(path_ogg):
-		stream = load(path_ogg) as AudioStream
-	elif ResourceLoader.exists(path_wav):
-		stream = load(path_wav) as AudioStream
-	if stream == null:
-		return
-	var player := AudioStreamPlayer.new()
-	player.stream = stream
-	add_child(player)
-	player.finished.connect(player.queue_free)
-	player.play()
+	AudioManager.play_gong_once()
 
 func _input(event: InputEvent) -> void:
 	if not _can_advance:
@@ -106,7 +130,6 @@ func _input(event: InputEvent) -> void:
 			vp.set_input_as_handled()
 
 func _start_face_sparkle(node: Control) -> void:
-	# 顔の上でぴかぴか（モジュレート＋スケールのループ）
 	var tween := create_tween().set_loops()
 	tween.tween_property(node, "modulate", Color(1, 1, 1, 0.35), 0.12)
 	tween.tween_property(node, "modulate", Color(1, 1, 1, 1), 0.12)
@@ -115,5 +138,4 @@ func _start_face_sparkle(node: Control) -> void:
 
 func _start_battle() -> void:
 	AudioManager.stop_bgm()
-	# バトル開始
 	get_tree().change_scene_to_file("res://Scenes/Levels/GameWrapper.tscn")

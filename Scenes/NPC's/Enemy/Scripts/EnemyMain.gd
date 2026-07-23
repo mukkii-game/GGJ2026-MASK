@@ -598,6 +598,8 @@ func finished_attacking():
 
 func _on_detection_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("Player"):
+		if GameManager.enemies_frozen:
+			return
 		if is_training_dummy or is_perched or is_dead:
 			return  # ダミー・ポスト上待機・気絶(QTE)中は攻撃・接近しない
 		# リングイン中は最優先で入場のみ。ダウン中・リングイン中はプレイヤー検知でチェースに移行しない

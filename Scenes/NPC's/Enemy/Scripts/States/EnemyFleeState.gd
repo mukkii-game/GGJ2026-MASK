@@ -17,6 +17,11 @@ func Enter():
 func Update(_delta: float):
 	if not owner_node or owner_node.is_dead:
 		return
+	if GameManager.enemies_frozen:
+		owner_node.velocity = Vector2.ZERO
+		if owner_node.sprite:
+			owner_node.sprite.play("idle")
+		return
 	
 	var player: CharacterBase = _find_player()
 	if not player:

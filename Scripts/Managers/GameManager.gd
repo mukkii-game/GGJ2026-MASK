@@ -7,6 +7,27 @@ var use_grid_mode: bool = false
 ## 敵を全員止める（体当たりテスト用）。true の間は敵は移動しない
 var enemies_frozen: bool = false
 
+## ゲームオーバー時: 敵をその場で待機（Idle）に固定。移動・攻撃しない
+func freeze_battle_for_game_over() -> void:
+	enemies_frozen = true
+	var tree := get_tree()
+	if tree == null:
+		return
+	for node in tree.get_nodes_in_group("Enemy"):
+		var em := node as EnemyMain
+		if not is_instance_valid(em) or em.is_dead:
+			continue
+		em.velocity = Vector2.ZERO
+		em.player_in_range = false
+		if em.rope_running:
+			em.stop_rope_run()
+		em.is_top_rope_aerial = false
+		if em.fsm:
+			em.fsm.force_change_state("enemy_idle_state")
+		if em.sprite and em.sprite.has_method("play"):
+			# Idle アニメはステート Enter で再生される
+			pass
+
 ## 二人用モードかどうか（タイトル画面で設定）
 var two_player_mode: bool = false
 

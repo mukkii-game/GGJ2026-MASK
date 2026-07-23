@@ -74,6 +74,44 @@ func stop_bgm() -> void:
 	_bgm_player.stop()
 	_bgm_finished_callback = Callable()
 
+## クリア演出用: カン・カン・カン（ゴング3回）
+func play_gong_triple() -> void:
+	var stream := _load_gong_stream()
+	if stream == null:
+		return
+	_play_gong_burst(stream, 0.0)
+	_play_gong_burst(stream, 0.38)
+	_play_gong_burst(stream, 0.76)
+
+## 登場画面など: ゴング1回
+func play_gong_once() -> void:
+	var stream := _load_gong_stream()
+	if stream == null:
+		return
+	_play_gong_burst(stream, 0.0)
+
+func _load_gong_stream() -> AudioStream:
+	for path in ["res://Art/Audio/Effects/gong.ogg", "res://Art/Audio/Effects/gong.wav", "res://Art/Audio/Effects/mask_ambient1.wav", "res://Art/Audio/Effects/kill_mask.wav"]:
+		if ResourceLoader.exists(path):
+			return load(path) as AudioStream
+	return null
+
+func _play_gong_burst(stream: AudioStream, delay_sec: float) -> void:
+	var player := AudioStreamPlayer.new()
+	player.stream = stream
+	player.volume_db = 2.0
+	add_child(player)
+	if delay_sec <= 0.0:
+		player.play()
+		player.finished.connect(player.queue_free)
+	else:
+		var t := get_tree().create_timer(delay_sec)
+		t.timeout.connect(func() -> void:
+			if is_instance_valid(player):
+				player.play()
+				player.finished.connect(player.queue_free)
+		)
+
 func _on_bgm_finished() -> void:
 	if _bgm_finished_callback.is_valid():
 		var cb := _bgm_finished_callback

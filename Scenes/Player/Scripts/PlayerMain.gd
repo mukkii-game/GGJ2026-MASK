@@ -855,6 +855,8 @@ func _clamp_enemy_to_mat(enemy_ref: CharacterBase) -> void:
 		enemy_ref.global_position.y = clampf(enemy_ref.global_position.y, MAT_TOP, MAT_BOTTOM)
 
 func _die():
+	# ゲームオーバー中はバトルを止める（敵は待機モーションのみ）
+	GameManager.freeze_battle_for_game_over()
 	super() #calls _die() on base-class CharacterBase
 	
 	fsm.force_change_state("Die")

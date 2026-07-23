@@ -1056,19 +1056,21 @@ func _play_clear_flash_and_fanfare() -> void:
 	tween.tween_property(flash, "color", Color(1, 1, 1, 0), 0.5)
 	tween.tween_callback(flash.queue_free)
 
-## ステージクリア（Timerノードで1.2秒後に遷移。create_timer のコールバックが失われる不具合を避ける）
+## ステージクリア（ゴング3回→約2秒後にクリア画面）
 ## 全ステージ共通：ステージクリア画面へ→キーで次へ（4の次はエンディング）
 func _on_stage_clear() -> void:
-	# クリア確定後は敵を止め、プレイヤーを無敵にする（遷移までの1.2秒間に被弾死しないように: KI-06）
+	# クリア確定後は敵を止め、プレイヤーを無敵にする
 	GameManager.enemies_frozen = true
 	for node in get_tree().get_nodes_in_group("Player"):
 		if node and node.has_method("set_invincible_for"):
 			node.set_invincible_for(5.0)
 	_pending_clear_stage = GameManager.current_stage
+	# カンカンカン（ゴング）→ 余韻を含めて約2秒後に遷移
+	AudioManager.play_gong_triple()
 	if _clear_timer != null and is_instance_valid(_clear_timer):
 		_clear_timer.queue_free()
 	_clear_timer = Timer.new()
-	_clear_timer.wait_time = 1.2
+	_clear_timer.wait_time = 2.2
 	_clear_timer.one_shot = true
 	_clear_timer.process_callback = Timer.TIMER_PROCESS_PHYSICS
 	_clear_timer.process_mode = PROCESS_MODE_ALWAYS
