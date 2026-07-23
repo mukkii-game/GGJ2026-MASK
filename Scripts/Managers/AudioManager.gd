@@ -93,10 +93,13 @@ func play_gong_triple() -> void:
 	_play_announce("res://Art/Audio/Effects/announce_match_end.mp3")
 
 ## 試合開始・やっちまえ前など: 金属ゴング1打（カーン）
+## 音量は線形で約1/3（+3dB → 約 -6.5dB）
+const GONG_ONCE_VOLUME_DB := -6.5
+
 func play_gong_once() -> void:
 	var stream := _load_gong_once_stream()
 	if stream:
-		_play_gong_burst(stream, 0.0, 3.0)
+		_play_gong_burst(stream, 0.0, GONG_ONCE_VOLUME_DB)
 		return
 	_play_announce("res://Art/Audio/Effects/announce_match_start.mp3")
 

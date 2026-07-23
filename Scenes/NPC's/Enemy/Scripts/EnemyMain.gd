@@ -634,7 +634,7 @@ func _on_detection_area_body_exited(body: Node2D) -> void:
 func _die():
 	# ヤラレ声はここで一度だけ（半キャラ連打死は damage_effects を通らないため）
 	if not is_dead:
-		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -4)
+		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -10)
 	super() #calls _die() on base-class CharacterBase
 
 ## 空中（飛ばされ・ブラスト吹き飛び・トップロープ滞空）は手前
