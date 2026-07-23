@@ -20,7 +20,10 @@ var _reinforce_index: int = 0
 var _s1_spawned: int = 0
 var _s1_cap: int = 1
 var _s1_ramp_timer: float = 0.0
-var _s1_phase: int = 0  # 0=1匹教習 1=やっちまえ後群れ
+var _s1_phase: int = 0  # 0=1匹教習 1=ゴング待ち 2=やっちまえ後群れ
+## 教習撃破後〜やっちまえまでの待ち（秒）。負＝待機中でない
+var _s1_swarm_delay: float = -1.0
+const S1_SWARM_DELAY_SEC := 2.0
 ## ボス・トップロープ攻撃（低HPで最大2回）
 var _top_rope_count: int = 0
 var _top_rope_active: bool = false
@@ -392,26 +395,33 @@ func _spawn_initial_enemies() -> void:
 		var pos: Vector2 = spawn_points[i % spawn_points.size()]
 		_spawn_enemy_at(pos, has_boss_stage and i == 0)
 
-## S1: 最初1匹。倒すと「やっちまえー」→群れ突入
+## S1: 最初1匹。倒す→ゴング→少し待つ→「やっちまえー」→群れ突入
 func _update_stage1_waves(delta: float) -> void:
 	var quota: int = stage_params.get("total_quota", 8)
 	var cap_max: int = stage_params.get("cap_max", 5)
 	var alive := _get_alive_enemy_count()
-	# 教習1匹を倒したら群れフェーズへ
+	# 教習1匹を倒したらゴング→待機フェーズへ（即スポーンしない）
 	if _s1_phase == 0 and _s1_spawned >= 1 and alive == 0:
 		_s1_phase = 1
-		_s1_cap = mini(4, cap_max)
-		_show_yatchimae_banner()
-		# 一気に数体リングイン
-		for _i in range(3):
-			if _s1_spawned < quota:
-				_spawn_enemy_at(spawn_points[randi() % spawn_points.size()], false)
-	if _s1_phase >= 1 and _s1_cap < cap_max:
+		_s1_swarm_delay = 0.0
+		AudioManager.play_gong_once()
+	# ゴング後すこし待ってからやっちまえ＋群れ
+	if _s1_phase == 1:
+		_s1_swarm_delay += delta
+		if _s1_swarm_delay >= S1_SWARM_DELAY_SEC:
+			_s1_phase = 2
+			_s1_swarm_delay = -1.0
+			_s1_cap = mini(4, cap_max)
+			_show_yatchimae_banner()
+			for _i in range(3):
+				if _s1_spawned < quota:
+					_spawn_enemy_at(spawn_points[randi() % spawn_points.size()], false)
+	if _s1_phase >= 2 and _s1_cap < cap_max:
 		_s1_ramp_timer += delta
 		if _s1_ramp_timer >= float(stage_params.get("ramp_interval", 8.0)):
 			_s1_ramp_timer = 0.0
 			_s1_cap += 1
-	if _s1_phase >= 1 and _s1_spawned < quota and alive < _s1_cap:
+	if _s1_phase >= 2 and _s1_spawned < quota and alive < _s1_cap:
 		# たまにペアで出す
 		if randf() < 0.35 and _s1_spawned + 1 < quota:
 			_spawn_zako_pack(2 if randf() < 0.7 else 3)

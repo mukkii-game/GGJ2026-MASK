@@ -83,17 +83,19 @@ func play_gong_triple() -> void:
 	_play_gong_burst(stream, 0.38)
 	_play_gong_burst(stream, 0.76)
 
-## 登場画面など: ゴング1回
+## 登場画面・試合開始など: ゴング1回（金属のカーン）
 func play_gong_once() -> void:
 	var stream := _load_gong_stream()
 	if stream == null:
 		return
 	_play_gong_burst(stream, 0.0)
 
+## 本物のゴング音のみ。がやがや環境音はフォールバックに使わない
 func _load_gong_stream() -> AudioStream:
-	for path in ["res://Art/Audio/Effects/gong.ogg", "res://Art/Audio/Effects/gong.wav", "res://Art/Audio/Effects/mask_ambient1.wav", "res://Art/Audio/Effects/kill_mask.wav"]:
+	for path in ["res://Art/Audio/Effects/gong.wav", "res://Art/Audio/Effects/gong.ogg"]:
 		if ResourceLoader.exists(path):
 			return load(path) as AudioStream
+	push_warning("AudioManager: gong.wav が見つかりません（金属ゴング未配置）")
 	return null
 
 func _play_gong_burst(stream: AudioStream, delay_sec: float) -> void:
