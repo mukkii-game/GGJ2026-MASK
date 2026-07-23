@@ -4,7 +4,7 @@ class_name enemy_ring_in_state
 ## 右端か左端から走る速度で入場。ロープの少し手前で大きくジャンプして狙った位置に着地
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
-const MAT_TOP := 106.0
+const MAT_TOP := 138.0
 const MAT_BOTTOM := 614.0
 ## 普通の走り程度の速度
 const RING_IN_RUN_SPEED := 180.0

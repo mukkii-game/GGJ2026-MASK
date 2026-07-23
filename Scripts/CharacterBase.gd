@@ -29,9 +29,9 @@ var flash_effect_white_texture: Texture2D = null
 ## （以前は get_processed_tweens() で全Tweenをkillしており、UIや他キャラのTweenを巻き込んでいた: KI-02）
 var _motion_tweens: Array[Tween] = []
 
-## 描画順: 足元Yが大きいほど手前。空中は加算。トップロープ空中攻撃は最優先
+## 描画順: 足元Yが大きいほど手前。空中は加算。トップロープ空中攻撃は下部ロープより手前
 const DRAW_Z_AIR_BONUS := 800
-const DRAW_Z_TOP_ROPE_BONUS := 2000
+const DRAW_Z_TOP_ROPE_BONUS := 2500
 ## トップロープ滞空中（最前面）
 var is_top_rope_aerial: bool = false
 

@@ -13,7 +13,7 @@ enum EnemyType { Jobber, Gaburi, Heatman, Debu }
 ## 敵のマット範囲（PlayerMainより片側16px狭い＝敵がロープ端に張り付かない）
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
-const MAT_TOP := 106.0
+const MAT_TOP := 138.0
 const MAT_BOTTOM := 614.0
 const BODY_HALF := 32.0
 

@@ -22,8 +22,11 @@ func Enter() -> void:
 	if not player or not player_main:
 		return
 	
-	# ロープの振動音（PLAYER_ATTACK_SWINGを使用）
-	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -6)
+	# ロープに弾かれて飛ぶ音（従来は -6dB でほぼ聞こえない）
+	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
+	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, 0)
+	# ダメージなしの空中移動であること／原因を明示
+	GameManager.show_callout(player, "ロープ飛ばし！", Color(0.55, 0.85, 1.0, 1.0))
 	
 	player_main.is_jumping = true
 	player.velocity = Vector2.ZERO
@@ -108,6 +111,6 @@ func Update(delta: float) -> void:
 func _calculate_opposite_position(current_pos: Vector2) -> Vector2:
 	# マット中央付近にランダムに配置（確実にマット内に収める）
 	var opposite_x := randf_range(350.0, 930.0)
-	var opposite_y := randf_range(106.0, 614.0)
+	var opposite_y := randf_range(138.0, 614.0)
 	
 	return Vector2(opposite_x, opposite_y)

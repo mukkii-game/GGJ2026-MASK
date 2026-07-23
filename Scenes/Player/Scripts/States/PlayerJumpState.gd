@@ -127,8 +127,10 @@ func _land() -> void:
 				GameManager.body_contact_type_text = "フライングボディ！"
 				GameManager.body_contact_type_timer = 1.5
 			continue
-		# 非ダウンへ着地＝自分が吹き飛ぶ（攻撃失敗）
-		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -2)
+		# 非ダウンへ着地＝自分が吹き飛ぶ（攻撃失敗・ダメージなし）
+		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 1)
+		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -1)
+		GameManager.show_callout(player, "着地失敗！", Color(1.0, 0.45, 0.3, 1.0))
 		var away := _axis_knockback((land_pos - enemy.global_position).normalized(), FAIL_LAND_KNOCKBACK)
 		if away == Vector2.ZERO:
 			away = Vector2(FAIL_LAND_KNOCKBACK, 0)

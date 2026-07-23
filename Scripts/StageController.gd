@@ -769,7 +769,7 @@ func _get_zako_texture_path(type: EnemyMain.EnemyType) -> String:
 ## リングイン：画面右端／左端スポーン位置（マットより外側・右端か左端から走り込む）
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
-const MAT_TOP := 106.0
+const MAT_TOP := 138.0
 const MAT_BOTTOM := 614.0
 const RING_IN_SPAWN_RIGHT := 1110.0
 const RING_IN_SPAWN_LEFT := 186.0

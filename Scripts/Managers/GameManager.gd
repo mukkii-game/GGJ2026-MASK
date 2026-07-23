@@ -143,7 +143,7 @@ func show_callout_world(pos: Vector2, text: String, color: Color = Color(1.0, 0.
 func _spawn_callout_label(parent: Node, pos: Vector2, text: String, color: Color) -> void:
 	var label := Label.new()
 	label.text = text
-	label.z_index = 200
+	label.z_index = 2500
 	label.add_theme_font_size_override("font_size", 34)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.add_theme_color_override("font_outline_color", Color(color.r * 0.6, color.g * 0.5, color.b * 0.1, 1.0))

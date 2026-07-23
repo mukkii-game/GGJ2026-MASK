@@ -5,7 +5,7 @@ extends Node2D
 ## マット範囲（右→左 or 上→下の移動に使用）
 const MAT_LEFT := 296.0
 const MAT_RIGHT := 984.0
-const MAT_TOP := 106.0
+const MAT_TOP := 138.0
 const MAT_BOTTOM := 614.0
 ## ジャンプの見た目の高さ（プレイヤーJUMP_VISUAL_HEIGHTと同じ）
 const FLOAT_HEIGHT := 100.0

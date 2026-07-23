@@ -8,10 +8,10 @@ const FlashPikaPikaScript = preload("res://Scripts/FlashPikaPika.gd")
 
 ## マット内の移動範囲（ロープの位置ぴったりまで）
 # ArenaMat.tscn の MatColor / RopeLeft / RopeRight に合わせる
-# ロープの内側だけ行ける（上ロープ下端=106、下ロープ上端=614でクランプ）
+# ロープの内側だけ行ける（上は背景ロープに食い込まないよう余裕、下ロープ上端=614）
 const MAT_LEFT := 280   # 左ロープの内側端
 const MAT_RIGHT := 1000 # 右ロープの内側端
-const MAT_TOP := 106    # 上ロープの内側（ロープより下）
+const MAT_TOP := 138    # 上ロープ3本の下端よりさらに内側（奥行き見た目用）
 const MAT_BOTTOM := 614 # 下ロープの内側（ロープより上）
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)

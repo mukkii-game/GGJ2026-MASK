@@ -4,7 +4,7 @@ class_name enemy_launched_state
 ## マット内の着地範囲（確実にマット内に収める）
 const MAT_LEFT := 350.0
 const MAT_RIGHT := 930.0
-const MAT_TOP := 106.0
+const MAT_TOP := 138.0
 const MAT_BOTTOM := 614.0
 ## ロープからの反発ジャンプ（放物線移動）の持続時間（秒）
 const LAUNCH_DURATION := 1.2
