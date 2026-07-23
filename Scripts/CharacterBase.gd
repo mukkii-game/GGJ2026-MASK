@@ -29,6 +29,12 @@ var flash_effect_white_texture: Texture2D = null
 ## （以前は get_processed_tweens() で全Tweenをkillしており、UIや他キャラのTweenを巻き込んでいた: KI-02）
 var _motion_tweens: Array[Tween] = []
 
+## 描画順: 足元Yが大きいほど手前。空中は加算。トップロープ空中攻撃は最優先
+const DRAW_Z_AIR_BONUS := 800
+const DRAW_Z_TOP_ROPE_BONUS := 2000
+## トップロープ滞空中（最前面）
+var is_top_rope_aerial: bool = false
+
 ## 位置・回転を動かすTweenを登録する。ジャンプ/ロープ飛ばし開始時にまとめてkillされる
 func register_motion_tween(t: Tween) -> void:
 	_motion_tweens = _motion_tweens.filter(func(x: Tween) -> bool: return x != null and x.is_valid())
@@ -41,6 +47,19 @@ func kill_motion_tweens() -> void:
 			t.kill()
 	_motion_tweens.clear()
 
+## 空中扱いか（ジャンプ・飛ばされ等）。子でオーバーライド
+func is_airborne_for_draw() -> bool:
+	return false
+
+## 足元基準の描画プライオリティを毎フレーム更新
+func update_draw_priority() -> void:
+	var z: int = int(global_position.y)
+	if is_airborne_for_draw():
+		z += DRAW_Z_AIR_BONUS
+	if is_top_rope_aerial:
+		z += DRAW_Z_TOP_ROPE_BONUS
+	z_index = z
+
 func _ready():
 	max_health = health  # 初期HPを記録
 	init_character()
@@ -48,6 +67,7 @@ func _ready():
 func _process(delta: float):
 	knockback_stun_remaining = maxf(0.0, knockback_stun_remaining - delta)
 	Turn()
+	update_draw_priority()
 	_update_healthbar_visual(delta)
 	
 #Add anything here that needs to be initialized on the character
@@ -102,8 +122,8 @@ func Turn():
 
 #Play universal damage sound effect for any character taking damage and flashing red
 func damage_effects():
-	# やられ声がうるさい対策で音量半分程度に（-3→-9dB）
-	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -9)
+	# 打撃音（BLOODY）。ヤラレ声(ENEMY_HIT)は敵の死亡時のみにして遅延二重再生を防ぐ
+	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -6)
 	after_damage_iframes()
 	if(hit_particles):
 		hit_particles.emitting = true
@@ -147,7 +167,14 @@ func _take_damage(amount):
 	
 	if health <= 0:
 		if use_qte_on_defeat:
-			defeated_for_qte.emit(self)
+			# ボスは即QTEせず HP0ダウンへ（ジャンプ追撃でQTE）
+			health = 0
+			if healthbar:
+				healthbar.value = 0
+			if has_method("enter_finisher_down"):
+				call("enter_finisher_down")
+			else:
+				defeated_for_qte.emit(self)
 			return
 		_die()
 
@@ -162,7 +189,13 @@ func apply_repeat_contact_damage(amount: int, invincible_sec: float) -> bool:
 	set_invincible_for(invincible_sec)
 	if health <= 0:
 		if use_qte_on_defeat:
-			defeated_for_qte.emit(self)
+			health = 0
+			if healthbar:
+				healthbar.value = 0
+			if has_method("enter_finisher_down"):
+				call("enter_finisher_down")
+			else:
+				defeated_for_qte.emit(self)
 			return true
 		_die()
 	return true

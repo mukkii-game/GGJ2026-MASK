@@ -145,6 +145,12 @@ func _play_shoulder_hit_sound(damage_mult: float) -> void:
 	var volume: float = 2.0 if _is_boosted_body_hit(damage_mult) else 0.0
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, volume)
 
+## 接触ヒットSEを必ず鳴らす（通常正面でも無音にしない）
+func _play_contact_hit_sound(boosted: bool = false) -> void:
+	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2.0 if boosted else 0.0)
+	if boosted or rope_bounce_running or is_run_dashing:
+		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
+
 func apply_power_bait_enemy_immune(duration_sec: float) -> void:
 	power_bait_enemy_damage_immune_until = duration_sec
 
@@ -259,34 +265,33 @@ func _process(delta: float):
 		var jump_act := "Jump" if not is_player_two else "Jump2"
 		var dash_act := "Dash" if not is_player_two else "Punch2"
 		if Input.is_action_just_pressed(mv_left) or Input.is_action_just_pressed(mv_right) or Input.is_action_just_pressed(mv_up) or Input.is_action_just_pressed(mv_down) or Input.is_action_just_pressed(jump_act) or Input.is_action_just_pressed(dash_act):
-			# ロープ走行中にジャンプ＝空中頭突き（P7）: 走行方向を持ち越してから解除
+			# ロープ走行中のジャンプ＝回避のみ（頭突き廃止）
 			if Input.is_action_just_pressed(jump_act) and rope_bounce_direction.length() > 0.1:
-				pending_headbutt_dir = rope_bounce_direction
+				pending_headbutt_dir = Vector2.ZERO
 			rope_bounce_running = false
 			rope_bounce_direction = Vector2.ZERO
 	
 	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
-	# 下側ロープの手前：地面にいるときだけキャラをロープより後ろに（z_index で制御）。飛んでるときはキャラ前面
-	var flying := is_jumping
-	if fsm and fsm.current_state:
-		var state_name: StringName = fsm.current_state.name
-		flying = flying or state_name == "RopeLaunched"
-	# 空中（ジャンプ・ロープ飛ばされ）は地上より前面に描画
-	if not flying and global_position.y >= 550:
-		z_index = -10
-	elif flying:
-		z_index = 10
-	else:
-		z_index = 0
 	# ジャンプ中はXだけマット内に（Yクランプ・体当たり・ロープバウンスは _physics_process で処理）
 	if is_jumping:
 		var p := global_position
 		global_position.x = clampf(p.x, MAT_LEFT, MAT_RIGHT)
+	# 描画順は CharacterBase.update_draw_priority（足元Y＋空中ボーナス）
 	var we = get_node_or_null("WindEffect")
 	if we:
 		we.visible = is_auto_running
+
+## ジャンプ／ロープ飛ばされ中は空中として手前に
+func is_airborne_for_draw() -> bool:
+	if is_jumping:
+		return true
+	if fsm and fsm.current_state:
+		var sn: StringName = fsm.current_state.name
+		if sn == "RopeLaunched" or sn == "Jump":
+			return true
+	return false
 
 
 func _physics_process(delta: float) -> void:
@@ -314,34 +319,27 @@ func _physics_process(delta: float) -> void:
 		global_position = p
 		_body_contact(delta)
 		return
-	# 通常時：ロープ接触チェック（四辺バネる）
+	# 通常時：ロープ接触チェック（プレイヤーは左右のみ。上下はクランプ）
 	if p.x <= MAT_LEFT:
 		rope_bounce_running = true
 		rope_bounce_direction = Vector2.RIGHT
 		rope_bounce_target = Vector2(MAT_RIGHT, p.y)
+		facing_dir = rope_bounce_direction
 		_face_horizontal(rope_bounce_direction.x)
 		_notify_rope_bounce("left")
 	elif p.x >= MAT_RIGHT:
 		rope_bounce_running = true
 		rope_bounce_direction = Vector2.LEFT
 		rope_bounce_target = Vector2(MAT_LEFT, p.y)
+		facing_dir = rope_bounce_direction
 		_face_horizontal(rope_bounce_direction.x)
 		_notify_rope_bounce("right")
-	elif p.y <= MAT_TOP:
-		rope_bounce_running = true
-		rope_bounce_direction = Vector2.DOWN
-		rope_bounce_target = Vector2(p.x, MAT_BOTTOM)
-		_notify_rope_bounce("top")
-	elif p.y >= MAT_BOTTOM:
-		rope_bounce_running = true
-		rope_bounce_direction = Vector2.UP
-		rope_bounce_target = Vector2(p.x, MAT_TOP)
-		_notify_rope_bounce("bottom")
 	if rope_bounce_running:
-		# ロープ跳ね返り開始時: かすり回転などの移動系Tweenを止め、逆さ向きのまま走るのを防ぐ（F-5）
+		# ロープ跳ね返り開始時: かすり回転などの移動系Tweenを止め、逆さ向きのまま走るのを防ぐ
 		kill_motion_tweens()
 		if sprite and is_instance_valid(sprite):
 			sprite.rotation_degrees = 0.0
+			_face_horizontal(rope_bounce_direction.x)
 	global_position = Vector2(clampf(p.x, MAT_LEFT, MAT_RIGHT), clampf(p.y, MAT_TOP, MAT_BOTTOM))
 	_body_contact(delta)
 
@@ -529,36 +527,39 @@ func _body_contact(delta: float) -> void:
 					register_motion_tween(tw_hit)
 				body_contact_cooldown = BODY_CONTACT_INTERVAL
 			break
-		if shoulder_ok and enemy_angry:
-			# 怒り状態：半キャラずらし無効。ダメージなし・ノックバックなし。
-			# 押し込みが「効いていない」ことを伝えるため、プレイヤーだけ軽く弾き返す
-			if GameManager.training_mode:
-				GameManager.body_contact_type_text = "半キャラ無効(怒り)"
-				GameManager.body_contact_type_timer = 1.5
-			if _push_damage_timer <= 0:
-				_push_damage_timer = _get_push_damage_interval()
-				var repel: Vector2 = _axis_knockback(-to_enemy, PUSH_KNOCKBACK * 0.5)
-				var repel_pos := global_position + repel
-				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR + 0.1)
-				if _is_outside_mat(repel_pos):
-					set_invincible_for(1.5)
-					trigger_rope_launch()
-				else:
-					var tw_rp := create_tween()
-					tw_rp.tween_property(self, "global_position", repel_pos, BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR)
-					tw_rp.tween_callback(func() -> void:
-						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
-					)
-					register_motion_tween(tw_rp)
-			break
 		if shoulder_ok:
+			# 怒り中は後ろ半キャラのみ有効。それ以外の半キャラは逆に被ダメ
+			if enemy_angry and em and not em.is_rear_approach_from(p_pos):
+				if GameManager.training_mode:
+					GameManager.body_contact_type_text = "怒り半キャラ逆ダメ！"
+					GameManager.body_contact_type_timer = 1.5
+				if _push_damage_timer <= 0:
+					_push_damage_timer = _get_push_damage_interval()
+					take_damage_from_enemy(STRONG_FRONTAL_SELF_DAMAGE)
+					_flash_white_body_contact()
+					var repel: Vector2 = _axis_knockback(-to_enemy, PUSH_KNOCKBACK)
+					var repel_pos := global_position + repel
+					set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR + 0.2)
+					if _is_outside_mat(repel_pos):
+						set_invincible_for(1.5)
+						trigger_rope_launch()
+					else:
+						var tw_rp := create_tween()
+						tw_rp.tween_property(self, "global_position", repel_pos, BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR)
+						tw_rp.tween_callback(func() -> void:
+							global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
+						)
+						register_motion_tween(tw_rp)
+				break
 			if GameManager.training_mode:
 				if rope_bounce_running:
 					GameManager.body_contact_type_text = "ロープ(半キャラ)"
+				elif enemy_angry:
+					GameManager.body_contact_type_text = "後ろ半キャラ！"
 				else:
 					GameManager.body_contact_type_text = "弱り(半キャラ)" if enemy_weak else "半キャラ"
 				GameManager.body_contact_type_timer = 1.5
-			# 半キャラずらし＝白エフェクト画像でピカピカ（用意されていれば）。なければ modulate で白
+			# 半キャラずらし＝白エフェクト
 			var flash_tex: Texture2D = enemy.get("flash_effect_white_texture") as Texture2D
 			if flash_tex and (enemy.sprite or enemy):
 				var flash: Node2D = FlashPikaPikaScript.new()
@@ -568,46 +569,34 @@ func _body_contact(delta: float) -> void:
 				flash.call("start")
 			else:
 				enemy.halfcar_white_until = Time.get_ticks_msec() / 1000.0 + 1.0
-			# ショルダータックル：ずれが多め＝敵だけノックバック＋ダメージ（0.2秒間隔）。下方向は暴発しないよう弱く
 			if _push_damage_timer <= 0:
 				var push_interval: float = _get_push_damage_interval()
 				_push_damage_timer = push_interval
 				GameManager.notify_stage1_shoulder_tackle()
-
 				var damage_mult: float = _get_body_damage_mult()
 				var damage: int = int(PUSH_DAMAGE_PER_TICK * damage_mult)
-
 				var dealt: bool = enemy.apply_repeat_contact_damage(damage, push_interval * 0.95)
-				# 半キャラ蓄積（P4）: 通常状態の敵に累計3発で弱り（青）化
 				if dealt and em:
 					em.notify_halfcar_hit()
 				_play_shoulder_hit_sound(damage_mult)
-
 				if enemy.hit_particles:
 					if _is_boosted_body_hit(damage_mult):
 						enemy.hit_particles.amount = 40
 						enemy.hit_particles.lifetime = 0.8
 					else:
 						enemy.hit_particles.amount = 20
-						enemy.hit_particles.lifetime = 0.4  # 通常
+						enemy.hit_particles.lifetime = 0.4
 					enemy.hit_particles.emitting = true
-				
-				# ノックバック量：ステージ4では超反動。半キャラ時は敵を倍速で飛ばし・プレイヤーは半分だけ後ずさり（追撃しやすく）
 				var knock_amount: float = PUSH_KNOCKBACK
-				var player_push: float = PUSH_PLAYER_KNOCKBACK_HALFCAR  # 6.0（従来12の半分）
-				var tween_dur: float = BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR  # 0.1秒＝敵ノックバック倍速
-				
-				# ステージ4: 異論マスクの超反動（90px。半キャラ用は正面ノックバックより控えめ）
+				var player_push: float = PUSH_PLAYER_KNOCKBACK_HALFCAR
+				var tween_dur: float = BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR
 				if GameManager.current_stage == 4 and "stage_number" in enemy and enemy.stage_number == 4:
 					knock_amount = 90.0
-
-				# 敵を押し飛ばす方向は「敵から離れる方向」（-to_enemy）。数フレームで動かし、その間無敵
 				var knock: Vector2 = _axis_knockback(to_enemy, knock_amount)
 				var new_enemy_pos: Vector2 = Vector2(e_pos.x + knock.x, e_pos.y + knock.y)
 				var new_player_pos := global_position + _axis_knockback(-to_enemy, player_push)
 				enemy.velocity = Vector2.ZERO
-				# スタンは白フラッシュが終わるまで長めに（modulate を上書きしないため）
-				enemy.knockback_stun_remaining = 1.15  # 0.12上昇+1.0秒維持の間は敵の modulate を触らない
+				enemy.knockback_stun_remaining = 1.15
 				set_invincible_for(tween_dur + 0.1)
 				if _is_outside_mat(new_enemy_pos) and enemy.has_method("trigger_rope_launch"):
 					enemy.set_invincible_for(1.5)
@@ -629,13 +618,13 @@ func _body_contact(delta: float) -> void:
 					register_motion_tween(tw_p)
 			break
 		if kasuri_ok and body_contact_cooldown <= 0:
-			# かすり：一方的にダメージ、両者斜めにすっ飛ばして離れる。繋がらない（クールダウンで連打防止）
+			# かすり：両者スピン。敵は5秒ダウン（notify_graze_hit）
 			body_contact_cooldown = KASURI_COOLDOWN
 			if GameManager.training_mode:
 				if rope_bounce_running:
 					GameManager.body_contact_type_text = "ロープ(かすり)"
 				else:
-					GameManager.body_contact_type_text = "弱り(かすり)" if enemy_weak else "かすり"
+					GameManager.body_contact_type_text = "かすりダウン"
 				GameManager.body_contact_type_timer = 1.5
 			# かすり＝黄フラッシュ（敵のみ・プレイヤーはダメージなしなので光らせない）。黄を少し長く維持
 			var enemy_sprite_kasuri: CanvasItem = enemy.sprite if enemy.sprite else enemy
@@ -645,8 +634,7 @@ func _body_contact(delta: float) -> void:
 			enemy._take_damage(damage)
 			if enemy.has_method("notify_graze_hit"):
 				enemy.notify_graze_hit()
-			if _is_boosted_body_hit(damage_mult):
-				AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
+			_play_contact_hit_sound(_is_boosted_body_hit(damage_mult))
 			if enemy.hit_particles:
 				if _is_boosted_body_hit(damage_mult):
 					enemy.hit_particles.amount = 40
@@ -682,7 +670,7 @@ func _body_contact(delta: float) -> void:
 			tw_e.chain().tween_callback(_clamp_enemy_to_mat.bind(enemy))  # KI-20: かすりトドメ時のドリフト防止
 			enemy.register_motion_tween(tw_e)
 			break
-		# 正面など（半キャラ・かすり以外の接触）: 敵状態と向きで分岐（確定仕様v1.0）
+		# 正面など（半キャラ・かすり以外の接触）: 敵状態と向きで分岐
 		if body_contact_cooldown <= 0:
 			# ステージ3: ユニ帝仮面の正面無敵 + 反撃（正面側から当たったときだけ有効。弱り中は無効）
 			var is_stage3_boss: bool = GameManager.current_stage == 3 and "stage_number" in enemy and enemy.stage_number == 3
@@ -805,12 +793,9 @@ func _body_contact(delta: float) -> void:
 				enemy._take_damage(damage_to_enemy)
 				take_damage_from_enemy(BODY_DAMAGE_TAKEN)
 				
-				# 正面衝突：血のエフェクト・SE（ロープ加速中もノックバックは必ず実行）
+				# 正面衝突：常にヒットSE（通常正面でも無音にしない）
 				var boosted_frontal: bool = _is_boosted_body_hit(damage_mult)
-				if boosted_frontal:
-					AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2)
-				if boosted_frontal or rope_bounce_running:
-					AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
+				_play_contact_hit_sound(boosted_frontal)
 				if enemy.hit_particles:
 					enemy.hit_particles.amount = 40
 					enemy.hit_particles.lifetime = 0.8

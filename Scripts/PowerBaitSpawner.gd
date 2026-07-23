@@ -1,21 +1,24 @@
 extends Node
-## パワーエサを10秒ごとにスポーン
+## パワーエサを15〜20秒ごとにスポーン（弱り付与のみ・稀な救済）
 
-const FIRST_SPAWN_DELAY := 10.0
-const SPAWN_INTERVAL := 10.0
+const FIRST_SPAWN_DELAY := 17.0
+const SPAWN_INTERVAL_MIN := 15.0
+const SPAWN_INTERVAL_MAX := 20.0
 const POWER_BAIT_SCENE := preload("res://Scenes/Interactables/PowerBait.tscn")
 
 var _timer: float = 0.0
 var _first_spawned: bool = false
 
 
+var _next_interval: float = FIRST_SPAWN_DELAY
+
 func _process(delta: float) -> void:
 	_timer += delta
-	var interval := FIRST_SPAWN_DELAY if not _first_spawned else SPAWN_INTERVAL
-	if _timer >= interval:
+	if _timer >= _next_interval:
 		var is_first: bool = not _first_spawned
 		_timer = 0.0
 		_first_spawned = true
+		_next_interval = randf_range(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL_MAX)
 		_spawn_one(is_first)
 
 

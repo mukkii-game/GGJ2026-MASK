@@ -20,6 +20,17 @@ var _reinforce_index: int = 0
 var _s1_spawned: int = 0
 var _s1_cap: int = 1
 var _s1_ramp_timer: float = 0.0
+var _s1_phase: int = 0  # 0=1匹教習 1=やっちまえ後群れ
+## ボス・トップロープ攻撃（低HPで最大2回）
+var _top_rope_count: int = 0
+var _top_rope_active: bool = false
+var _top_rope_timer: float = 0.0
+var _top_rope_shadow: Node2D = null
+var _top_rope_boss: EnemyMain = null
+var _top_rope_land_pos: Vector2 = Vector2.ZERO
+const TOP_ROPE_AIR_SEC := 4.0
+const TOP_ROPE_DAMAGE := 30
+var _next_pack_id: int = 1
 ## S4ボスギミック（号令とロープ走行を交互）
 var _gimmick_timer: float = 0.0
 var _gimmick_toggle: bool = false
@@ -36,7 +47,15 @@ const PERCH_MIN_SEC := 4.0    # 最低これだけは待機
 const PERCH_MAX_SEC := 20.0   # ザコが残っていてもこれで降臨
 var _perch_timer: float = 0.0
 
-## ステージごとのザコ種類サイクル（確定仕様v1.0 ザコ図鑑）
+## ザコ移動5種サイクル
+const MOVE_STYLE_CYCLE := [
+	EnemyMain.Behavior.SlowApproach,
+	EnemyMain.Behavior.HorizontalLoop,
+	EnemyMain.Behavior.VerticalLoop,
+	EnemyMain.Behavior.SineWave,
+	EnemyMain.Behavior.Yotayota,
+]
+## ステージごとのザコ種類サイクル（見た目流用）
 ## S1=ジョバーのみ / S2=ジョバー+ガブリ / S3=ヒートマン・デブ初出 / S4=混成
 const STAGE_ZAKO_CYCLE := {
 	1: [EnemyMain.EnemyType.Jobber],
@@ -156,14 +175,14 @@ func _setup_test_params() -> void:
 ## 本番モード（スタート）：全ステージで雑魚を定期的に落とす・敵HPは半分
 func _setup_normal_params() -> void:
 	match GameManager.current_stage:
-		1:  # 雑魚マスク軍団: 1体ずつ登場→約10秒毎に同時数+1（最大4）→倒すと即補充。合計10体倒すとクリア
+		1:  # 最初1匹教習→やっちまえで群れ。合計8体でクリア（ボスなし）
 			stage_params = {
 				"initial_count": 1,
-				"total_quota": 10,
-				"cap_max": 4,
-				"ramp_interval": 10.0,
-				"enemy_hp": 27,
-				"behavior": 3  # RandomRange
+				"total_quota": 8,
+				"cap_max": 5,
+				"ramp_interval": 8.0,
+				"enemy_hp": 24,
+				"behavior": 7  # SlowApproach
 			}
 		2:  # マスクメロンナ（足速く・近づくと距離取り・被弾で超高速離脱）。初期からザコ1体（ガブリ教材）
 			stage_params = {
@@ -214,7 +233,7 @@ func _process(delta: float) -> void:
 				_training_respawn_timer = -1.0
 		return
 	
-	# S1: 1体ずつ→約10秒毎に同時数を引き上げ→倒したら即補充（合計quota体でクリア）
+	# S1: 1匹教習→やっちまえ群れ
 	if GameManager.current_stage == 1:
 		_update_stage1_waves(delta)
 	else:
@@ -225,15 +244,19 @@ func _process(delta: float) -> void:
 			spawn_timer = 0.0
 			_spawn_reinforcement()
 
-	# S4ボスギミック: 号令（全ザコ一時強化）とロープ走行を交互に仕掛ける（確定仕様）
+	# S4ボスギミック
 	if GameManager.current_stage == 4:
 		_update_stage4_boss_gimmicks(delta)
 
-	# S2ボス: ポスト上待機→ザコが片付く（or 時間経過）とリングへ降臨
-	if GameManager.current_stage == 2:
+	# S2〜S4ボス: ポスト上待機→降臨
+	if GameManager.current_stage >= 2:
 		_update_stage2_perch(delta)
 
-	# 取り巻き周回（確定仕様）: ボス存命＆ザコ残2体以下 → ザコはボスの周囲を回る
+	# ボス共通トップロープ攻撃（低HPで最大2回）
+	if GameManager.current_stage >= 2:
+		_update_boss_top_rope(delta)
+
+	# 取り巻き周回
 	_update_orbit_assignment()
 
 	# クリア判定
@@ -366,18 +389,86 @@ func _spawn_initial_enemies() -> void:
 		var pos: Vector2 = spawn_points[i % spawn_points.size()]
 		_spawn_enemy_at(pos, has_boss_stage and i == 0)
 
-## S1ウェーブ: 同時数上限まで即補充。上限はramp_intervalごとに+1（最大cap_max）。累計total_quota体で打ち止め
+## S1: 最初1匹。倒すと「やっちまえー」→群れ突入
 func _update_stage1_waves(delta: float) -> void:
-	var quota: int = stage_params.get("total_quota", 10)
-	var cap_max: int = stage_params.get("cap_max", 4)
-	if _s1_cap < cap_max:
+	var quota: int = stage_params.get("total_quota", 8)
+	var cap_max: int = stage_params.get("cap_max", 5)
+	var alive := _get_alive_enemy_count()
+	# 教習1匹を倒したら群れフェーズへ
+	if _s1_phase == 0 and _s1_spawned >= 1 and alive == 0:
+		_s1_phase = 1
+		_s1_cap = mini(4, cap_max)
+		_show_yatchimae_banner()
+		# 一気に数体リングイン
+		for _i in range(3):
+			if _s1_spawned < quota:
+				_spawn_enemy_at(spawn_points[randi() % spawn_points.size()], false)
+	if _s1_phase >= 1 and _s1_cap < cap_max:
 		_s1_ramp_timer += delta
-		if _s1_ramp_timer >= float(stage_params.get("ramp_interval", 10.0)):
+		if _s1_ramp_timer >= float(stage_params.get("ramp_interval", 8.0)):
 			_s1_ramp_timer = 0.0
 			_s1_cap += 1
-	if _s1_spawned < quota and _get_alive_enemy_count() < _s1_cap:
-		var random_point := spawn_points[randi() % spawn_points.size()]
-		_spawn_enemy_at(random_point, false)
+	if _s1_phase >= 1 and _s1_spawned < quota and alive < _s1_cap:
+		# たまにペアで出す
+		if randf() < 0.35 and _s1_spawned + 1 < quota:
+			_spawn_zako_pack(2 if randf() < 0.7 else 3)
+		else:
+			_spawn_enemy_at(spawn_points[randi() % spawn_points.size()], false)
+
+func _show_yatchimae_banner() -> void:
+	GameManager.show_callout_world(Vector2(640, 200), "やっちまえー！！", Color(1.0, 0.35, 0.2, 1.0))
+	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -4)
+
+## 確定仕様: ロープを走るのはボス＋ザコの左右/上下往復タイプ。移動5種で差別化
+func _set_zako_behavior(enemy: EnemyMain, _pos: Vector2) -> void:
+	var style: EnemyMain.Behavior = MOVE_STYLE_CYCLE[_reinforce_index % MOVE_STYLE_CYCLE.size()] as EnemyMain.Behavior
+	enemy.behavior_type = style
+	enemy.patrol_distance_override = 0.0
+	enemy.patrol_speed_override = 0.0
+	if style == EnemyMain.Behavior.HorizontalLoop:
+		enemy.patrol_vertical = false
+		enemy.patrol_distance_override = ROPE_PATROL_DISTANCE
+		enemy.patrol_speed_override = ROPE_PATROL_SPEED
+	elif style == EnemyMain.Behavior.VerticalLoop:
+		enemy.patrol_vertical = true
+		enemy.patrol_distance_override = ROPE_PATROL_DISTANCE
+		enemy.patrol_speed_override = ROPE_PATROL_SPEED
+
+## 2〜3人ペアでスポーン（横or縦）。吹き飛ばされると解散し、後で再整列は緩く追従
+func _spawn_zako_pack(count: int) -> void:
+	count = clampi(count, 2, 3)
+	var pid: int = _next_pack_id
+	_next_pack_id += 1
+	var formation: int = 0 if randf() < 0.5 else 1
+	var base: Vector2 = spawn_points[randi() % spawn_points.size()]
+	for i in range(count):
+		var offset := Vector2(float(i) * 56.0, 0.0) if formation == 0 else Vector2(0.0, float(i) * 52.0)
+		_spawn_enemy_at(base + offset, false)
+		# 直前スポーンの敵に pack 情報を付与
+		var npcs = _get_npcs_node()
+		if npcs and npcs.get_child_count() > 0:
+			var last := npcs.get_child(npcs.get_child_count() - 1) as EnemyMain
+			if last and not last.is_boss:
+				last.pack_id = pid
+				last.pack_slot = i
+				last.pack_formation = formation
+
+## ザコ種類のパラメータ適用
+func _apply_zako_type_params(enemy: EnemyMain, type: EnemyMain.EnemyType) -> void:
+	enemy.enemy_type = type
+	match type:
+		EnemyMain.EnemyType.Gaburi:
+			# 小型・低HP（弱り常時は廃止。半キャラ／正面で気持ちよく倒せる）
+			enemy.health = maxi(1, int(enemy.health * 0.55))
+			_scale_enemy_speed(enemy, 0.85)
+		EnemyMain.EnemyType.Heatman:
+			_scale_enemy_speed(enemy, 1.1)
+			enemy.anger_rate_mult = 1.4
+		EnemyMain.EnemyType.Debu:
+			enemy.health = maxi(2, enemy.health * 4)
+			_scale_enemy_speed(enemy, 0.55)
+		_:
+			pass
 
 ## 増援（雑魚を定期的に落とす）
 func _spawn_reinforcement() -> void:
@@ -396,8 +487,11 @@ func _spawn_reinforcement() -> void:
 			max_count = stage_params.get("max_count", 4)
 	
 	if current_count < max_count:
-		var random_point := spawn_points[randi() % spawn_points.size()]
-		_spawn_enemy_at(random_point, false)
+		if randf() < 0.4 and current_count + 1 < max_count:
+			_spawn_zako_pack(2 if randf() < 0.65 else 3)
+		else:
+			var random_point := spawn_points[randi() % spawn_points.size()]
+			_spawn_enemy_at(random_point, false)
 
 ## トレーニング用：1体スポーン（画面右端からリングインして landing_pos に着地、通常・怒り・弱りを固定）
 func _spawn_training_enemy_at(landing_pos: Vector2, state: EnemyMain.EnemyState) -> void:
@@ -569,21 +663,108 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 	_apply_enemy_sprite(enemy, tex_path)
 	if not is_boss:
 		_apply_zako_type_visual(enemy, zako_type)
+	else:
+		_apply_boss_visual_scale(enemy)
 
-	# S2ボスは開幕ポスト上待機（実際の青ポールの上・降りてくるまで当たり判定なし）
-	if is_boss and GameManager.current_stage == 2 and not GameManager.training_mode:
+	# S2〜S4ボスは開幕ポスト上待機
+	if is_boss and GameManager.current_stage >= 2 and not GameManager.training_mode:
 		_perch_timer = 0.0
 		enemy.start_perch(PERCH_POS_LEFT if randf() < 0.5 else PERCH_POS_RIGHT)
 
-## ザコ種類ごとのスプライト（見た目差: ジョバー/デブ=青、ガブリ=青髪小型、ヒートマン=赤）
+## ボス共通: HP50%/25%付近でトップロープ攻撃（影→滞空→着地。くらうと痛い。かわすとボスダウン）
+func _update_boss_top_rope(delta: float) -> void:
+	if _top_rope_active:
+		_top_rope_timer += delta
+		if is_instance_valid(_top_rope_shadow):
+			# 影を点滅
+			_top_rope_shadow.modulate.a = 0.35 + 0.35 * absf(sin(_top_rope_timer * 8.0))
+		if _top_rope_timer >= TOP_ROPE_AIR_SEC:
+			_finish_top_rope_attack()
+		return
+	var boss := _find_alive_boss()
+	if not boss or boss.is_perched or boss.awaiting_finisher or boss.is_in_down_state() or current_qte_boss != null:
+		return
+	if boss.rope_running:
+		return
+	var ratio := float(boss.health) / maxf(1.0, float(boss.max_health))
+	var need := -1
+	if _top_rope_count == 0 and ratio <= 0.5:
+		need = 0
+	elif _top_rope_count == 1 and ratio <= 0.25:
+		need = 1
+	if need < 0:
+		return
+	_start_top_rope_attack(boss)
+
+func _start_top_rope_attack(boss: EnemyMain) -> void:
+	_top_rope_active = true
+	_top_rope_timer = 0.0
+	_top_rope_boss = boss
+	_top_rope_count += 1
+	_top_rope_land_pos = Vector2(randf_range(MAT_LEFT + 80, MAT_RIGHT - 80), randf_range(MAT_TOP + 80, MAT_BOTTOM - 80))
+	# ボスを一時退避（ポスト上）＋描画最優先
+	boss.is_top_rope_aerial = true
+	boss.start_perch(PERCH_POS_LEFT if boss.global_position.x < 640 else PERCH_POS_RIGHT)
+	GameManager.show_callout(boss, "トップロープ！！", Color(1.0, 0.4, 0.2, 1.0))
+	AudioManager.play_sound(AudioManager.MASK_WARNING, 0, 0)
+	# 着地点の影
+	_top_rope_shadow = Polygon2D.new()
+	_top_rope_shadow.polygon = PackedVector2Array([
+		Vector2(-36, -18), Vector2(36, -18), Vector2(36, 18), Vector2(-36, 18)
+	])
+	_top_rope_shadow.z_index = 5
+	_top_rope_shadow.color = Color(0.05, 0.05, 0.05, 0.55)
+	var parent: Node = boss.get_parent()
+	if parent:
+		parent.add_child(_top_rope_shadow)
+		_top_rope_shadow.global_position = _top_rope_land_pos
+
+func _finish_top_rope_attack() -> void:
+	_top_rope_active = false
+	if is_instance_valid(_top_rope_shadow):
+		_top_rope_shadow.queue_free()
+	_top_rope_shadow = null
+	var boss := _top_rope_boss
+	_top_rope_boss = null
+	if not is_instance_valid(boss) or boss.is_dead:
+		return
+	boss.is_top_rope_aerial = false
+	# 降臨
+	boss.is_perched = false
+	boss.z_index = 0
+	boss.global_position = _top_rope_land_pos
+	boss.velocity = Vector2.ZERO
+	if boss.fsm:
+		boss.fsm.force_change_state("enemy_idle_state")
+	# 着地点付近のプレイヤーにダメージ / いなければボスがダウン
+	var hit_player := false
+	for node in get_tree().get_nodes_in_group("Player"):
+		var p := node as CharacterBase
+		if not is_instance_valid(p) or p.is_dead:
+			continue
+		if p.global_position.distance_to(_top_rope_land_pos) <= 70.0:
+			hit_player = true
+			if p.has_method("take_damage_from_enemy"):
+				p.take_damage_from_enemy(TOP_ROPE_DAMAGE)
+			elif p.has_method("_take_damage"):
+				p._take_damage(TOP_ROPE_DAMAGE)
+			GameManager.show_callout(p, "直撃！！", Color(1.0, 0.2, 0.2, 1.0))
+	if hit_player:
+		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
+	else:
+		GameManager.show_callout(boss, "空振り！", Color(0.5, 1.0, 0.5, 1.0))
+		boss.enter_down(EnemyMain.GRAZE_DOWN_SEC)
+		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -2)
+
+## ザコ種類ごとのスプライト（マスク色で差別化。小型同一顔は廃止）
 func _get_zako_texture_path(type: EnemyMain.EnemyType) -> String:
 	match type:
-		EnemyMain.EnemyType.Gaburi:
-			return "res://Art/Sprites/m_man_g_l1.png"
 		EnemyMain.EnemyType.Heatman:
-			return "res://Art/Sprites/m_man_r_l1.png"
+			return "res://Art/Sprites/m_man_r_l1.png"  # 赤マスク
+		EnemyMain.EnemyType.Gaburi:
+			return "res://Art/Sprites/m_man_b_l1.png"  # 青ベース＋後で体色変調
 		_:
-			return "res://Art/Sprites/m_man_b_l1.png"
+			return "res://Art/Sprites/m_man_b_l1.png"  # ジョバー／デブ
 
 ## リングイン：画面右端／左端スポーン位置（マットより外側・右端か左端から走り込む）
 const MAT_LEFT := 296.0
@@ -620,12 +801,6 @@ func _pick_empty_spot_on_mat(main_floor: Node) -> Vector2:
 			return p
 	return Vector2((MAT_LEFT + MAT_RIGHT) * 0.5, (MAT_TOP + MAT_BOTTOM) * 0.5)
 
-## 確定仕様v1.0: ロープを走るのはボスだけ。ザコのロープ往復は廃止し、種類（挙動）で差別化する
-func _set_zako_behavior(enemy: EnemyMain, _pos: Vector2) -> void:
-	enemy.behavior_type = stage_params.get("behavior", 3) as EnemyMain.Behavior
-	enemy.patrol_distance_override = 0.0
-	enemy.patrol_speed_override = 0.0
-
 ## ザコの種類をステージのサイクルから順番に取る
 func _next_zako_type() -> EnemyMain.EnemyType:
 	var cycle: Array = STAGE_ZAKO_CYCLE.get(GameManager.current_stage, [EnemyMain.EnemyType.Jobber])
@@ -633,32 +808,29 @@ func _next_zako_type() -> EnemyMain.EnemyType:
 	_reinforce_index += 1
 	return t
 
-## ザコ種類のパラメータ適用（add_childの前に呼ぶ: HP・速度。max_healthは_readyで記録されるため）
-func _apply_zako_type_params(enemy: EnemyMain, type: EnemyMain.EnemyType) -> void:
-	enemy.enemy_type = type
-	match type:
-		EnemyMain.EnemyType.Gaburi:
-			# 常時弱り・小型・低HP: 正面一発で場外へ飛ぶ「気持ちいい係」
-			enemy.health = maxi(1, int(enemy.health * 0.6))
-			_scale_enemy_speed(enemy, 0.9)
-		EnemyMain.EnemyType.Heatman:
-			# 放置すると発熱（強い化）する時限爆弾
-			_scale_enemy_speed(enemy, 1.1)
-		EnemyMain.EnemyType.Debu:
-			# 大型高HP: 半キャラだけだと長い。弱り正面→ダウン→プレスのコンボ場
-			enemy.health = maxi(2, enemy.health * 5)
-			_scale_enemy_speed(enemy, 0.55)
+## ザコ見た目: 小型同一顔は廃止。色とサイズで差別化。ボスはデブ級サイズ
+const BOSS_VISUAL_SCALE := 1.35
 
-## ザコ種類の見た目適用（スプライト適用後に呼ぶ: サイズ差）
 func _apply_zako_type_visual(enemy: EnemyMain, type: EnemyMain.EnemyType) -> void:
 	var sprite := enemy.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
 	if not sprite:
 		return
 	match type:
 		EnemyMain.EnemyType.Gaburi:
-			sprite.scale *= 0.75
+			enemy.body_tint = Color(0.75, 1.15, 0.85, 1.0)
+		EnemyMain.EnemyType.Heatman:
+			enemy.body_tint = Color(1.1, 0.95, 0.95, 1.0)
 		EnemyMain.EnemyType.Debu:
-			sprite.scale *= 1.35
+			sprite.scale *= BOSS_VISUAL_SCALE
+			enemy.body_tint = Color(1.05, 1.0, 0.9, 1.0)
+		_:
+			enemy.body_tint = Color.WHITE
+	sprite.modulate = enemy.body_tint
+
+func _apply_boss_visual_scale(enemy: EnemyMain) -> void:
+	var sprite := enemy.get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if sprite:
+		sprite.scale *= BOSS_VISUAL_SCALE
 
 func _scale_enemy_speed(enemy: EnemyMain, mult: float) -> void:
 	var wander = enemy.get_node_or_null("FSM/enemy_wander_state")
@@ -809,21 +981,39 @@ func _on_qte_succeeded() -> void:
 	current_qte_boss = null
 	qte_node = null
 	stage_cleared = true
+	# 残ザコは逃げ帰る
+	_flee_remaining_zakos()
 	
 	# 画面フラッシュ＋ファンファーレを再生し、awaitを使わずタイマーでクリア画面へ（ステージ3後フリーズ対策）
 	_play_clear_flash_and_fanfare()
 	_on_stage_clear()
 
+func _flee_remaining_zakos() -> void:
+	var npcs = _get_npcs_node()
+	if not npcs:
+		return
+	for child in npcs.get_children():
+		var em := child as EnemyMain
+		if em and not em.is_dead and not em.is_boss:
+			em.behavior_type = EnemyMain.Behavior.Flee
+			if em.fsm:
+				em.fsm.force_change_state("enemy_flee_state")
+			em.super_flee_remaining = 3.0
+
 func _on_qte_failed() -> void:
-	# QTE失敗＝戦闘続行なので凍結解除
+	# QTE失敗＝HP1で再開
 	GameManager.enemies_frozen = false
 	if current_qte_boss and is_instance_valid(current_qte_boss):
-		var restore := ceili(current_qte_boss.max_health * 0.2)
-		restore = maxi(restore, 1)
-		current_qte_boss.health = restore
+		current_qte_boss.health = 1
 		current_qte_boss.is_dead = false
 		if current_qte_boss.healthbar:
 			current_qte_boss.healthbar.value = current_qte_boss.health
+		if current_qte_boss is EnemyMain:
+			var bem := current_qte_boss as EnemyMain
+			bem.awaiting_finisher = false
+			bem.down_remaining = 0.0
+			if bem.fsm:
+				bem.fsm.force_change_state("enemy_idle_state")
 	current_qte_boss = null
 	# qte_node は2秒後に自分で queue_free
 

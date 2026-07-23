@@ -22,8 +22,9 @@ const BGM_FALLBACK_PATH := "res://Art/Audio/MainTheme.mp3"
 #endregion
 
 var audio_players = []
-var max_players = 16
-var starting_players = 3
+var max_players = 24
+var starting_players = 6
+var _steal_index: int = 0
 
 var _bgm_player: AudioStreamPlayer
 var _bgm_finished_callback: Callable = Callable()
@@ -98,9 +99,12 @@ func play_sound(audiostream : AudioStream, offset : float, volume : float):
 		audio_players.append(available_player)
 		add_child(available_player)
 
-	# 上限に達していて全員再生中なら、やむを得ず最初のプレイヤーを上書きする
+	# 上限に達していて全員再生中なら、ラウンドロビンで上書き（常に先頭を潰さない）
 	if available_player == null:
-		available_player = audio_players[0]
+		if audio_players.is_empty():
+			return
+		_steal_index = (_steal_index + 1) % audio_players.size()
+		available_player = audio_players[_steal_index]
 
 	available_player.stream = audiostream
 	available_player.pitch_scale = randf_range(0.9, 1.1)

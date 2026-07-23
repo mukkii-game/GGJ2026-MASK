@@ -1,8 +1,8 @@
 extends CharacterBase
 class_name EnemyMain
 
-## 静止・上下ループ・左右ループ・一定範囲ランダム・逃走の5種
-enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee }
+## 移動パターン: Idle / 上下ロープ / 左右ロープ / 旧ランダム / 逃走 / サイン波 / ヨタヨタ / ゆっくり接近
+enum Behavior { Idle, VerticalLoop, HorizontalLoop, RandomRange, Flee, SineWave, Yotayota, SlowApproach }
 
 ## 敵の状態（攻略性向上）：通常・怒り（=強い）・弱り
 enum EnemyState { Normal, Angry, Weak }
@@ -57,27 +57,51 @@ const ANGRY_HP_RATIO := 0.4
 const ANGRY_TIME_SEC := 15.0
 ## 時間経過起因の怒りはこの秒数だけ続き、その後タイマーがリセットされて通常に戻る（波状の怒り）
 const ANGRY_TIME_DURATION := 8.0
-## 弱り：かすり／踏みのあとこの秒数だけ弱り状態
+## 弱り：パワーエサのみ（アイテム限定）
 const WEAK_DURATION_SEC := 8.0
 var _state_timer: float = 0.0
 var _weak_until: float = 0.0
 
-## ===== 確定仕様v1.0: 状態経済 =====
-## 敵タイプ
+## ===== 新方針: 状態経済 =====
+## 敵タイプ（見た目流用。攻略差は移動パターン＋怒り）
 var enemy_type: EnemyType = EnemyType.Jobber
-## 強い（Angry）の明示タイマー（>0の間 強い）。号令・ヒートマン発熱でセット
+## 強い（Angry）の明示タイマー
 var _angry_until: float = 0.0
-## ヒートマン: 無被弾でこの秒数経過すると発熱（強い化）→ HEAT_DURATION_SEC 後に自然冷却の周期
+## ザコの周期怒り（ランダム間隔で赤化）
+const ZAKO_ANGER_MIN_GAP := 10.0
+const ZAKO_ANGER_MAX_GAP := 16.0
+const ZAKO_ANGER_DURATION := 7.0
+const BOSS_ANGER_DURATION := 9.0
+var _anger_cycle_timer: float = 0.0
+var _next_anger_gap: float = 12.0
+## うに帝は怒り発生が早い
+var anger_rate_mult: float = 1.0
+## ヒートマン互換（発熱は怒り周期に統合しつつ残す）
 const HEAT_IGNITE_SEC := 10.0
 const HEAT_DURATION_SEC := 10.0
 var _heat_timer: float = 0.0
-## 半キャラ被弾の累積カウント。HALFCAR_HITS_TO_WEAK 発で弱り（青）化（P4）
-const HALFCAR_HITS_TO_WEAK := 3
 var halfcar_hit_count: int = 0
-## ダウン残り秒数（enemy_down_state が減算し、0で起き上がり→2秒弱り）
-const DOWN_DURATION_SEC := 3.0
-const WAKEUP_WEAK_SEC := 2.0
+## かすりダウン秒数 / 通常ダウン
+const GRAZE_DOWN_SEC := 5.0
+const DOWN_DURATION_SEC := 5.0
+const WAKEUP_WEAK_SEC := 0.0
 var down_remaining: float = 0.0
+## ボスHP0後、ジャンプ待ち
+var awaiting_finisher: bool = false
+## ペア編隊
+var pack_id: int = -1
+var pack_slot: int = 0
+var pack_formation: int = 0  # 0=横 1=縦
+var pack_spacing: float = 56.0
+## サイン波用
+var _sine_phase: float = 0.0
+var _sine_axis_horizontal: bool = true
+## ヨタヨタ用
+var _yota_dir: Vector2 = Vector2.RIGHT
+var _yota_move_left: float = 0.0
+var _yota_pause_left: float = 0.0
+## 怒り湯気
+var _steam_particles: GPUParticles2D = null
 ## 取り巻き周回: 対象ボス（StageControllerが設定。ボス存命＆ザコ残少で周回移動）
 var orbit_boss: EnemyMain = null
 var _orbit_angle: float = 0.0
@@ -91,10 +115,12 @@ var rope_running: bool = false
 ## ロープ走行の軸（true=左右往復）。直角カウンター判定に使う
 var rope_run_horizontal: bool = true
 var _rope_run_remaining: float = 0.0
-## 怒り時の色（体当たり赤と区別するためマゼンタ系）
-const STATE_ANGRY_MODULATE := Color(1.35, 0.45, 0.55, 1.0)
+## 怒り時の色（真っ赤・読みやすさ優先）
+const STATE_ANGRY_MODULATE := Color(2.2, 0.25, 0.2, 1.0)
 ## 弱り時の色
 const STATE_WEAK_MODULATE := Color(0.5, 0.6, 1.4, 1.0)
+## ザコタイプの体色ベース（通常時の modulate に乗算）
+var body_tint := Color.WHITE
 ## 被弾後この秒数だけ超高速で離脱（FleeStateで使用）
 var super_flee_remaining: float = 0.0
 ## プレイヤーと接したあとこの秒数だけモーション2倍速
@@ -111,13 +137,36 @@ func _process(delta: float) -> void:
 		_player_contact_timer = maxf(0.0, _player_contact_timer - delta)
 	_weak_until = maxf(0.0, _weak_until - delta)
 	_angry_until = maxf(0.0, _angry_until - delta)
-	# ヒートマン: 無被弾が続くと発熱（強い化）。被弾でタイマーリセット（_on_took_damage）
+	# ザコ周期怒り（Gaburi以外）。うに帝は anger_rate_mult で早め
+	if not is_training_dummy and not is_dead and not is_boss and enemy_type != EnemyType.Gaburi:
+		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state() and not awaiting_finisher:
+			_anger_cycle_timer += delta * anger_rate_mult
+			if _anger_cycle_timer >= _next_anger_gap:
+				_anger_cycle_timer = 0.0
+				_next_anger_gap = randf_range(ZAKO_ANGER_MIN_GAP, ZAKO_ANGER_MAX_GAP)
+				set_angry_for(ZAKO_ANGER_DURATION)
+	# ヒートマン: 無被弾が続くと発熱（強い化）
 	if enemy_type == EnemyType.Heatman and not is_training_dummy and not is_dead:
 		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state():
 			_heat_timer += delta
 			if _heat_timer >= HEAT_IGNITE_SEC:
 				_heat_timer = 0.0
 				_ignite()
+	# ボス（うに帝）: 高頻度で怒り
+	if is_boss and stage_number == 3 and not is_dead and not awaiting_finisher:
+		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state():
+			_anger_cycle_timer += delta * 1.6
+			if _anger_cycle_timer >= 8.0:
+				_anger_cycle_timer = 0.0
+				set_angry_for(BOSS_ANGER_DURATION)
+	# 異論マスクも怒り周期
+	if is_boss and stage_number == 4 and not is_dead and not awaiting_finisher:
+		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state() and not rope_running:
+			_anger_cycle_timer += delta * 1.4
+			if _anger_cycle_timer >= 9.0:
+				_anger_cycle_timer = 0.0
+				set_angry_for(BOSS_ANGER_DURATION)
+	_update_steam_effect()
 	# ボスのロープ走行: 時間切れで停止（直角カウンターでも停止する）
 	if rope_running and not is_dead:
 		_rope_run_remaining -= delta
@@ -170,8 +219,11 @@ func Turn() -> void:
 	# flipped_horizontal を考慮した基準方向（+1=右を向く）
 	var base_dir := -1 if flipped_horizontal == true else 1
 	
-	# ステージ3ボスだけは左右反転を少し遅らせる
+	# ステージ3ボスだけは左右反転を少し遅らせる（怒り中はさらに長く＝後ろが取りやすい）
 	if is_boss and stage_number == 3:
+		var flip_delay: float = BOSS3_FLIP_DELAY
+		if enemy_state == EnemyState.Angry:
+			flip_delay = BOSS3_FLIP_DELAY * 1.8
 		var move_dir := 0
 		if velocity.x < -0.1:
 			move_dir = -1
@@ -179,13 +231,11 @@ func Turn() -> void:
 			move_dir = 1
 		
 		if move_dir != 0 and move_dir != facing_dir_sign:
-			# 進行方向が変わったら、一定時間たってから振り向く
 			_boss_flip_timer += _turn_delta
-			if _boss_flip_timer >= BOSS3_FLIP_DELAY:
+			if _boss_flip_timer >= flip_delay:
 				facing_dir_sign = move_dir
 				_boss_flip_timer = 0.0
 		else:
-			# 同じ方向を向いている、または止まっている間はタイマーをリセット
 			_boss_flip_timer = 0.0
 		
 		if facing_dir_sign != 0:
@@ -269,24 +319,26 @@ func _ready():
 		Behavior.HorizontalLoop:
 			patrol_vertical = false
 			fsm.force_change_state("enemy_patrol_state")
-		Behavior.RandomRange:
+		Behavior.RandomRange, Behavior.Yotayota, Behavior.SineWave, Behavior.SlowApproach:
 			fsm.force_change_state("enemy_wander_state")
 		Behavior.Flee:
 			fsm.force_change_state("enemy_flee_state")
 
 func _get_state_modulate() -> Color:
+	var base: Color
 	match enemy_state:
 		EnemyState.Angry:
-			return STATE_ANGRY_MODULATE
+			var pulse := 0.15 * sin(Time.get_ticks_msec() / 90.0)
+			base = Color(STATE_ANGRY_MODULATE.r + pulse, STATE_ANGRY_MODULATE.g, STATE_ANGRY_MODULATE.b, 1.0)
 		EnemyState.Weak:
-			return STATE_WEAK_MODULATE
+			base = STATE_WEAK_MODULATE
 		_:
-			return Color.WHITE
+			base = body_tint
+	return base
 
-## 確定仕様v1.0: 弱り＝タイマー or ガブリ常時。強い＝明示タイマー（発熱・号令）/ボスのロープ走行/S3ボスのHP怒りのみ。
-## ザコの自動怒り（旧: HP40%・15秒周期）は廃止（強い状態は個体トリガー限定）
+## 弱り＝パワーエサ（タイマー）のみ。強い＝怒りタイマー / ロープ走行 / S3ボス低HP
 func _update_enemy_state() -> void:
-	if _weak_until > 0.0 or enemy_type == EnemyType.Gaburi:
+	if _weak_until > 0.0:
 		enemy_state = EnemyState.Weak
 		return
 	if _angry_until > 0.0 or rope_running:
@@ -313,58 +365,66 @@ func state_speed_mult() -> float:
 func state_damage_mult() -> float:
 	return 1.5 if enemy_state == EnemyState.Angry else 1.0
 
-## 半キャラずらしが無効か（Angry中は正面以外のダメージ源はかすり・踏みのみ）
+## 半キャラずらしが「通常角度では無効」か（Angry中。後ろ半キャラとかすりは別判定）
 func is_shoulder_immune() -> bool:
 	return enemy_state == EnemyState.Angry
 
-## 弱り中か（どの角度からでも一方的ダメージ・プレイヤーは正面でも無傷）
+## 弱り中か（タイマーを即時参照。状態更新前でも正しい）
 func is_weak_state() -> bool:
-	return enemy_state == EnemyState.Weak
+	return _weak_until > 0.0
 
-## かすりを食らったとき（弱り状態へ）
+## プレイヤーが敵の背後から半キャラを狙っているか（facing の反対側）
+func is_rear_approach_from(player_pos: Vector2) -> bool:
+	var facing: int = facing_dir_sign
+	if facing == 0:
+		facing = 1
+	var side: float = signf(player_pos.x - global_position.x)
+	if absf(side) < 0.01:
+		return false
+	return int(side) == -facing
+
+## かすり → 5秒ダウン（弱りではない）
 func notify_graze_hit() -> void:
-	_weak_until = WEAK_DURATION_SEC
-
-## ジャンプで踏まれたとき（弱り状態へ）
-func notify_stepped_on() -> void:
-	_weak_until = WEAK_DURATION_SEC
-
-## 指定秒数だけ弱り状態にする（パワーエサなど）。既存の弱りより長い場合だけ上書き
-func set_weak_for(duration_sec: float) -> void:
-	_weak_until = maxf(_weak_until, duration_sec)
-
-## ===== 確定仕様v1.0: 状態経済 API =====
-
-## 半キャラずらしを1発食らった（P4: 累計3発で弱り化）。通常状態のときだけカウント
-func notify_halfcar_hit() -> void:
-	if enemy_state != EnemyState.Normal:
+	if awaiting_finisher or is_dead:
 		return
-	halfcar_hit_count += 1
-	if halfcar_hit_count >= HALFCAR_HITS_TO_WEAK:
-		halfcar_hit_count = 0
-		set_weak_for(WEAK_DURATION_SEC)
-		# ぐらつき演出（青くなる瞬間を目立たせる）
-		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -3)
+	GameManager.show_callout(self, "かすりダウン！", Color(1.0, 0.9, 0.3, 1.0))
+	enter_down(GRAZE_DOWN_SEC)
 
-## 指定秒数だけ強い（Angry）状態にする（号令・発熱）
+## ジャンプ踏み（弱り化は廃止）
+func notify_stepped_on() -> void:
+	pass
+
+## 指定秒数だけ弱り状態にする（パワーエサ）。赤は解除
+func set_weak_for(duration_sec: float) -> void:
+	clear_angry()
+	_weak_until = maxf(_weak_until, duration_sec)
+	_update_enemy_state()
+
+## 半キャラ蓄積弱りは廃止（互換のため空）
+func notify_halfcar_hit() -> void:
+	pass
+
+## 指定秒数だけ強い（Angry）状態にする
 func set_angry_for(duration_sec: float) -> void:
+	if _weak_until > 0.0:
+		return
 	_angry_until = maxf(_angry_until, duration_sec)
 
-## 強い状態を強制解除（頭突きダウン・直角カウンター）
+## 強い状態を強制解除
 func clear_angry() -> void:
 	_angry_until = 0.0
 	_heat_timer = 0.0
 
-## ヒートマン発熱（強い化）。閃光＋SEで予告的に目立たせる
+## ヒートマン発熱
 func _ignite() -> void:
 	set_angry_for(HEAT_DURATION_SEC)
 	if sprite:
 		var tw := create_tween()
-		tw.tween_property(sprite, "modulate", Color(2.2, 1.2, 0.6, 1.0), 0.1)
+		tw.tween_property(sprite, "modulate", Color(2.4, 0.4, 0.2, 1.0), 0.1)
 		tw.tween_property(sprite, "modulate", Color.WHITE, 0.2)
 	AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -6)
 
-## ダウン（寝）状態に入る。強化は解除・半キャラカウントもリセット
+## ダウン（寝）状態に入る
 func enter_down(duration_sec: float = DOWN_DURATION_SEC) -> void:
 	if is_dead:
 		return
@@ -377,7 +437,52 @@ func enter_down(duration_sec: float = DOWN_DURATION_SEC) -> void:
 		_rope_run_remaining = 0.0
 	fsm.force_change_state("enemy_down_state")
 
-## 弱り正面ブラスト／頭突きで生き残った敵：リング内ランダム地点へ吹き飛ばし→ダウン（P5/P7）
+## ボスHP0: 死亡せずダウンし、ジャンプ待ち
+func enter_finisher_down() -> void:
+	if awaiting_finisher:
+		return
+	awaiting_finisher = true
+	health = 0
+	if healthbar:
+		healthbar.value = 0
+	is_dead = false
+	enter_down(99.0)
+	GameManager.show_callout(self, "フィニッシュ待ち！", Color(1.0, 0.75, 0.2, 1.0))
+
+## ジャンプ追撃でQTEへ
+func request_finisher_qte() -> void:
+	if not is_boss:
+		return
+	awaiting_finisher = false
+	defeated_for_qte.emit(self)
+
+func _update_steam_effect() -> void:
+	var want_steam: bool = enemy_state == EnemyState.Angry and not is_dead and not is_in_down_state()
+	if want_steam:
+		if _steam_particles == null or not is_instance_valid(_steam_particles):
+			_steam_particles = GPUParticles2D.new()
+			_steam_particles.name = "AngrySteam"
+			_steam_particles.amount = 18
+			_steam_particles.lifetime = 0.7
+			_steam_particles.explosiveness = 0.05
+			_steam_particles.randomness = 0.4
+			_steam_particles.position = Vector2(0, -28)
+			var mat := ParticleProcessMaterial.new()
+			mat.direction = Vector3(0, -1, 0)
+			mat.spread = 35.0
+			mat.initial_velocity_min = 20.0
+			mat.initial_velocity_max = 55.0
+			mat.gravity = Vector3(0, -40, 0)
+			mat.scale_min = 1.5
+			mat.scale_max = 3.0
+			mat.color = Color(1.0, 0.55, 0.35, 0.7)
+			_steam_particles.process_material = mat
+			add_child(_steam_particles)
+		_steam_particles.emitting = true
+	elif _steam_particles and is_instance_valid(_steam_particles):
+		_steam_particles.emitting = false
+
+## 弱り正面ブラスト／吹き飛ばし→ダウン
 const BLAST_DOWN_TWEEN_DURATION := 0.45
 func blast_to_down(from_dir: Vector2 = Vector2.ZERO) -> void:
 	if is_dead:
@@ -513,10 +618,22 @@ func _on_detection_area_body_exited(body: Node2D) -> void:
 		player_in_range = false
 
 func _die():
-	# やられ声を必ず鳴らす（半キャラ連打死は damage_effects を通らないため、ここで一元化）
+	# ヤラレ声はここで一度だけ（半キャラ連打死は damage_effects を通らないため）
 	if not is_dead:
 		AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -4)
 	super() #calls _die() on base-class CharacterBase
+
+## 空中（飛ばされ・ブラスト吹き飛び・トップロープ滞空）は手前
+func is_airborne_for_draw() -> bool:
+	if is_top_rope_aerial or is_perched:
+		return true
+	if _aerial_knockback_animating:
+		return true
+	if fsm and fsm.current_state:
+		var sn: String = String(fsm.current_state.name).to_lower()
+		if sn == "enemy_launched_state" or sn == "enemy_ring_in_state":
+			return true
+	return false
 	fsm.force_change_state("enemy_death_state")
 
 ## ロープまでノックされたときに呼ぶ。大きくジャンプして画面内のどこかに着地する

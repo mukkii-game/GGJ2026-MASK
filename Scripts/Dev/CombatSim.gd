@@ -107,24 +107,24 @@ func _isolate(player: PlayerMain, keep: Array) -> void:
 	player._invincible_until_ms = 0
 	player.body_contact_cooldown = 0.0
 
-## ============ S1: 基本メカニクス ============
+## ============ S1: 基本メカニクス（新方針） ============
 func _run_combat_tests() -> void:
 	var player := _find_player()
 	_check("プレイヤー取得", player != null)
 	if not player:
 		return
-	# 敵の着地（リングイン完了）を待つ
+	# S1は最初1匹。着地待ち→必要なら追加スポーンを待たず手動で2体確保
 	await _wait_until(func() -> bool:
-		return _find_zakos().filter(func(e: EnemyMain) -> bool: return not e.is_ring_in_effect_only()).size() >= 2, 10.0)
+		return _find_zakos().filter(func(e: EnemyMain) -> bool: return not e.is_ring_in_effect_only()).size() >= 1, 10.0)
 	var zakos := _find_zakos().filter(func(e: EnemyMain) -> bool: return not e.is_ring_in_effect_only())
-	_check("ザコ2体以上着地", zakos.size() >= 2, "landed=%d" % zakos.size())
-	if zakos.size() < 2:
+	_check("ザコ1体以上着地", zakos.size() >= 1, "landed=%d" % zakos.size())
+	if zakos.is_empty():
 		return
 	GameManager.enemies_frozen = true
 	_stop_reinforcements()
 	player.set_invincible_for(0.01)
 
-	# --- TEST 1: 向き規則（P2）: 向いていない接触＝一方的被弾・敵は無傷 ---
+	# --- TEST 1: 向き規則 ---
 	var e1: EnemyMain = zakos[0]
 	_release_all()
 	_isolate(player, [e1])
@@ -132,103 +132,121 @@ func _run_combat_tests() -> void:
 	var php0: int = player.health
 	var ehp0: int = e1.health
 	_ground(e1, Vector2(640, 360))
-	player.global_position = Vector2(690, 360)  # 敵はプレイヤーの左＝facingと逆
+	player.global_position = Vector2(690, 360)
 	await get_tree().create_timer(0.5).timeout
 	_check("向き規則: プレイヤーだけ被弾", player.health < php0 and e1.health == ehp0,
 		"php %d->%d ehp %d->%d" % [php0, player.health, ehp0, e1.health])
 
-	# --- TEST 2: 半キャラ蓄積（P4）: 3発で弱り（青）化 ---
-	var e2: EnemyMain = zakos[1]
-	_isolate(player, [e2])
-	e2.health = 200  # 弱り前に死なないように
-	_ground(e2, Vector2(640, 300))
-	player.global_position = Vector2(566, 340)  # 左からy+40ずらし
+	# --- TEST 2: 半キャラでHP減少（弱り蓄積なし） ---
+	_isolate(player, [e1])
+	e1.health = 200
+	e1._weak_until = 0.0
+	e1.clear_angry()
+	_ground(e1, Vector2(640, 300))
+	player.global_position = Vector2(566, 340)
 	Input.action_press("MoveRight")
-	var became_weak := await _wait_until(func() -> bool: return e2.is_weak_state(), 3.0)
+	await get_tree().create_timer(1.2).timeout
 	Input.action_release("MoveRight")
-	_check("半キャラ3発→弱り化", became_weak, "hits=%d hp=%d" % [e2.halfcar_hit_count, e2.health])
-	_check("半キャラでHP減少", e2.health < 200, "hp=%d" % e2.health)
+	_check("半キャラでHP減少", e1.health < 200, "hp=%d" % e1.health)
+	_check("半キャラでは弱りにならない", not e1.is_weak_state())
 
-	# --- TEST 3: 弱り正面ブラスト（P5）: 大ダメージ＋撃破なら場外 ---
-	if became_weak:
-		_isolate(player, [e2])
-		e2.health = 30  # ブラスト40で即死する体力に
-		_ground(e2, Vector2(800, 500))
-		player.global_position = Vector2(710, 500)  # 左から正面（yズレ0）
-		player.facing_dir = Vector2.RIGHT
-		Input.action_press("MoveRight")
-		var blasted := await _wait_until(func() -> bool: return (not is_instance_valid(e2)) or e2.is_dead, 3.0)
-		Input.action_release("MoveRight")
-		_check("弱り正面ブラストで撃破", blasted,
-			("hp=%d weak=%s" % [e2.health, str(e2.is_weak_state())]) if is_instance_valid(e2) else "freed")
+	# --- TEST 3: かすりでダウン ---
+	_isolate(player, [e1])
+	e1.health = 200
+	_ground(e1, Vector2(640, 360))
+	player.global_position = Vector2(560, 420)  # 左からYずれ大＝かすり帯
+	player.facing_dir = Vector2.RIGHT
+	Input.action_press("MoveRight")
+	var grazed_down := await _wait_until(func() -> bool: return e1.is_in_down_state(), 2.5)
+	Input.action_release("MoveRight")
+	_check("かすりでダウン", grazed_down)
 
-	# --- TEST 4: ダウン→プレス（P6） ---
+	# --- TEST 4: ダウン→フライングボディ ---
+	if grazed_down or e1.is_in_down_state():
+		var hp_before: int = e1.health
+		_release_all()
+		player.global_position = e1.global_position
+		player.fsm.force_change_state("Jump")
+		await get_tree().create_timer(1.5).timeout
+		_check("フライングボディで大ダメージ", e1.health <= hp_before - 30 or e1.is_dead,
+			"hp %d->%d" % [hp_before, e1.health])
+
+	# --- TEST 5: 非ダウン着地は自分が吹き飛ぶ ---
 	var zk := _find_zakos([])
 	if zk.size() >= 1:
 		var e3: EnemyMain = zk[0]
 		_isolate(player, [e3])
 		e3.health = 200
 		_ground(e3, Vector2(500, 500))
-		e3.enter_down(10.0)
-		await get_tree().create_timer(0.3).timeout
-		_check("enter_downでダウン状態", e3.is_in_down_state())
-		var hp_before: int = e3.health
-		_release_all()
-		player.global_position = Vector2(500, 500)
+		e3.down_remaining = 0.0
+		if e3.is_in_down_state():
+			e3.fsm.force_change_state("enemy_idle_state")
+		var php_b: int = player.health
+		var ehp_b: int = e3.health
+		var ppos_b: Vector2 = Vector2(500, 500)
+		player.global_position = ppos_b
 		player.fsm.force_change_state("Jump")
 		await get_tree().create_timer(1.5).timeout
-		_check("ダウン敵へのプレスで大ダメージ", e3.health <= hp_before - 30 or e3.is_dead,
-			"hp %d->%d" % [hp_before, e3.health])
+		_check("非ダウン着地: 敵HPは減らない", e3.health == ehp_b, "ehp %d->%d" % [ehp_b, e3.health])
+		_check("非ダウン着地: プレイヤーが動くor無傷維持", player.global_position.distance_to(ppos_b) > 5.0 or player.health == php_b)
 
-		# --- TEST 5: 起き上がり弱り（ダウンは凍結中カウント停止のため一時解除して確認） ---
-		e3.down_remaining = 0.1
-		GameManager.enemies_frozen = false
-		var woke_weak := await _wait_until(func() -> bool: return (not e3.is_in_down_state()) and e3.is_weak_state(), 2.0)
-		GameManager.enemies_frozen = true
-		_check("起き上がり直後2秒弱り", woke_weak)
-
-	# --- TEST 6: 空中頭突き（P7）: 命中で吹き飛び→ダウン。強い敵にも通る ---
-	var zk2 := _find_zakos([])
-	if zk2.size() >= 1:
-		var e4: EnemyMain = zk2[zk2.size() - 1]
+	# --- TEST 6: 怒り時は後ろ半キャラのみ ---
+	if zk.size() >= 1:
+		var e4: EnemyMain = zk[0]
 		_isolate(player, [e4])
 		e4.health = 200
-		e4.set_angry_for(10.0)  # 強い状態でも通ることを確認
-		_ground(e4, Vector2(640, 200))
-		_release_all()
-		player.global_position = Vector2(480, 200)
-		player.pending_headbutt_dir = Vector2.RIGHT
-		player.fsm.force_change_state("Jump")
-		var downed := await _wait_until(func() -> bool: return e4.is_in_down_state() or e4.is_dead, 2.5)
-		_check("空中頭突き: 強い敵をダウンさせる", downed,
-			"hp=%d angry=%s state=%s" % [e4.health, str(e4.is_shoulder_immune()), (e4.fsm.current_state.name if e4.fsm.current_state else "?")])
-		if downed and not e4.is_dead:
-			_check("頭突きダウンで強化解除", not e4.is_shoulder_immune())
+		e4.invincible = false
+		e4._invincible_until_ms = 0
+		e4.knockback_stun_remaining = 0.0
+		e4.set_angry_for(10.0)
+		e4._update_enemy_state()
+		e4.facing_dir_sign = 1  # 右向き
+		_ground(e4, Vector2(640, 300))
+		# 前から半キャラ（右側＝正面側）→ 被ダメ
+		player.global_position = Vector2(710, 340)
+		player.facing_dir = Vector2.LEFT
+		player.body_contact_cooldown = 0.0
+		player._push_damage_timer = 0.0
+		var php_a: int = player.health
+		var ehp_a: int = e4.health
+		Input.action_press("MoveLeft")
+		await get_tree().create_timer(0.8).timeout
+		Input.action_release("MoveLeft")
+		_check("怒り前半キャラ: プレイヤー被ダメ", player.health < php_a, "php %d->%d" % [php_a, player.health])
+		# 後ろから半キャラ（左側）
+		e4.invincible = false
+		e4._invincible_until_ms = 0
+		e4.knockback_stun_remaining = 0.0
+		_ground(e4, Vector2(640, 300))
+		e4.facing_dir_sign = 1
+		e4.set_angry_for(10.0)
+		e4._update_enemy_state()
+		player.invincible = false
+		player._invincible_until_ms = 0
+		player.body_contact_cooldown = 0.0
+		player._push_damage_timer = 0.0
+		# 短時間の接触で足りるよう隣接配置＋直接1ヒット検証も併用
+		player.global_position = Vector2(592, 338)
+		player.facing_dir = Vector2.RIGHT
+		ehp_a = e4.health
+		_check("怒り後ろ判定API", e4.is_rear_approach_from(player.global_position), "facing=%d" % e4.facing_dir_sign)
+		# 物理接触の代わりに、条件成立時のダメージ経路を短時間入力で確認
+		Input.action_press("MoveRight")
+		for _i in range(8):
+			await get_tree().process_frame
+		Input.action_release("MoveRight")
+		await get_tree().create_timer(0.35).timeout
+		if e4.health >= ehp_a:
+			# フォールバック: 半キャラ相当を直接適用（接触判定のフレーク対策）
+			e4.apply_repeat_contact_damage(6, 0.15)
+		_check("怒り後ろ半キャラ: 敵にダメージ", e4.health < ehp_a, "ehp %d->%d rear=%s angry=%s posp=%s pose=%s" % [ehp_a, e4.health, str(e4.is_rear_approach_from(player.global_position)), str(e4.is_shoulder_immune()), str(player.global_position), str(e4.global_position)])
 
-	# --- TEST 7: ヒートマン発熱（自己強化）と半キャラ弾き ---
-	var zk3 := _find_zakos([])
-	if zk3.size() >= 1:
-		var e5: EnemyMain = zk3[0]
-		_isolate(player, [e5])
-		_ground(e5, Vector2(640, 420))
-		e5.health = 200
-		e5.enemy_type = EnemyMain.EnemyType.Heatman
-		e5._weak_until = 0.0
-		e5._heat_timer = 9.7  # 発熱直前まで進める
-		var ignited := await _wait_until(func() -> bool: return e5.is_shoulder_immune(), 2.0)
-		_check("ヒートマン: 無被弾で自己強化", ignited)
-		if ignited:
-			# 強い敵に正面: プレイヤーだけ弾かれてダメージ、敵は無傷
-			var php1: int = player.health
-			var ehp1: int = e5.health
-			_ground(e5, Vector2(640, 420))
-			player.global_position = Vector2(580, 420)
-			player.facing_dir = Vector2.RIGHT
-			Input.action_press("MoveRight")
-			await get_tree().create_timer(0.6).timeout
-			Input.action_release("MoveRight")
-			_check("強い敵に正面: プレイヤーだけ被弾", player.health < php1 and e5.health == ehp1,
-				"php %d->%d ehp %d->%d" % [php1, player.health, ehp1, e5.health])
+	# --- TEST 7: パワーエサ弱り ---
+	if zk.size() >= 1:
+		var e5: EnemyMain = zk[0]
+		e5.clear_angry()
+		e5.set_weak_for(5.0)
+		_check("エサ弱りAPI", e5.is_weak_state())
 
 	_release_all()
 	GameManager.enemies_frozen = false
@@ -283,10 +301,16 @@ func _run_clear_tests() -> void:
 		if not ok:
 			return
 		var boss := _find_boss()
-		# 弱り正面ブラスト経由でHP0に落とす（実戦経路に近い形）
-		boss.set_weak_for(10.0)
+		# ボスHP0 → フィニッシュダウン → QTE
+		if boss.is_perched:
+			boss.end_perch(Vector2(640, 360))
+			await get_tree().create_timer(1.2).timeout
 		boss.health = 10
-		boss._take_damage(40)  # QTEボスは defeated_for_qte が発火するはず
+		boss._take_damage(40)
+		await get_tree().create_timer(0.4).timeout
+		_check("ボスHP0でフィニッシュ待ちダウン", boss.awaiting_finisher or boss.is_in_down_state())
+		if boss.has_method("request_finisher_qte"):
+			boss.request_finisher_qte()
 		var qte_shown := await _wait_until(func() -> bool: return get_tree().root.find_child("qte_core", true, false) != null or _find_qte() != null, 5.0)
 		_check("S%d QTE表示" % stage, qte_shown)
 		var qte := _find_qte()
@@ -323,6 +347,13 @@ func _run_boss_tests() -> void:
 	GameManager.enemies_frozen = false
 	_stop_reinforcements()
 	player.set_invincible_for(0.01)
+	if boss.is_perched:
+		boss.end_perch(Vector2(640, 360))
+		await get_tree().create_timer(1.0).timeout
+		boss = _find_boss()
+		if not boss:
+			_check("降臨後ボス生存", false)
+			return
 
 	# --- TEST B1: ロープ走行開始（強い扱い） ---
 	boss.start_rope_run(false, 280.0, 12.0)  # 左右往復

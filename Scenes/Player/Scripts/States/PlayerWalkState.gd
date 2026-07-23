@@ -48,11 +48,7 @@ func Update(delta : float):
 		mv_down = "Move2Down"
 	var input_dir = Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()
 	if player_main and player_main.wants_jump():
-		# 走行中ジャンプ＝空中頭突き（確定仕様P7）: 走り方向をJumpStateへ持ち越す
-		if dashspeed > 100.0 and dash_direction != Vector2.ZERO:
-			player_main.pending_headbutt_dir = dash_direction
-		elif auto_run_direction != Vector2.ZERO:
-			player_main.pending_headbutt_dir = auto_run_direction
+		player_main.pending_headbutt_dir = Vector2.ZERO
 		state_transition.emit(self, "Jump")
 		return
 	# Nボタン（2Pは左クリック）＝走る

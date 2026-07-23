@@ -23,7 +23,7 @@ func Enter() -> void:
 
 func Exit() -> void:
 	if body and body.sprite and is_instance_valid(body.sprite):
-		body.sprite.modulate = Color.WHITE
+		body.sprite.modulate = body.body_tint if "body_tint" in body else Color.WHITE
 		body.sprite.rotation_degrees = 0.0
 
 func Update(delta: float) -> void:
@@ -32,9 +32,10 @@ func Update(delta: float) -> void:
 	# QTE中・クリア演出中はダウンのまま静止（起き上がりカウントも止める）
 	if GameManager.enemies_frozen:
 		return
+	# ボスHP0フィニッシュ待ちは起き上がらない（ジャンプまで寝る）
+	if body.awaiting_finisher:
+		return
 	body.down_remaining -= delta
 	if body.down_remaining <= 0.0:
 		body.down_remaining = 0.0
-		# 起き上がりの隙＝短い弱り（確定仕様: WAKEUP_WEAK_SEC）
-		body.set_weak_for(body.WAKEUP_WEAK_SEC)
 		state_transition.emit(self, "enemy_idle_state")

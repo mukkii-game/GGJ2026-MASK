@@ -34,5 +34,6 @@ func deal_damage_to_player(player : PlayerMain):
 	player.take_damage_from_enemy(dmg)
 	
 func play_hitground_sound():
-	AudioManager.play_sound(AudioManager.ENEMY_HIT, 0, -10)
+	# 攻撃着地SE。ENEMY_HIT（ヤラレ声）は使わない（遅延で二重に聞こえる原因だった）
+	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -4)
 	

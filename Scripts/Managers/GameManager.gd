@@ -107,6 +107,19 @@ func show_callout(anchor: Node2D, text: String, color: Color = Color(1.0, 0.85, 
 	var parent := anchor.get_parent()
 	if not parent:
 		return
+	_spawn_callout_label(parent, anchor.global_position + Vector2(-140.0, -100.0), text, color)
+
+## ワールド座標に技名／煽りを出す（やっちまえ等）
+func show_callout_world(pos: Vector2, text: String, color: Color = Color(1.0, 0.85, 0.2, 1.0)) -> void:
+	var parent: Node = get_tree().current_scene
+	var players := get_tree().get_nodes_in_group("Player")
+	if players.size() > 0 and is_instance_valid(players[0]) and players[0].get_parent():
+		parent = players[0].get_parent()
+	if not parent:
+		return
+	_spawn_callout_label(parent, pos + Vector2(-160.0, -40.0), text, color)
+
+func _spawn_callout_label(parent: Node, pos: Vector2, text: String, color: Color) -> void:
 	var label := Label.new()
 	label.text = text
 	label.z_index = 200
@@ -115,8 +128,8 @@ func show_callout(anchor: Node2D, text: String, color: Color = Color(1.0, 0.85, 
 	label.add_theme_color_override("font_outline_color", Color(color.r * 0.6, color.g * 0.5, color.b * 0.1, 1.0))
 	label.add_theme_constant_override("outline_size", 8)
 	parent.add_child(label)
-	label.position = anchor.global_position + Vector2(-140.0, -100.0)
-	label.size = Vector2(280.0, 40.0)
+	label.position = pos
+	label.size = Vector2(320.0, 40.0)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var tw := label.create_tween()
 	tw.set_parallel(true)
