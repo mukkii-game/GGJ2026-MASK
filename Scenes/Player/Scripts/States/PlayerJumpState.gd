@@ -7,10 +7,16 @@ const WALK_SPEED_JUMP := 280.0
 const JUMP_DURATION_NORMAL := 0.85
 ## ジャンプ弧の見た目の高さ（ピクセル）
 const JUMP_VISUAL_HEIGHT := 100.0
-## ダウン敵へのフライングボディアタック
+## ダウン敵へのフライングボディアタック（威力は連続でも固定）
 const PRESS_DAMAGE := 40
 ## 非ダウン敵に着地したとき、自分が吹き飛ぶ距離
 const FAIL_LAND_KNOCKBACK := 120.0
+## 連続ジャンプ台の上限段数
+const TRAMPOLINE_COMBO_MAX := 7
+## 段ごとの滞空・高さ・空中移動の伸び
+const TRAMPOLINE_DURATION_STEP := 0.16
+const TRAMPOLINE_HEIGHT_STEP := 0.28
+const TRAMPOLINE_SPEED_STEP := 0.22
 
 var player: CharacterBody2D
 var player_main: PlayerMain
@@ -18,6 +24,8 @@ var body_shape: CollisionShape2D
 var sprite_node: Node2D
 var jump_time: float = 0.0
 var jump_duration: float = JUMP_DURATION_NORMAL
+var jump_visual_height: float = JUMP_VISUAL_HEIGHT
+var jump_move_speed: float = WALK_SPEED_JUMP
 
 func Enter() -> void:
 	player = get_parent().get_parent() as CharacterBody2D
@@ -28,7 +36,10 @@ func Enter() -> void:
 	player.velocity = Vector2.ZERO
 	player.rotation = 0.0
 	jump_time = 0.0
-	jump_duration = JUMP_DURATION_NORMAL
+	var combo: int = clampi(player_main.trampoline_combo, 0, TRAMPOLINE_COMBO_MAX)
+	jump_duration = JUMP_DURATION_NORMAL * (1.0 + TRAMPOLINE_DURATION_STEP * float(combo))
+	jump_visual_height = JUMP_VISUAL_HEIGHT * (1.0 + TRAMPOLINE_HEIGHT_STEP * float(combo))
+	jump_move_speed = WALK_SPEED_JUMP * (1.0 + TRAMPOLINE_SPEED_STEP * float(combo))
 	# 頭突きは廃止（回避＋ダウン追撃に特化）
 	player_main.pending_headbutt_dir = Vector2.ZERO
 	sprite_node = player_main.sprite if player_main else player.get_node_or_null("AnimatedSprite2D")
@@ -65,7 +76,7 @@ func Update(delta: float) -> void:
 	var mv_up := "MoveUp" if not player_main.is_player_two else "Move2Up"
 	var mv_down := "MoveDown" if not player_main.is_player_two else "Move2Down"
 	var input_dir := Input.get_vector(mv_left, mv_right, mv_up, mv_down).normalized()
-	var move: Vector2 = input_dir * WALK_SPEED_JUMP * delta
+	var move: Vector2 = input_dir * jump_move_speed * delta
 	var p := player.global_position + move
 	p.x = clampf(p.x, player_main.MAT_LEFT, player_main.MAT_RIGHT)
 	p.y = clampf(p.y, player_main.MAT_TOP, player_main.MAT_BOTTOM)
@@ -75,7 +86,7 @@ func Update(delta: float) -> void:
 	var t: float = jump_time / jump_duration
 	var jump_offset: float = 0.0
 	if t < 1.0:
-		jump_offset = 4.0 * JUMP_VISUAL_HEIGHT * t * (1.0 - t)
+		jump_offset = 4.0 * jump_visual_height * t * (1.0 - t)
 	if sprite_node and is_instance_valid(sprite_node):
 		sprite_node.position.y = -jump_offset
 	if jump_time >= jump_duration:
@@ -107,9 +118,10 @@ func _land() -> void:
 				if GameManager.training_mode:
 					GameManager.body_contact_type_text = "フィニッシュ！"
 					GameManager.body_contact_type_timer = 1.5
+				player_main.trampoline_combo = 0
 				state_transition.emit(self, "Idle")
 				return
-			# フライングボディアタック → 敵をジャンプ台にして連続ジャンプ
+			# フライングボディアタック → 敵をジャンプ台にして連続ジャンプ（だんだん高く・遠く）
 			AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 			enemy._take_damage(PRESS_DAMAGE)
 			if player_main.has_method("flash_aerial_hit"):
@@ -120,14 +132,19 @@ func _land() -> void:
 				enemy.hit_particles.emitting = true
 			if enemy.is_dead:
 				em.fly_out_visual(Vector2(cos(randf() * TAU), sin(randf() * TAU)))
+				player_main.trampoline_combo = 0
 			else:
 				GameManager.show_callout(enemy, "フライングボディ！", Color(0.9, 0.5, 1.0, 1.0))
 				em.down_remaining = maxf(em.down_remaining, 1.2)
+				player_main.trampoline_combo = mini(player_main.trampoline_combo + 1, TRAMPOLINE_COMBO_MAX)
 			if GameManager.training_mode:
 				GameManager.body_contact_type_text = "フライングボディ！"
 				GameManager.body_contact_type_timer = 1.5
 			# 着地せず再ジャンプ（連続フライングボディ）
-			state_transition.emit(self, "Jump")
+			if enemy.is_dead:
+				state_transition.emit(self, "Idle")
+			else:
+				state_transition.emit(self, "Jump")
 			return
 		# 非ダウンへ着地＝自分が吹き飛ぶ（攻撃失敗・ダメージなし）
 		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 1)
@@ -146,7 +163,9 @@ func _land() -> void:
 		if GameManager.training_mode:
 			GameManager.body_contact_type_text = "着地失敗！"
 			GameManager.body_contact_type_timer = 1.5
+		player_main.trampoline_combo = 0
 		break
+	player_main.trampoline_combo = 0
 	state_transition.emit(self, "Idle")
 
 func _axis_knockback(to_dir: Vector2, amount: float) -> Vector2:

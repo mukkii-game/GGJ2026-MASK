@@ -38,6 +38,8 @@ const DASH_DURATION := 0.5
 const DASH_SPEED_MULT := 3.0
 ## ジャンプ中か（当たり判定スキップ・Yクランプしない）
 var is_jumping := false
+## ダウン敵連続ジャンプ（ジャンプ台）の段数。威力は同じで高さ・滞空・移動が伸びる
+var trampoline_combo: int = 0
 ## 空中頭突き（P7）: 走行中にジャンプした瞬間の走行方向。JumpStateが消費（ZERO=通常ジャンプ）
 var pending_headbutt_dir := Vector2.ZERO
 ## 着地した直後1フレームだけ体当たりをスキップ（ジャンプ着地時の二重発火防止）
@@ -887,6 +889,7 @@ func _stop_all_motion_on_death() -> void:
 	run_dash_direction = Vector2.ZERO
 	start_auto_run = false
 	is_jumping = false
+	trampoline_combo = 0
 	velocity = Vector2.ZERO
 	kill_motion_tweens()
 	# 影（本体位置）が敵に当たり続けないようコリジョンも切る
