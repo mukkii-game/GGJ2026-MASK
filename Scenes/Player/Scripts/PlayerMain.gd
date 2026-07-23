@@ -142,11 +142,15 @@ func _is_boosted_body_hit(damage_mult: float) -> bool:
 	return damage_mult > 1.5 or rope_bounce_running or is_run_dashing
 
 func _play_shoulder_hit_sound(damage_mult: float) -> void:
+	if is_dead:
+		return
 	var volume: float = 2.0 if _is_boosted_body_hit(damage_mult) else 0.0
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, volume)
 
 ## 接触ヒットSEを必ず鳴らす（通常正面でも無音にしない）
 func _play_contact_hit_sound(boosted: bool = false) -> void:
+	if is_dead:
+		return
 	AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 2.0 if boosted else 0.0)
 	if boosted or rope_bounce_running or is_run_dashing:
 		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
@@ -885,6 +889,12 @@ func _stop_all_motion_on_death() -> void:
 	is_jumping = false
 	velocity = Vector2.ZERO
 	kill_motion_tweens()
+	# 影（本体位置）が敵に当たり続けないようコリジョンも切る
+	collision_layer = 0
+	collision_mask = 0
+	var body_shape := get_node_or_null("BodyCollisionShape") as CollisionShape2D
+	if body_shape:
+		body_shape.disabled = true
 	var we := get_node_or_null("WindEffect")
 	if we:
 		we.visible = false
