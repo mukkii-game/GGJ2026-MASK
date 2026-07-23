@@ -23,10 +23,7 @@ func Enter() -> void:
 		return
 	
 	# ダメージなしのロープ弾き＝かわいいぽよーん
-	if ResourceLoader.exists(AudioManager.POYO_BOUNCE_PATH):
-		AudioManager.play_sound(load(AudioManager.POYO_BOUNCE_PATH) as AudioStream, 0, 0)
-	else:
-		AudioManager.play_sound(AudioManager.COIN_PICK, 0, -2)
+	AudioManager.play_sound(AudioManager.POYO_BOUNCE, 0, 0)
 	GameManager.show_callout(player, "ロープ飛ばし！", Color(0.55, 0.85, 1.0, 1.0))
 	
 	player_main.is_jumping = true

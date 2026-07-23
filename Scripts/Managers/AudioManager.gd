@@ -14,8 +14,8 @@ const POWER_BAIT_GET = preload("res://Art/Audio/Effects/QuestSound.ogg")
 const KILL_MASK = preload("res://Art/Audio/Effects/kill_mask.wav")
 ## 警告音（S4ボスの号令予告など）
 const MASK_WARNING = preload("res://Art/Audio/Effects/mask_ambient1.wav")
-## ロープ飛ばし（ダメージなしのぽよーん）。未インポート時はフォールバック
-const POYO_BOUNCE_PATH := "res://Art/Audio/Effects/poyo_bounce.wav"
+## ロープ飛ばし（ダメージなしのぽよーん）
+const POYO_BOUNCE = preload("res://Art/Audio/Effects/poyo_bounce.wav")
 
 const BGM_BATTLE := preload("res://Art/Audio/MainThemeNew.mp3")
 const BGM_INTRO := preload("res://Art/Audio/Intro.mp3")
