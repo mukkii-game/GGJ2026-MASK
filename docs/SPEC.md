@@ -192,6 +192,7 @@ Enemy は以下の状態（Status）を持つ。
 - 左右ロープ接触時のみ「ロープ跳ね返り」演出
   - Player はロープ端に触れたら反対側へ自動移動（`rope_bounce_running`）
   - ロープバウンド速度は **約800px/s**（以前より減速）
+  - **物理のロープ外壁（collision layer 2）は当てない**（`MAT_COLLISION_MASK=1`）。ジャンプ着地で mask=3 に戻すと端に届かず跳ね返り不能になるバグがあったため、常に1を維持。
 - ノックバック等でマット外へ出た場合は「ロープ飛ばされ（放物線）」へ遷移（`RopeLaunched`）
   - 見た目の回転・放物線は `PlayerRopeLaunchedState.gd` / `EnemyLaunchedState.gd`
 

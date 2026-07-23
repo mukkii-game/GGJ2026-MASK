@@ -50,10 +50,15 @@ func Enter() -> void:
 	body_shape = player.get_node_or_null("BodyCollisionShape") as CollisionShape2D
 	if body_shape:
 		body_shape.disabled = true
-	player.collision_mask = 1
+	# ロープ外壁(layer2)は無効のまま（コードのマット端判定で跳ね返す）
+	player.collision_mask = PlayerMain.MAT_COLLISION_MASK
 
 func Exit() -> void:
 	if not player:
+		return
+	# force_change_state の deferred Exit が後から走ると、既に別ステートなのに
+	# is_jumping / collision_mask を壊す（跳ね返り不能バグの原因）
+	if player_main and player_main.fsm and player_main.fsm.current_state != self:
 		return
 	player_main.is_jumping = false
 	player_main._just_landed_frame = true
@@ -61,7 +66,7 @@ func Exit() -> void:
 		body_shape.disabled = false
 	player.z_index = 0
 	player.rotation = 0.0
-	player.collision_mask = 3
+	player.collision_mask = PlayerMain.MAT_COLLISION_MASK
 	player_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):
 		sprite_node.position = Vector2.ZERO

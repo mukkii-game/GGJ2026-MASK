@@ -43,7 +43,7 @@ func Enter() -> void:
 		body_shape.disabled = true
 	player.z_index = 100
 	# コリジョンマスクを1に変更（layer 2のロープ外の壁をすり抜ける）
-	player.collision_mask = 1
+	player.collision_mask = PlayerMain.MAT_COLLISION_MASK
 	sprite_node = player_main.sprite if player_main else player.get_node_or_null("AnimatedSprite2D")
 	
 	# Enter時に自分の移動・回転Tweenだけをkillしてリセット（他ノードのTweenは巻き込まない）
@@ -62,13 +62,16 @@ func Enter() -> void:
 func Exit() -> void:
 	if not player:
 		return
+	# force_change_state の deferred Exit 対策（既に別ステートなら上書きしない）
+	if player_main and player_main.fsm and player_main.fsm.current_state != self:
+		return
 	player_main.is_jumping = false
 	if body_shape and is_instance_valid(body_shape):
 		body_shape.disabled = false
 	player.z_index = 0
 	player.rotation = 0.0
-	# コリジョンマスクを元に戻す（1 = layer 1 のみ・ロープ外の壁は無効のまま）
-	player.collision_mask = 1
+	# ロープ外壁は無効のまま（跳ね返りはマット端コード判定）
+	player.collision_mask = PlayerMain.MAT_COLLISION_MASK
 	# 自分の移動・回転Tweenだけをkillしてリセット
 	player_main.kill_motion_tweens()
 	if sprite_node and is_instance_valid(sprite_node):

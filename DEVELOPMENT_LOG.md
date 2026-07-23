@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-07-23 — 左右ロープ跳ね返り不能バグ修正
+
+### 原因
+ジャンプ着地（`PlayerJumpState.Exit`）で `collision_mask=3` に戻しており、layer2のロープ外壁に物理で止められ `MAT_LEFT/RIGHT` に届かず跳ね返り判定が発火しなかった。ロープ飛ばし着地は mask=1 のため、一度飛ばされると復帰して見えた。
+
+### 修正
+- ジャンプ Exit も `MAT_COLLISION_MASK=1` を維持
+- force_change_state の deferred Exit が別ステート後にフラグを壊さないようガード
+- `_physics_process` で `is_jumping` と実ステートのズレを自己修復
+
+---
+
 ## 2026-07-23 — クリア下部文言／ダウンz修正／トップロープ追影
 
 ### 変更理由

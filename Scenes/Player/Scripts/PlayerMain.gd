@@ -13,6 +13,8 @@ const MAT_LEFT := 280   # 左ロープの内側端
 const MAT_RIGHT := 1000 # 右ロープの内側端
 const MAT_TOP := 138    # 上ロープ3本の下端よりさらに内側（奥行き見た目用）
 const MAT_BOTTOM := 614 # 下ロープの内側（ロープより上）
+## 通常時 collision_mask（layer1のみ。layer2=ロープ外壁は無効＝コードで跳ね返す）
+const MAT_COLLISION_MASK := 1
 ## カメラ固定位置（画面中央＝マット中央）
 const CAM_CENTER := Vector2(640, 360)
 
@@ -177,7 +179,7 @@ func _ready():
 	if is_player_two and sprite and sprite.sprite_frames:
 		_apply_2p_sprite_frames()
 	# 一旦ロープ以外の背景コリジョン（ロープ外の壁）を無効化：layer1 のみ当たる
-	collision_mask = 1
+	collision_mask = MAT_COLLISION_MASK
 	# アリーナマット（ロープ見た目）参照を取っておく（なくても動作はする）
 	var scene_root: Node = get_tree().current_scene
 	if scene_root:
@@ -310,6 +312,12 @@ func _physics_process(delta: float) -> void:
 		rope_bounce_running = false
 		velocity = Vector2.ZERO
 		return
+	# is_jumping フラグ残留対策（deferred Exit 等でステートとズレた場合）
+	if is_jumping and fsm and fsm.current_state:
+		var sn := String(fsm.current_state.name)
+		if sn != "Jump" and sn != "RopeLaunched":
+			is_jumping = false
+			collision_mask = MAT_COLLISION_MASK
 	# ロープ跳ね返り・マット内クランプは移動の後に実行（SubViewport でも確実に動く）
 	if is_jumping:
 		return
