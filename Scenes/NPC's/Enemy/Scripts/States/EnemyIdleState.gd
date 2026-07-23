@@ -11,6 +11,10 @@ var _timer := 0.0
 func Enter():
 	animator.play("Idle")
 	_timer = idle_duration
+	if enemy and enemy.is_perched and animator:
+		animator.speed_scale = 0.2
+	elif animator:
+		animator.speed_scale = 1.0
 
 func Update(delta: float):
 	# 敵全員凍結モード時は動かない
@@ -18,7 +22,11 @@ func Update(delta: float):
 		return
 	# ポスト上待機中はIdleのまま（StageControllerのend_perchで降臨するまで動かない）
 	if enemy and enemy.is_perched:
+		if animator and animator.speed_scale != 0.2:
+			animator.speed_scale = 0.2
 		return
+	if animator and animator.speed_scale != 1.0:
+		animator.speed_scale = 1.0
 	# プレイヤーが範囲内なら接近・攻撃（チェース）へ
 	if enemy and enemy.player_in_range:
 		state_transition.emit(self, "enemy_chase_state")

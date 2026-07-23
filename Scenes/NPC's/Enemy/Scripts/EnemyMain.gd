@@ -152,15 +152,15 @@ func _process(delta: float) -> void:
 			if _heat_timer >= HEAT_IGNITE_SEC:
 				_heat_timer = 0.0
 				_ignite()
-	# ボス（うに帝）: 高頻度で怒り
-	if is_boss and stage_number == 3 and not is_dead and not awaiting_finisher:
+	# ボス（うに帝）: 高頻度で怒り（ポスト上の高みの見物中は発動しない）
+	if is_boss and stage_number == 3 and not is_dead and not awaiting_finisher and not is_perched:
 		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state():
 			_anger_cycle_timer += delta * 1.6
 			if _anger_cycle_timer >= 8.0:
 				_anger_cycle_timer = 0.0
 				set_angry_for(BOSS_ANGER_DURATION)
-	# 異論マスクも怒り周期
-	if is_boss and stage_number == 4 and not is_dead and not awaiting_finisher:
+	# 異論マスクも怒り周期（ポスト上は発動しない）
+	if is_boss and stage_number == 4 and not is_dead and not awaiting_finisher and not is_perched:
 		if _angry_until <= 0.0 and _weak_until <= 0.0 and not is_in_down_state() and not rope_running:
 			_anger_cycle_timer += delta * 1.4
 			if _anger_cycle_timer >= 9.0:
@@ -193,11 +193,16 @@ func _process(delta: float) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 	if sprite and now < halfcar_white_until:
 		sprite.modulate = Color(2.0, 2.0, 2.0, 1.0)
+	elif sprite and is_perched:
+		# 高みの見物: 赤／青にならない通常色
+		sprite.modulate = body_tint
 	elif sprite and not invincible and not in_down and knockback_stun_remaining <= 0.0:
 		sprite.modulate = _get_state_modulate()
-	# アニメ速度：飛んでいるとき4倍速、プレイヤーと接した直後数秒は2倍速、それ以外は通常
+	# アニメ速度：ポスト上は超ゆっくり／飛んでいるとき4倍速／接触直後2倍速
 	if sprite:
-		if fsm.current_state and fsm.current_state.name.to_lower() == "enemy_launched_state":
+		if is_perched:
+			sprite.speed_scale = 0.2
+		elif fsm.current_state and fsm.current_state.name.to_lower() == "enemy_launched_state":
 			sprite.speed_scale = 4.0
 		elif _player_contact_timer > 0.0:
 			sprite.speed_scale = 2.0
@@ -457,7 +462,7 @@ func request_finisher_qte() -> void:
 	defeated_for_qte.emit(self)
 
 func _update_steam_effect() -> void:
-	var want_steam: bool = enemy_state == EnemyState.Angry and not is_dead and not is_in_down_state()
+	var want_steam: bool = enemy_state == EnemyState.Angry and not is_dead and not is_in_down_state() and not is_perched
 	if want_steam:
 		if _steam_particles == null or not is_instance_valid(_steam_particles):
 			_steam_particles = GPUParticles2D.new()
@@ -543,13 +548,20 @@ func stop_rope_run() -> void:
 	if not is_dead and not is_in_down_state() and fsm:
 		fsm.force_change_state("enemy_idle_state")
 
-## ポスト上待機を開始（S2ボス）。降りてくるまで当たり判定なし・不動
+## ポスト上待機を開始（S2ボス等）。降りてくるまで当たり判定なし・不動・高みの見物
 func start_perch(pos: Vector2) -> void:
 	is_perched = true
 	_perch_pos = pos
 	velocity = Vector2.ZERO
 	global_position = pos
 	z_index = 20  # ロープ・背景より手前に立って見せる
+	clear_angry()
+	_weak_until = 0.0
+	enemy_state = EnemyState.Normal
+	if sprite:
+		sprite.modulate = body_tint
+		sprite.speed_scale = 0.2
+		sprite.rotation = 0.0
 	if fsm and fsm.current_state:
 		fsm.force_change_state("enemy_idle_state")
 
