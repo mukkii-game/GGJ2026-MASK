@@ -109,7 +109,7 @@ func _land() -> void:
 					GameManager.body_contact_type_timer = 1.5
 				state_transition.emit(self, "Idle")
 				return
-			# フライングボディアタック
+			# フライングボディアタック → 敵をジャンプ台にして連続ジャンプ
 			AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 			enemy._take_damage(PRESS_DAMAGE)
 			if player_main.has_method("flash_aerial_hit"):
@@ -126,7 +126,9 @@ func _land() -> void:
 			if GameManager.training_mode:
 				GameManager.body_contact_type_text = "フライングボディ！"
 				GameManager.body_contact_type_timer = 1.5
-			continue
+			# 着地せず再ジャンプ（連続フライングボディ）
+			state_transition.emit(self, "Jump")
+			return
 		# 非ダウンへ着地＝自分が吹き飛ぶ（攻撃失敗・ダメージなし）
 		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_HIT, 0, 1)
 		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -1)

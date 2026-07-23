@@ -29,8 +29,7 @@ var flash_effect_white_texture: Texture2D = null
 ## （以前は get_processed_tweens() で全Tweenをkillしており、UIや他キャラのTweenを巻き込んでいた: KI-02）
 var _motion_tweens: Array[Tween] = []
 
-## 描画順: 足元Yが大きいほど手前。空中は加算。トップロープ空中攻撃は下部ロープより手前
-const DRAW_Z_AIR_BONUS := 800
+## 描画順: キャラスプライト下部（足元）のYのみ。画面上側＝奥（低いz）。トップロープ滞空のみ例外で前面
 const DRAW_Z_TOP_ROPE_BONUS := 2500
 ## トップロープ滞空中（最前面）
 var is_top_rope_aerial: bool = false
@@ -51,11 +50,14 @@ func kill_motion_tweens() -> void:
 func is_airborne_for_draw() -> bool:
 	return false
 
-## 足元基準の描画プライオリティを毎フレーム更新
+## スプライト下部（足元）のワールドY。ジャンプの見た目オフセットは無視し、床上の位置で奥行きを決める。
+## ダウンで90度回転していてもAABBではなくノード足元を使う（寝ている側が手前を奪わない）。
+func get_draw_feet_y() -> float:
+	return global_position.y
+
+## 足元Y基準の描画プライオリティを毎フレーム更新（画面上＝奥）
 func update_draw_priority() -> void:
-	var z: int = int(global_position.y)
-	if is_airborne_for_draw():
-		z += DRAW_Z_AIR_BONUS
+	var z: int = int(get_draw_feet_y())
 	if is_top_rope_aerial:
 		z += DRAW_Z_TOP_ROPE_BONUS
 	z_index = z

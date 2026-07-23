@@ -278,7 +278,7 @@ func _process(delta: float):
 	if is_jumping:
 		var p := global_position
 		global_position.x = clampf(p.x, MAT_LEFT, MAT_RIGHT)
-	# 描画順は CharacterBase.update_draw_priority（足元Y＋空中ボーナス）
+	# 描画順は CharacterBase.update_draw_priority（足元Yのみ）
 	var we = get_node_or_null("WindEffect")
 	if we:
 		we.visible = is_auto_running
