@@ -74,34 +74,58 @@ func stop_bgm() -> void:
 	_bgm_player.stop()
 	_bgm_finished_callback = Callable()
 
-## クリア演出用: カン・カン・カン（ゴング3回）
+## クリア演出用: カン・カン・カン（ベル3連 or ゴング連打）
 func play_gong_triple() -> void:
-	var stream := _load_gong_stream()
-	if stream == null:
+	# ボクシングベル素材は元から3連なので1回再生でOK
+	var bell := _load_stream_first([
+		"res://Art/Audio/Effects/boxing_bell_cc0.mp3",
+		"res://Art/Audio/Effects/boxing_bell_cc0.wav",
+	])
+	if bell:
+		_play_gong_burst(bell, 0.0, 3.0)
 		return
-	_play_gong_burst(stream, 0.0)
-	_play_gong_burst(stream, 0.38)
-	_play_gong_burst(stream, 0.76)
+	var gong := _load_gong_once_stream()
+	if gong:
+		_play_gong_burst(gong, 0.0, 2.0)
+		_play_gong_burst(gong, 0.38, 2.0)
+		_play_gong_burst(gong, 0.76, 2.0)
+		return
+	_play_announce("res://Art/Audio/Effects/announce_match_end.mp3")
 
-## 登場画面・試合開始など: ゴング1回（金属のカーン）
+## 試合開始・やっちまえ前など: 金属ゴング1打（カーン）
 func play_gong_once() -> void:
-	var stream := _load_gong_stream()
-	if stream == null:
+	var stream := _load_gong_once_stream()
+	if stream:
+		_play_gong_burst(stream, 0.0, 3.0)
 		return
-	_play_gong_burst(stream, 0.0)
+	_play_announce("res://Art/Audio/Effects/announce_match_start.mp3")
 
-## 本物のゴング音のみ。がやがや環境音はフォールバックに使わない
-func _load_gong_stream() -> AudioStream:
-	for path in ["res://Art/Audio/Effects/gong.wav", "res://Art/Audio/Effects/gong.ogg"]:
+## 単発カーン用（実録音 CC0 → 合成wav）
+func _load_gong_once_stream() -> AudioStream:
+	return _load_stream_first([
+		"res://Art/Audio/Effects/gong_strong_cc0.mp3",
+		"res://Art/Audio/Effects/gong_strong_cc0.wav",
+		"res://Art/Audio/Effects/gong.wav",
+		"res://Art/Audio/Effects/gong.ogg",
+	])
+
+func _load_stream_first(paths: Array) -> AudioStream:
+	for path in paths:
 		if ResourceLoader.exists(path):
 			return load(path) as AudioStream
-	push_warning("AudioManager: gong.wav が見つかりません（金属ゴング未配置）")
 	return null
 
-func _play_gong_burst(stream: AudioStream, delay_sec: float) -> void:
+func _play_announce(path: String) -> void:
+	var stream := _load_stream_first([path])
+	if stream == null:
+		push_warning("AudioManager: アナウンス音声がありません: " + path)
+		return
+	_play_gong_burst(stream, 0.0, 4.0)
+
+func _play_gong_burst(stream: AudioStream, delay_sec: float, volume_db: float = 2.0) -> void:
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
-	player.volume_db = 2.0
+	player.volume_db = volume_db
 	add_child(player)
 	if delay_sec <= 0.0:
 		player.play()
