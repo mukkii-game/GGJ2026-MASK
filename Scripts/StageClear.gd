@@ -1,6 +1,7 @@
 extends Control
-## ステージクリア画面。倒したボスの顔を表示。右上1/4はモザイクで隠し、その上に「STAGE CLEAR!」とメッセージを表示。
-## 何かキー/マウスで次へ（ステージ4の次はエンディング）
+## ステージクリア画面。倒したボスの顔を表示。
+## S2〜S4: 右上にモザイク＋「〇〇のマスクを剥いだ！」
+## S1: モザイクなし。文言は画面下部に表示。
 
 var _can_advance := false
 
@@ -9,7 +10,7 @@ func _ready() -> void:
 	set_process_input(true)
 	# クリア画面は一旦無音（専用曲は後日用意）。戦闘BGMを止める
 	AudioManager.stop_bgm()
-	# ステージ番号表示（右上1/4のモザイク上）
+	# ステージ番号表示
 	var stage_label = get_node_or_null("FaceCover/TextPanel/VBox/StageNumber")
 	if stage_label:
 		stage_label.text = "STAGE " + str(GameManager.current_stage) + " CLEAR!"
@@ -26,14 +27,41 @@ func _ready() -> void:
 	if blur_rect and tex:
 		blur_rect.texture = tex
 	
-	# 勝利メッセージ（右上1/4）：「〇〇のマスクを剥いだ！」
 	var boss_name := _get_boss_name(GameManager.current_stage)
-	var message_label = get_node_or_null("FaceCover/TextPanel/VBox/Message")
-	if message_label:
-		message_label.text = boss_name + "のマスクを剥いだ！"
+	var peel_text := boss_name + "のマスクを剥いだ！"
+	var message_label = get_node_or_null("FaceCover/TextPanel/VBox/Message") as Label
+	
+	if GameManager.current_stage == 1:
+		# ザコ面: モザイク不要。文言は画面下部
+		if blur_rect:
+			blur_rect.visible = false
+		if message_label:
+			message_label.visible = false
+		_add_bottom_peel_label(peel_text)
+	else:
+		if message_label:
+			message_label.visible = true
+			message_label.text = peel_text
 	
 	# 1秒間は進めない
 	get_tree().create_timer(1.0).timeout.connect(_on_advance_allowed)
+
+func _add_bottom_peel_label(text: String) -> void:
+	var label := Label.new()
+	label.name = "BottomPeelMessage"
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 40)
+	label.add_theme_color_override("font_color", Color(0.98, 0.98, 0.98, 1.0))
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	label.add_theme_constant_override("outline_size", 6)
+	label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	label.offset_left = 24.0
+	label.offset_right = -24.0
+	label.offset_top = -110.0
+	label.offset_bottom = -36.0
+	add_child(label)
 
 func _on_advance_allowed() -> void:
 	_can_advance = true

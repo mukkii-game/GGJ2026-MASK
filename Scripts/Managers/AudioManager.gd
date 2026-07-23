@@ -76,7 +76,7 @@ func stop_bgm() -> void:
 	_bgm_player.stop()
 	_bgm_finished_callback = Callable()
 
-## クリア演出用: カン・カン・カン（ベル3連 or ゴング連打）
+## クリア演出用: カン・カン・カン（ベル3連）
 func play_gong_triple() -> void:
 	# ボクシングベル素材は元から3連なので1回再生でOK
 	var bell := _load_stream_first([
@@ -86,33 +86,23 @@ func play_gong_triple() -> void:
 	if bell:
 		_play_gong_burst(bell, 0.0, 3.0)
 		return
-	var gong := _load_gong_once_stream()
-	if gong:
-		_play_gong_burst(gong, 0.0, 2.0)
-		_play_gong_burst(gong, 0.38, 2.0)
-		_play_gong_burst(gong, 0.76, 2.0)
-		return
 	_play_announce("res://Art/Audio/Effects/announce_match_end.mp3")
 
-## 試合開始・やっちまえ前など: 金属ゴング1打（カーン）
-## 音量は線形で約1/3（+3dB → 約 -6.5dB）
+## 試合開始など: 決着ベルの「最初のカン」だけ（同じ音色）
+## 音量は線形で約1/3
 const GONG_ONCE_VOLUME_DB := -6.5
+## 3連ベルのうち先頭1打分の長さ（秒）
+const GONG_ONCE_CLIP_SEC := 0.42
 
 func play_gong_once() -> void:
-	var stream := _load_gong_once_stream()
+	var stream := _load_stream_first([
+		"res://Art/Audio/Effects/boxing_bell_cc0.mp3",
+		"res://Art/Audio/Effects/boxing_bell_cc0.wav",
+	])
 	if stream:
-		_play_gong_burst(stream, 0.0, GONG_ONCE_VOLUME_DB)
+		_play_gong_burst(stream, 0.0, GONG_ONCE_VOLUME_DB, GONG_ONCE_CLIP_SEC)
 		return
 	_play_announce("res://Art/Audio/Effects/announce_match_start.mp3")
-
-## 単発カーン用（実録音 CC0 → 合成wav）
-func _load_gong_once_stream() -> AudioStream:
-	return _load_stream_first([
-		"res://Art/Audio/Effects/gong_strong_cc0.mp3",
-		"res://Art/Audio/Effects/gong_strong_cc0.wav",
-		"res://Art/Audio/Effects/gong.wav",
-		"res://Art/Audio/Effects/gong.ogg",
-	])
 
 func _load_stream_first(paths: Array) -> AudioStream:
 	for path in paths:
@@ -127,21 +117,30 @@ func _play_announce(path: String) -> void:
 		return
 	_play_gong_burst(stream, 0.0, 4.0)
 
-func _play_gong_burst(stream: AudioStream, delay_sec: float, volume_db: float = 2.0) -> void:
+## max_play_sec > 0 ならその秒数で止める（3連ベルの先頭カンだけ再生用）
+func _play_gong_burst(stream: AudioStream, delay_sec: float, volume_db: float = 2.0, max_play_sec: float = 0.0) -> void:
 	var player := AudioStreamPlayer.new()
 	player.stream = stream
 	player.volume_db = volume_db
 	add_child(player)
-	if delay_sec <= 0.0:
+	var start_play := func() -> void:
+		if not is_instance_valid(player):
+			return
 		player.play()
-		player.finished.connect(player.queue_free)
+		if max_play_sec > 0.0:
+			var clip_t := get_tree().create_timer(max_play_sec)
+			clip_t.timeout.connect(func() -> void:
+				if is_instance_valid(player):
+					player.stop()
+					player.queue_free()
+			)
+		else:
+			player.finished.connect(player.queue_free)
+	if delay_sec <= 0.0:
+		start_play.call()
 	else:
 		var t := get_tree().create_timer(delay_sec)
-		t.timeout.connect(func() -> void:
-			if is_instance_valid(player):
-				player.play()
-				player.finished.connect(player.queue_free)
-		)
+		t.timeout.connect(start_play)
 
 func _on_bgm_finished() -> void:
 	if _bgm_finished_callback.is_valid():
