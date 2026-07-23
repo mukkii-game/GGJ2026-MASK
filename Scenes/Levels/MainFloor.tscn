@@ -37,7 +37,7 @@ position = Vector2(840, 360)
 scale = Vector2(1, 1)
 is_player_two = true
 
-[node name="NPCs" type="Node" parent="." unique_id=1564613766]
+[node name="NPCs" type="Node2D" parent="." unique_id=1564613766]
 
 [node name="EnemyBounce" parent="NPCs" unique_id=1677050120 instance=ExtResource("2_gsqk0")]
 modulate = Color(0.35, 1, 0.35, 1)

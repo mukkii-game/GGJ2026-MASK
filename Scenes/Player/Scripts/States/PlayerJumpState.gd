@@ -102,7 +102,7 @@ func _land() -> void:
 		var enemy = node as CharacterBase
 		if not is_instance_valid(enemy) or enemy.is_dead:
 			continue
-		if enemy is EnemyMain and ((enemy as EnemyMain).is_ring_in_effect_only() or (enemy as EnemyMain).is_perched):
+		if enemy is EnemyMain and ((enemy as EnemyMain).is_ring_in_effect_only() or (enemy as EnemyMain).is_perched or (enemy as EnemyMain).is_top_rope_aerial):
 			continue
 		if absf(land_pos.x - enemy.global_position.x) > 2.0 * half or absf(land_pos.y - enemy.global_position.y) > 2.0 * half:
 			continue

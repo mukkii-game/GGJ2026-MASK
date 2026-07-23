@@ -30,11 +30,15 @@ var flash_effect_white_texture: Texture2D = null
 var _motion_tweens: Array[Tween] = []
 
 ## 描画順: キャラスプライト下部（足元）のYのみ。画面上側＝奥（低いz）。トップロープ滞空のみ例外で前面
+## ※ Godot の z_index は概ね ±4096。範囲外代入はエラーで無視されるため、帯をこの中に収める。
 const DRAW_Z_TOP_ROPE_BONUS := 2500
-## ダウン中は誰よりも奥（寝ているキャラが手前を奪わない）
-const DRAW_Z_DOWN_PENALTY := 8000
+## ダウン中は立ちキャラ帯（足元Y≒100〜700）より常に低い固定帯へ
+const DRAW_Z_DOWNED_BASE := -2800
 ## トップロープ滞空中（最前面）
 var is_top_rope_aerial: bool = false
+## トップロープ擬似高さ（マット平面座標は global_position、見た目はスプライトYオフセット）
+var top_rope_height: float = 0.0
+var _top_rope_sprite_base_y: float = 0.0
 
 ## 位置・回転を動かすTweenを登録する。ジャンプ/ロープ飛ばし開始時にまとめてkillされる
 func register_motion_tween(t: Tween) -> void:
@@ -62,14 +66,37 @@ func get_draw_feet_y() -> float:
 
 ## 足元Y基準の描画プライオリティを毎フレーム更新（画面上＝奥）
 func update_draw_priority() -> void:
-	var z: int = int(get_draw_feet_y())
+	z_as_relative = false
+	var z: int
 	if is_downed_for_draw():
-		z -= DRAW_Z_DOWN_PENALTY
+		# ダウン同士の前後だけ足元Yで微差。立ちキャラ（>=100前後）より必ず奥
+		z = DRAW_Z_DOWNED_BASE + int(get_draw_feet_y() / 20.0)
 	elif is_top_rope_aerial:
-		z += DRAW_Z_TOP_ROPE_BONUS
-	z_index = z
+		z = int(get_draw_feet_y()) + DRAW_Z_TOP_ROPE_BONUS
+	else:
+		z = int(get_draw_feet_y())
+	z_index = clampi(z, -4095, 4095)
+
+## トップロープ擬似高さの見た目をスプライトに反映（マット座標は動かさない）
+func apply_top_rope_visual_height() -> void:
+	if not sprite:
+		return
+	sprite.position.y = _top_rope_sprite_base_y - top_rope_height
+
+func begin_top_rope_flight() -> void:
+	is_top_rope_aerial = true
+	if sprite:
+		_top_rope_sprite_base_y = sprite.position.y
+	top_rope_height = 0.0
+
+func end_top_rope_flight() -> void:
+	is_top_rope_aerial = false
+	top_rope_height = 0.0
+	if sprite:
+		sprite.position.y = _top_rope_sprite_base_y
 
 func _ready():
+	z_as_relative = false
 	max_health = health  # 初期HPを記録
 	init_character()
 	

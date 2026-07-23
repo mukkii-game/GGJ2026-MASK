@@ -183,6 +183,14 @@ func _process(delta: float) -> void:
 	super._process(delta)
 	if is_dead or GameManager.enemies_frozen:
 		return
+	# トップロープ滞空中は StageController がマット平面座標と擬似高さを制御
+	if is_top_rope_aerial:
+		velocity = Vector2.ZERO
+		apply_top_rope_visual_height()
+		if sprite:
+			sprite.speed_scale = 4.0
+			sprite.modulate = body_tint
+		return
 	var in_ring_in: bool = fsm.current_state and fsm.current_state.name.to_lower() == "enemy_ring_in_state"
 	var in_down: bool = fsm.current_state and fsm.current_state.name.to_lower() == "enemy_down_state"
 	# ノックバックティーン中は押し離しをスキップ（半キャラずらしで飛ばす距離が短くならないように）

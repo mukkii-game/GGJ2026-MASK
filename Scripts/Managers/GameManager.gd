@@ -23,6 +23,9 @@ func freeze_battle_for_game_over() -> void:
 		if em.rope_running:
 			em.stop_rope_run()
 		em.is_top_rope_aerial = false
+		em.top_rope_height = 0.0
+		if em.has_method("end_top_rope_flight"):
+			em.end_top_rope_flight()
 		if em.fsm:
 			em.fsm.force_change_state("enemy_idle_state")
 		if em.sprite and em.sprite.has_method("play"):

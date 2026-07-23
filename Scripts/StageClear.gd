@@ -1,7 +1,6 @@
 extends Control
-## ステージクリア画面。倒したボスの顔を表示。
-## S2〜S4: 右上にモザイク＋「〇〇のマスクを剥いだ！」
-## S1: モザイクなし。文言は画面下部に表示。
+## ステージクリア画面。倒したボスの一枚絵を全面表示。
+## 全ステージ共通: モザイクなし。剥ぎ文言は画面下部（登場用の書き文字入り絵ではなく、文字なし絵を優先）。
 
 var _can_advance := false
 
@@ -10,13 +9,13 @@ func _ready() -> void:
 	set_process_input(true)
 	# クリア画面は一旦無音（専用曲は後日用意）。戦闘BGMを止める
 	AudioManager.stop_bgm()
-	# ステージ番号表示
+	# ステージ番号表示（右上パネル内。剥ぎ文言は出さない）
 	var stage_label = get_node_or_null("FaceCover/TextPanel/VBox/StageNumber")
 	if stage_label:
 		stage_label.text = "STAGE " + str(GameManager.current_stage) + " CLEAR!"
 	
-	# ボス顔画像（ステージごと: iron_mask_title1〜4 を背景に使用）
-	var texture_path := "res://Art/Sprites/iron_mask_title%d.png" % clampi(GameManager.current_stage, 1, 4)
+	# 文字なし一枚絵を優先（なければ title にフォールバック）
+	var texture_path := _resolve_clear_art_path(GameManager.current_stage)
 	var tex: Texture2D = null
 	if ResourceLoader.exists(texture_path):
 		tex = load(texture_path) as Texture2D
@@ -24,27 +23,33 @@ func _ready() -> void:
 	if boss_face and tex:
 		boss_face.texture = tex
 	var blur_rect = get_node_or_null("FaceCover/BlurMosaicRect")
-	if blur_rect and tex:
-		blur_rect.texture = tex
+	if blur_rect:
+		blur_rect.visible = false
+		if tex:
+			blur_rect.texture = tex
 	
 	var boss_name := _get_boss_name(GameManager.current_stage)
 	var peel_text := boss_name + "のマスクを剥いだ！"
 	var message_label = get_node_or_null("FaceCover/TextPanel/VBox/Message") as Label
-	
-	if GameManager.current_stage == 1:
-		# ザコ面: モザイク不要。文言は画面下部
-		if blur_rect:
-			blur_rect.visible = false
-		if message_label:
-			message_label.visible = false
-		_add_bottom_peel_label(peel_text)
-	else:
-		if message_label:
-			message_label.visible = true
-			message_label.text = peel_text
+	if message_label:
+		message_label.visible = false
+	_add_bottom_peel_label(peel_text)
 	
 	# 1秒間は進めない
 	get_tree().create_timer(1.0).timeout.connect(_on_advance_allowed)
+
+## クリア用: 書き文字なし一枚絵を優先。未配置なら title にフォールバック。
+func _resolve_clear_art_path(stage: int) -> String:
+	var s := clampi(stage, 1, 4)
+	for path in [
+		"res://Art/Sprites/iron_mask_clear%d.png" % s,
+		"res://Art/Sprites/iron_mask_title%d_notext.png" % s,
+		"res://Art/Sprites/iron_mask_title%d_clear.png" % s,
+		"res://Art/Sprites/iron_mask_title%d.png" % s,
+	]:
+		if ResourceLoader.exists(path):
+			return path
+	return "res://Art/Sprites/iron_mask_title1.png"
 
 func _add_bottom_peel_label(text: String) -> void:
 	var label := Label.new()
