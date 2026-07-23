@@ -24,10 +24,8 @@ var _right_tween: Tween
 var _top_tween: Tween
 var _bottom_tween: Tween
 
-## 下部ロープはキャラより手前（通常ジャンプ含む）。上部ロープは奥寄り。
-const ROPE_BOTTOM_Z := 1800
-const ROPE_TOP_Z := 155
-
+## 下部／上部の ColorRect ロープ重ね描きは、背景(ring_bg)と位置がずれるため一旦オフ。
+## （前後関係の補正は、位置合わせできるスプライトができてから再開）
 func _ready() -> void:
 	_setup_rope_draw_layers()
 	if rope_left:
@@ -43,23 +41,13 @@ func _ready() -> void:
 		_bottom_orig_top = rope_bottom.offset_top
 		_bottom_orig_bottom = rope_bottom.offset_bottom
 
-## ring_bg にロープが焼き付いているため、重ね描きで前後関係を補正する
 func _setup_rope_draw_layers() -> void:
 	var bottom := get_node_or_null("RopeBottom") as Node2D
 	if bottom:
-		bottom.visible = true
-		bottom.z_as_relative = false
-		bottom.z_index = ROPE_BOTTOM_Z
+		bottom.visible = false
 	var frame := get_node_or_null("RopeFrameBack") as Node2D
 	if frame:
-		frame.visible = true
-		frame.z_as_relative = false
-		frame.z_index = ROPE_TOP_Z
-		# 左右は背景絵のまま。上部3本だけ手前／奥の補正に使う
-		for n in ["RopeLeft1", "RopeLeft2", "RopeLeft3", "RopeRight1", "RopeRight2", "RopeRight3"]:
-			var side := frame.get_node_or_null(n) as CanvasItem
-			if side:
-				side.visible = false
+		frame.visible = false
 
 func _process(_delta: float) -> void:
 	if mat_rect:
