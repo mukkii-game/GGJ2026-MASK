@@ -33,6 +33,8 @@ var _top_rope_boss: EnemyMain = null
 var _top_rope_land_pos: Vector2 = Vector2.ZERO
 const TOP_ROPE_AIR_SEC := 4.0
 const TOP_ROPE_DAMAGE := 30
+## トップロープ空振り時のダウン秒数（通常ダウンより短い）
+const TOP_ROPE_MISS_DOWN_SEC := 1.0
 var _next_pack_id: int = 1
 ## S4ボスギミック（号令とロープ走行を交互）
 var _gimmick_timer: float = 0.0
@@ -689,8 +691,12 @@ func _update_boss_top_rope(delta: float) -> void:
 	if _top_rope_active:
 		_top_rope_timer += delta
 		if is_instance_valid(_top_rope_shadow):
-			# 影を点滅
-			_top_rope_shadow.modulate.a = 0.35 + 0.35 * absf(sin(_top_rope_timer * 8.0))
+			# 影を点滅（回避合図）
+			var pulse := 0.55 + 0.45 * absf(sin(_top_rope_timer * 9.0))
+			_top_rope_shadow.modulate.a = pulse
+			# 着地直前はさらに強調
+			if _top_rope_timer >= TOP_ROPE_AIR_SEC - 0.6:
+				_top_rope_shadow.scale = Vector2.ONE * (1.0 + 0.15 * sin(_top_rope_timer * 20.0))
 		if _top_rope_timer >= TOP_ROPE_AIR_SEC:
 			_finish_top_rope_attack()
 		return
@@ -720,20 +726,45 @@ func _start_top_rope_attack(boss: EnemyMain) -> void:
 	boss.start_perch(PERCH_POS_LEFT if boss.global_position.x < 640 else PERCH_POS_RIGHT)
 	GameManager.show_callout(boss, "トップロープ！！", Color(1.0, 0.4, 0.2, 1.0))
 	AudioManager.play_sound(AudioManager.MASK_WARNING, 0, 0)
-	# 着地点の影
-	_top_rope_shadow = Polygon2D.new()
-	_top_rope_shadow.polygon = PackedVector2Array([
-		Vector2(-36, -18), Vector2(36, -18), Vector2(36, 18), Vector2(-36, 18)
-	])
-	_top_rope_shadow.z_index = 5
-	_top_rope_shadow.color = Color(0.05, 0.05, 0.05, 0.55)
+	# 着地点の影（床上・はっきり見える・ここへ落ちる）
+	_top_rope_shadow = _make_top_rope_shadow()
 	var parent: Node = boss.get_parent()
 	if parent:
 		parent.add_child(_top_rope_shadow)
 		_top_rope_shadow.global_position = _top_rope_land_pos
 
+func _make_top_rope_shadow() -> Node2D:
+	var root := Node2D.new()
+	root.name = "TopRopeShadow"
+	root.z_as_relative = false
+	# 足元Y付近＋少し手前寄りで、マット上の着地予告として見えるようにする
+	root.z_index = int(_top_rope_land_pos.y) + 40
+	# 楕円影（大きめ・濃いめ）
+	var oval := Polygon2D.new()
+	var pts := PackedVector2Array()
+	var rx := 58.0
+	var ry := 28.0
+	for i in 24:
+		var a := TAU * float(i) / 24.0
+		pts.append(Vector2(cos(a) * rx, sin(a) * ry))
+	oval.polygon = pts
+	oval.color = Color(0.02, 0.02, 0.05, 0.72)
+	root.add_child(oval)
+	# 外側リング（回避しやすさ用）
+	var ring := Line2D.new()
+	ring.width = 3.0
+	ring.default_color = Color(1.0, 0.25, 0.15, 0.85)
+	var ring_pts := PackedVector2Array()
+	for i in 25:
+		var a2 := TAU * float(i) / 24.0
+		ring_pts.append(Vector2(cos(a2) * (rx + 4.0), sin(a2) * (ry + 4.0)))
+	ring.points = ring_pts
+	root.add_child(ring)
+	return root
+
 func _finish_top_rope_attack() -> void:
 	_top_rope_active = false
+	var land_pos := _top_rope_land_pos
 	if is_instance_valid(_top_rope_shadow):
 		_top_rope_shadow.queue_free()
 	_top_rope_shadow = null
@@ -742,20 +773,20 @@ func _finish_top_rope_attack() -> void:
 	if not is_instance_valid(boss) or boss.is_dead:
 		return
 	boss.is_top_rope_aerial = false
-	# 降臨
+	# 影の位置へ降臨
 	boss.is_perched = false
-	boss.z_index = 0
-	boss.global_position = _top_rope_land_pos
+	boss.global_position = land_pos
 	boss.velocity = Vector2.ZERO
+	boss.update_draw_priority()
 	if boss.fsm:
 		boss.fsm.force_change_state("enemy_idle_state")
-	# 着地点付近のプレイヤーにダメージ / いなければボスがダウン
+	# 着地点付近のプレイヤーにダメージ / いなければボスが短ダウン
 	var hit_player := false
 	for node in get_tree().get_nodes_in_group("Player"):
 		var p := node as CharacterBase
 		if not is_instance_valid(p) or p.is_dead:
 			continue
-		if p.global_position.distance_to(_top_rope_land_pos) <= 70.0:
+		if p.global_position.distance_to(land_pos) <= 70.0:
 			hit_player = true
 			if p.has_method("take_damage_from_enemy"):
 				p.take_damage_from_enemy(TOP_ROPE_DAMAGE)
@@ -766,7 +797,7 @@ func _finish_top_rope_attack() -> void:
 		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
 	else:
 		GameManager.show_callout(boss, "空振り！", Color(0.5, 1.0, 0.5, 1.0))
-		boss.enter_down(EnemyMain.GRAZE_DOWN_SEC)
+		boss.enter_down(TOP_ROPE_MISS_DOWN_SEC)
 		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -2)
 
 ## ザコ種類ごとのスプライト（マスク色で差別化。小型同一顔は廃止）

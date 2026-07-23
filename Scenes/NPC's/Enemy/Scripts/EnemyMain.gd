@@ -597,6 +597,10 @@ func is_rope_launched() -> bool:
 func is_in_down_state() -> bool:
 	return fsm.current_state and fsm.current_state.name.to_lower() == "enemy_down_state"
 
+## ダウン中は描画を最奥に
+func is_downed_for_draw() -> bool:
+	return is_in_down_state()
+
 ## ボスがダメージを受けたら超高速離脱フラグを立てる。ヒートマンは被弾で発熱タイマーがリセットされる
 func _on_took_damage(_amount: int) -> void:
 	if is_boss:

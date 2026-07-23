@@ -31,6 +31,8 @@ var _motion_tweens: Array[Tween] = []
 
 ## 描画順: キャラスプライト下部（足元）のYのみ。画面上側＝奥（低いz）。トップロープ滞空のみ例外で前面
 const DRAW_Z_TOP_ROPE_BONUS := 2500
+## ダウン中は誰よりも奥（寝ているキャラが手前を奪わない）
+const DRAW_Z_DOWN_PENALTY := 8000
 ## トップロープ滞空中（最前面）
 var is_top_rope_aerial: bool = false
 
@@ -50,15 +52,20 @@ func kill_motion_tweens() -> void:
 func is_airborne_for_draw() -> bool:
 	return false
 
+## ダウン中か（描画を最奥にするため）。子でオーバーライド
+func is_downed_for_draw() -> bool:
+	return false
+
 ## スプライト下部（足元）のワールドY。ジャンプの見た目オフセットは無視し、床上の位置で奥行きを決める。
-## ダウンで90度回転していてもAABBではなくノード足元を使う（寝ている側が手前を奪わない）。
 func get_draw_feet_y() -> float:
 	return global_position.y
 
 ## 足元Y基準の描画プライオリティを毎フレーム更新（画面上＝奥）
 func update_draw_priority() -> void:
 	var z: int = int(get_draw_feet_y())
-	if is_top_rope_aerial:
+	if is_downed_for_draw():
+		z -= DRAW_Z_DOWN_PENALTY
+	elif is_top_rope_aerial:
 		z += DRAW_Z_TOP_ROPE_BONUS
 	z_index = z
 
