@@ -898,6 +898,8 @@ func _die():
 	_stop_all_motion_on_death()
 	# ゲームオーバー中はバトルを止める（敵は待機モーションのみ）＋SE全停止
 	GameManager.freeze_battle_for_game_over()
+	# 断末魔（ヤラレ声）。stop_all_sfx のあとも必ず鳴らす
+	AudioManager.play_sound_even_if_muted(AudioManager.ENEMY_HIT, 0.0, 2.0)
 	super() #calls _die() on base-class CharacterBase
 	
 	fsm.force_change_state("Die")

@@ -197,6 +197,18 @@ func stop_all_sfx() -> void:
 func unmute_sfx() -> void:
 	_sfx_muted = false
 
+## ミュート中でも鳴らす（プレイヤー断末魔など、stop_all_sfx の直後用）
+func play_sound_even_if_muted(audiostream: AudioStream, offset: float = 0.0, volume: float = 0.0) -> void:
+	if audiostream == null:
+		return
+	var player := AudioStreamPlayer.new()
+	player.stream = audiostream
+	player.volume_db = volume
+	player.pitch_scale = randf_range(0.95, 1.05)
+	add_child(player)
+	player.play(offset)
+	player.finished.connect(player.queue_free)
+
 #Instantiate audiostreams into the scene
 func initiate_audio_stream():
 	for i in range(starting_players):

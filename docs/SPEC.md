@@ -214,10 +214,13 @@ Enemy は以下の状態（Status）を持つ。
 ### 9.0.1 トップロープ攻撃（ボス共通・現行）
 - 発生: ボスHP **50%以下で1回目**、**25%以下で2回目**（`StageController`）。
 - 流れ:
-  1. **追尾**（約2.6秒）: ボスは擬似高さで空中移動。マット平面座標はプレイヤーを追う。影はボスのマット投影（真下）。
-  2. **ロック**（約1.1秒）: 追尾停止＝回避窓。影固定。高さはまだ高い。
-  3. **落下**（約0.45秒）: 固定位置へ急降下。半径70以内ならプレイヤー大ダメ、外れればボス短ダウン（1秒）。
-- 滞空中は体当たり・ジャンプ対象外（`is_top_rope_aerial`）。
+  1. **接近**（高速）: 近い方のコーナーポスト（トップロープ）へマット上を移動して載る（ワープしない）。
+  2. **マウント**（約0.4秒）: ポスト上で一瞬見せる。
+  3. **追尾**（約2.6秒）: 擬似高さで空中移動。スプライトを超高速回転（約2880°/秒）。マット平面はプレイヤー追従。影は真下（楕円 rx116×ry56＝旧約2倍）。
+  4. **ロック**（約1.1秒）: 追尾停止＝回避窓。影固定。回転継続。
+  5. **落下**（約0.45秒）: 急降下。着地衝撃波＝影楕円と同じ範囲。
+- 衝撃波: **プレイヤーとザコ**（ボス本人以外）が被弾（`TOP_ROPE_DAMAGE`）。ザコ巻き込み可。プレイヤー非被弾かつザコも非被弾ならボス短ダウン（1秒）。
+- 滞空中は体当たり・ジャンプ対象外（`is_top_rope_aerial`）。接近〜マウント中は無敵。
 
 ### 9.1 ステージ1のクリア条件（v0.4: 撃破ノルマ方式）
 - `StageController._setup_normal_params()`: `initial_count: 1`, `total_quota: 10`, `cap_max: 4`, `ramp_interval: 10.0`
@@ -746,7 +749,7 @@ Enemy は以下の状態（Status）を持つ。
   - **全ステージ**: モザイクなし。「〇〇のマスクを剥いだ！」は**画面下部**。  
   - `StageClear.gd` で 1秒後に入力受付し、キー/クリックで `GameManager.load_next_stage()` を呼ぶ。  
   - `load_next_stage()` は `StageIntro.tscn` →（入力で）`GameWrapper.tscn` へ遷移。ステージ4の次は `Ending.tscn`。
-- **Lose（現行）**: Player HP==0 で `PlayerMain._die()` がロープ往復・走りを即停止し影を消し、`GameManager.freeze_battle_for_game_over()` で敵を **Idle 待機に固定**＋**SE全停止**したうえで `Scenes/Misc/DeathScreen.tscn` を表示。
+- **Lose（現行）**: Player HP==0 で `PlayerMain._die()` がロープ往復・走りを即停止し影を消し、`GameManager.freeze_battle_for_game_over()` で敵を **Idle 待機に固定**＋**SE全停止**したうえで **断末魔SE**（`ENEMY_HIT`／`play_sound_even_if_muted`）を鳴らし、`Scenes/Misc/DeathScreen.tscn` を表示。
   - DeathScreen は **コンティニュー / タイトルに戻る / 終了する** を上下で選択（`Scripts/Reset.gd`）。再戦・タイトル復帰で SE ミュート解除。
 - **Clear 演出（現行）**: クリア確定後に `AudioManager.play_gong_triple()`（カンカンカン）→ 約 **2.2秒** 後にクリア画面。
 

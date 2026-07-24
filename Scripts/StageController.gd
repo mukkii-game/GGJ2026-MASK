@@ -25,16 +25,19 @@ var _s1_phase: int = 0  # 0=1匹教習 1=ゴング待ち 2=やっちまえ後群
 var _s1_swarm_delay: float = -1.0
 const S1_SWARM_DELAY_SEC := 2.0
 ## ボス・トップロープ攻撃（低HPで最大2回）
-## フェーズ: 追尾（影＝ボス真下・プレイヤー追従）→ ロック（回避窓）→ 落下
-enum TopRopePhase { CHASE, LOCK, FALL }
+## フェーズ: 高速でトップロープへ接近→載る→追尾（超高速回転＋影）→ロック→落下衝撃波
+enum TopRopePhase { APPROACH, MOUNT, CHASE, LOCK, FALL }
 var _top_rope_count: int = 0
 var _top_rope_active: bool = false
 var _top_rope_timer: float = 0.0
-var _top_rope_phase: TopRopePhase = TopRopePhase.CHASE
+var _top_rope_phase: TopRopePhase = TopRopePhase.APPROACH
 var _top_rope_shadow: Node2D = null
 var _top_rope_boss: EnemyMain = null
 var _top_rope_land_pos: Vector2 = Vector2.ZERO
 var _top_rope_fall_from_h: float = 0.0
+var _top_rope_perch_target: Vector2 = Vector2.ZERO
+const TOP_ROPE_APPROACH_SPEED := 780.0
+const TOP_ROPE_MOUNT_SEC := 0.4
 const TOP_ROPE_CHASE_SEC := 2.6
 const TOP_ROPE_LOCK_SEC := 1.1
 const TOP_ROPE_FALL_SEC := 0.45
@@ -42,6 +45,11 @@ const TOP_ROPE_CHASE_SPEED := 220.0
 const TOP_ROPE_HEIGHT_BASE := 160.0
 const TOP_ROPE_HEIGHT_AMP := 55.0
 const TOP_ROPE_DAMAGE := 30
+## 空中のぐるんぐるん回転（度/秒）
+const TOP_ROPE_SPIN_DEG_PER_SEC := 2880.0
+## 影楕円（旧58x28の約2倍）。着地衝撃波範囲も同じ
+const TOP_ROPE_SHADOW_RX := 116.0
+const TOP_ROPE_SHADOW_RY := 56.0
 ## トップロープ空振り時のダウン秒数（通常ダウンより短い）
 const TOP_ROPE_MISS_DOWN_SEC := 1.0
 var _next_pack_id: int = 1
@@ -696,7 +704,7 @@ func _spawn_enemy_at(pos: Vector2, is_boss: bool) -> void:
 		enemy.start_perch(PERCH_POS_LEFT if randf() < 0.5 else PERCH_POS_RIGHT)
 
 ## ボス共通: HP50%/25%付近でトップロープ攻撃
-## 影＝空中ボスのマット投影真下。追尾→ロック（回避窓）→落下。くらうと痛い／かわすと短ダウン
+## 高速でポストへ→載る→影＝空中ボスのマット投影真下で追尾→ロック→落下。範囲は影楕円（ザコ巻き込み可）
 func _update_boss_top_rope(delta: float) -> void:
 	if _top_rope_active:
 		_tick_top_rope_attack(delta)
@@ -719,29 +727,48 @@ func _update_boss_top_rope(delta: float) -> void:
 func _start_top_rope_attack(boss: EnemyMain) -> void:
 	_top_rope_active = true
 	_top_rope_timer = 0.0
-	_top_rope_phase = TopRopePhase.CHASE
+	_top_rope_phase = TopRopePhase.APPROACH
 	_top_rope_boss = boss
 	_top_rope_count += 1
-	# ポストから飛び出し、マット平面はプレイヤー追従・影はその真下
+	# 近い方のトップロープ・ポストへ高速移動（ワープしない）
+	var d_left := boss.global_position.distance_to(PERCH_POS_LEFT)
+	var d_right := boss.global_position.distance_to(PERCH_POS_RIGHT)
+	_top_rope_perch_target = PERCH_POS_LEFT if d_left <= d_right else PERCH_POS_RIGHT
+	boss.velocity = Vector2.ZERO
+	if boss.rope_running:
+		boss.stop_rope_run()
+	boss.clear_angry()
+	boss.set_invincible_for(12.0)
+	if boss.fsm:
+		boss.fsm.force_change_state("enemy_idle_state")
+	GameManager.show_callout(boss, "トップロープへ！！", Color(1.0, 0.55, 0.2, 1.0))
+	AudioManager.play_sound(AudioManager.MASK_WARNING, 0, 0)
+
+func _begin_top_rope_aerial_chase(boss: EnemyMain) -> void:
 	boss.is_perched = false
+	boss.z_index = 0
 	boss.begin_top_rope_flight()
-	var start_pos := PERCH_POS_LEFT if boss.global_position.x < 640.0 else PERCH_POS_RIGHT
-	boss.global_position = Vector2(
-		clampf(start_pos.x, MAT_LEFT + 60.0, MAT_RIGHT - 60.0),
+	# ポストからマット上へ飛び出す（平面座標はポストX寄り・マット内）
+	var start_pos := Vector2(
+		clampf(_top_rope_perch_target.x, MAT_LEFT + 60.0, MAT_RIGHT - 60.0),
 		clampf(MAT_TOP + 100.0, MAT_TOP + 60.0, MAT_BOTTOM - 60.0)
 	)
+	boss.global_position = start_pos
 	boss.top_rope_height = TOP_ROPE_HEIGHT_BASE
 	boss.apply_top_rope_visual_height()
 	_top_rope_land_pos = boss.global_position
 	if boss.fsm:
 		boss.fsm.force_change_state("enemy_idle_state")
 	GameManager.show_callout(boss, "トップロープ！！", Color(1.0, 0.4, 0.2, 1.0))
-	AudioManager.play_sound(AudioManager.MASK_WARNING, 0, 0)
 	_top_rope_shadow = _make_top_rope_shadow()
 	var parent: Node = boss.get_parent()
 	if parent:
 		parent.add_child(_top_rope_shadow)
 	_sync_top_rope_shadow()
+
+func _spin_top_rope_boss(boss: EnemyMain, delta: float) -> void:
+	if boss.sprite and is_instance_valid(boss.sprite):
+		boss.sprite.rotation_degrees += TOP_ROPE_SPIN_DEG_PER_SEC * delta
 
 func _tick_top_rope_attack(delta: float) -> void:
 	_top_rope_timer += delta
@@ -750,7 +777,29 @@ func _tick_top_rope_attack(delta: float) -> void:
 		_abort_top_rope_attack()
 		return
 	match _top_rope_phase:
+		TopRopePhase.APPROACH:
+			boss.global_position = boss.global_position.move_toward(_top_rope_perch_target, TOP_ROPE_APPROACH_SPEED * delta)
+			boss.velocity = Vector2.ZERO
+			boss.update_draw_priority()
+			if boss.global_position.distance_to(_top_rope_perch_target) <= 8.0:
+				boss.global_position = _top_rope_perch_target
+				boss.is_perched = true
+				boss.z_index = 20
+				if boss.sprite:
+					boss.sprite.rotation = 0.0
+					boss.sprite.speed_scale = 0.2
+				_top_rope_phase = TopRopePhase.MOUNT
+				_top_rope_timer = 0.0
+				GameManager.show_callout(boss, "登った！！", Color(1.0, 0.7, 0.2, 1.0))
+		TopRopePhase.MOUNT:
+			boss.global_position = _top_rope_perch_target
+			boss.velocity = Vector2.ZERO
+			if _top_rope_timer >= TOP_ROPE_MOUNT_SEC:
+				_top_rope_phase = TopRopePhase.CHASE
+				_top_rope_timer = 0.0
+				_begin_top_rope_aerial_chase(boss)
 		TopRopePhase.CHASE:
+			_spin_top_rope_boss(boss, delta)
 			var player := _find_living_player()
 			if player:
 				var target := player.global_position
@@ -771,6 +820,7 @@ func _tick_top_rope_attack(delta: float) -> void:
 				_top_rope_land_pos = boss.global_position
 				GameManager.show_callout(boss, "来るぞ！！", Color(1.0, 0.85, 0.2, 1.0))
 		TopRopePhase.LOCK:
+			_spin_top_rope_boss(boss, delta)
 			# 追尾停止＝回避窓。影は固定、高さはまだ高い
 			boss.global_position = _top_rope_land_pos
 			boss.top_rope_height = TOP_ROPE_HEIGHT_BASE + 20.0 * sin(_top_rope_timer * 10.0)
@@ -785,6 +835,7 @@ func _tick_top_rope_attack(delta: float) -> void:
 				_top_rope_timer = 0.0
 				_top_rope_fall_from_h = boss.top_rope_height
 		TopRopePhase.FALL:
+			_spin_top_rope_boss(boss, delta)
 			boss.global_position = _top_rope_land_pos
 			var t := clampf(_top_rope_timer / TOP_ROPE_FALL_SEC, 0.0, 1.0)
 			# 急降下（イーズイン）
@@ -818,11 +869,11 @@ func _make_top_rope_shadow() -> Node2D:
 	root.name = "TopRopeShadow"
 	root.z_as_relative = false
 	root.z_index = 200
-	# 楕円影（大きめ・濃いめ）
+	# 楕円影（約2倍・濃いめ）＝着地衝撃波範囲
 	var oval := Polygon2D.new()
 	var pts := PackedVector2Array()
-	var rx := 58.0
-	var ry := 28.0
+	var rx := TOP_ROPE_SHADOW_RX
+	var ry := TOP_ROPE_SHADOW_RY
 	for i in 24:
 		var a := TAU * float(i) / 24.0
 		pts.append(Vector2(cos(a) * rx, sin(a) * ry))
@@ -841,6 +892,12 @@ func _make_top_rope_shadow() -> Node2D:
 	root.add_child(ring)
 	return root
 
+func _in_top_rope_blast(pos: Vector2, land: Vector2) -> bool:
+	var d := pos - land
+	var nx := d.x / TOP_ROPE_SHADOW_RX
+	var ny := d.y / TOP_ROPE_SHADOW_RY
+	return (nx * nx + ny * ny) <= 1.0
+
 func _abort_top_rope_attack() -> void:
 	_top_rope_active = false
 	_top_rope_timer = 0.0
@@ -850,6 +907,7 @@ func _abort_top_rope_attack() -> void:
 	var boss := _top_rope_boss
 	_top_rope_boss = null
 	if is_instance_valid(boss):
+		boss.is_perched = false
 		boss.end_top_rope_flight()
 
 func _finish_top_rope_attack() -> void:
@@ -869,25 +927,44 @@ func _finish_top_rope_attack() -> void:
 	boss.update_draw_priority()
 	if boss.fsm:
 		boss.fsm.force_change_state("enemy_idle_state")
-	# 着地点付近のプレイヤーにダメージ / いなければボスが短ダウン
+	# 影楕円＝衝撃波。プレイヤー＋ザコ（ボス本人以外）が被弾
 	var hit_player := false
+	var hit_zako := false
 	for node in get_tree().get_nodes_in_group("Player"):
 		var p := node as CharacterBase
 		if not is_instance_valid(p) or p.is_dead:
 			continue
-		if p.global_position.distance_to(land_pos) <= 70.0:
+		if _in_top_rope_blast(p.global_position, land_pos):
 			hit_player = true
 			if p.has_method("take_damage_from_enemy"):
 				p.take_damage_from_enemy(TOP_ROPE_DAMAGE)
 			elif p.has_method("_take_damage"):
 				p._take_damage(TOP_ROPE_DAMAGE)
 			GameManager.show_callout(p, "直撃！！", Color(1.0, 0.2, 0.2, 1.0))
+	for node in get_tree().get_nodes_in_group("Enemy"):
+		var e := node as EnemyMain
+		if not is_instance_valid(e) or e.is_dead or e == boss:
+			continue
+		if e.is_boss or e.is_perched or e.is_top_rope_aerial:
+			continue
+		if e.is_ring_in_effect_only() or e.is_rope_launched():
+			continue
+		if _in_top_rope_blast(e.global_position, land_pos):
+			hit_zako = true
+			e._take_damage(TOP_ROPE_DAMAGE)
+			if not e.is_dead and e.has_method("enter_down"):
+				e.enter_down(TOP_ROPE_MISS_DOWN_SEC)
+	if hit_zako:
+		GameManager.show_callout(boss, "巻き込み！！", Color(1.0, 0.55, 0.15, 1.0))
 	if hit_player:
 		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
-	else:
+	elif not hit_zako:
 		GameManager.show_callout(boss, "空振り！", Color(0.5, 1.0, 0.5, 1.0))
 		boss.enter_down(TOP_ROPE_MISS_DOWN_SEC)
 		AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, -2)
+	else:
+		# プレイヤーは回避・ザコのみ巻き込み → ボスは空振りダウンしない（成功気味）
+		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -4)
 
 ## ザコ種類ごとのスプライト（マスク色で差別化。小型同一顔は廃止）
 func _get_zako_texture_path(type: EnemyMain.EnemyType) -> String:

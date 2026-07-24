@@ -95,6 +95,8 @@ func end_top_rope_flight() -> void:
 	top_rope_height = 0.0
 	if sprite:
 		sprite.position.y = _top_rope_sprite_base_y
+		sprite.rotation = 0.0
+		sprite.rotation_degrees = 0.0
 
 func _ready():
 	z_as_relative = false
