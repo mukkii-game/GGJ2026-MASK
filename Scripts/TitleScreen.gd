@@ -36,31 +36,39 @@ func _ready() -> void:
 	_style_normal.content_margin_left = 16
 	_style_normal.content_margin_right = 16
 
-	# 1P / 2P / テスト の3ボタンを取得（シーンで同じ名前のノードにしておく）
+	# ボタンは名前で取得（Label等が混在してもインデックスずれしない）
 	var container = get_node_or_null("ButtonsContainer")
 	if container:
 		container.visible = true
-		for c in container.get_children():
-			if c is Button:
-				_mode_buttons.append(c as Button)
-	if _mode_buttons.size() >= 1:
-		_mode_buttons[0].pressed.connect(_on_1p_pressed)
-	if _mode_buttons.size() >= 2:
-		_mode_buttons[1].pressed.connect(_on_2p_pressed)
-	if _mode_buttons.size() >= 3:
-		_mode_buttons[2].pressed.connect(_on_test_pressed)
-	if _mode_buttons.size() >= 4:
-		_mode_buttons[3].pressed.connect(_on_training_pressed)
-	if _mode_buttons.size() >= 5:
-		_mode_buttons[4].pressed.connect(_on_stage_pressed.bind(1))
-	if _mode_buttons.size() >= 6:
-		_mode_buttons[5].pressed.connect(_on_stage_pressed.bind(2))
-	if _mode_buttons.size() >= 7:
-		_mode_buttons[6].pressed.connect(_on_stage_pressed.bind(3))
-	if _mode_buttons.size() >= 8:
-		_mode_buttons[7].pressed.connect(_on_stage_pressed.bind(4))
-	if _mode_buttons.size() >= 9:
-		_mode_buttons[8].pressed.connect(_on_ending_pressed)
+	var btn_names := [
+		"Btn1P", "Btn2P", "BtnTest", "BtnTraining",
+		"BtnStage1", "BtnStage2", "BtnStage3", "BtnStage4", "BtnEnding",
+	]
+	for i in btn_names.size():
+		var btn := get_node_or_null("ButtonsContainer/" + btn_names[i]) as Button
+		if btn == null:
+			continue
+		_mode_buttons.append(btn)
+		var menu_i := _mode_buttons.size() - 1
+		match btn_names[i]:
+			"Btn1P":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_1p_pressed())
+			"Btn2P":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_2p_pressed())
+			"BtnTest":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_test_pressed())
+			"BtnTraining":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_training_pressed())
+			"BtnStage1":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_stage_pressed(1))
+			"BtnStage2":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_stage_pressed(2))
+			"BtnStage3":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_stage_pressed(3))
+			"BtnStage4":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_stage_pressed(4))
+			"BtnEnding":
+				btn.pressed.connect(func() -> void: _selected_index = menu_i; _on_ending_pressed())
 
 	# ESC確認パネル（暗い背景・最前面に表示）
 	_confirm_panel = get_node_or_null("ConfirmReturnPanel")
@@ -215,7 +223,29 @@ func _on_confirm_no() -> void:
 func _activate_selected() -> void:
 	if _selected_index < 0 or _selected_index >= _mode_buttons.size():
 		return
-	_mode_buttons[_selected_index].emit_signal("pressed")
+	# emit_signal("pressed") だと bind 引数が落ちることがあるため、ボタン名で直接起動
+	var btn := _mode_buttons[_selected_index]
+	match String(btn.name):
+		"Btn1P":
+			_on_1p_pressed()
+		"Btn2P":
+			_on_2p_pressed()
+		"BtnTest":
+			_on_test_pressed()
+		"BtnTraining":
+			_on_training_pressed()
+		"BtnStage1":
+			_on_stage_pressed(1)
+		"BtnStage2":
+			_on_stage_pressed(2)
+		"BtnStage3":
+			_on_stage_pressed(3)
+		"BtnStage4":
+			_on_stage_pressed(4)
+		"BtnEnding":
+			_on_ending_pressed()
+		_:
+			btn.emit_signal("pressed")
 
 func _play_decision_sound() -> void:
 	var path_ogg := "res://Art/Audio/Effects/decision.ogg"
@@ -255,6 +285,8 @@ func _on_1p_pressed() -> void:
 	_play_start_jingle()
 	GameManager.test_mode = false
 	GameManager.two_player_mode = false
+	GameManager.training_mode = false
+	GameManager.current_stage = 1
 	_start_game()
 
 ## 2Pモード（2Pは矢印＋マウス左右。1Pキャラのマスクを赤く表示）
@@ -262,6 +294,8 @@ func _on_2p_pressed() -> void:
 	_play_start_jingle()
 	GameManager.test_mode = false
 	GameManager.two_player_mode = true
+	GameManager.training_mode = false
+	GameManager.current_stage = 1
 	_start_game()
 
 ## テストモード
@@ -269,6 +303,8 @@ func _on_test_pressed() -> void:
 	_play_decision_sound()
 	GameManager.test_mode = true
 	GameManager.two_player_mode = false
+	GameManager.training_mode = false
+	GameManager.current_stage = 1
 	_start_game()
 
 ## トレーニングモード（中央に動かず攻撃しない敵・倒したら復活）
@@ -278,19 +314,22 @@ func _on_training_pressed() -> void:
 	GameManager.two_player_mode = false
 	GameManager.training_mode = true
 	GameManager.current_stage = 1
-	_start_game()
-
-func _start_game() -> void:
-	# ステージ1登場画面へ（通常進行＝ステージ直接選択モード解除）
-	GameManager.single_stage_mode = false
+	GameManager.single_stage_mode = true
 	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
 
-## ステージ1〜4直接選択（テスト用）。選んだステージが終わったらタイトルへ戻る
+func _start_game() -> void:
+	# 通常進行（1から順番）。クリア後は次ステージへ
+	GameManager.single_stage_mode = false
+	GameManager.training_mode = false
+	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
+
+## ステージ1〜4直接選択。選んだステージへ飛び、クリア後はタイトルへ戻る
 func _on_stage_pressed(stage_num: int) -> void:
 	_play_decision_sound()
-	GameManager.test_mode = true
+	GameManager.test_mode = false
 	GameManager.two_player_mode = false
-	GameManager.current_stage = stage_num
+	GameManager.training_mode = false
+	GameManager.current_stage = clampi(stage_num, 1, 4)
 	GameManager.single_stage_mode = true
 	get_tree().change_scene_to_file("res://Scenes/UI/StageIntro.tscn")
 

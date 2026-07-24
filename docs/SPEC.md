@@ -265,6 +265,7 @@ Enemy は以下の状態（Status）を持つ。
 - タイトル画面 / リトライ
 - ステージ1限定：撃破ノルマHUD（`Scripts/GameUI.gd`）。「のこり敵 X体」を画面右上に表示（v0.4。本番プレイのみ。トレーニング/S2〜4は非表示）
 - ステージ1限定：正面衝突の誤学習防止ヒント（`Scripts/Managers/GameManager.gd` / `Scripts/GameUI.gd`）。1プレイにつき一度だけ画面上部中央に3.5秒表示
+- **タイトルのステージ1〜4直接選択**: `GameManager.current_stage` に選んだ面をセットし、`single_stage_mode=true`。クリア後は次面へ進まず **タイトルへ戻る**（`load_next_stage`）。
 - **BGM（v0.4暫定）**: タイトル画面・ステージクリア画面は**無音**（`AudioManager.stop_bgm()`。専用曲は後日用意）。戦闘BGMはステージ開始時に再生
 - コーナーポストの重ね絵（黄ポリゴン＋`cormar_top.png`）は**削除済み**（背景の青ポールのみ。`MainFloor.tscn`）
 - **技名ポップアップ（v0.4・設計原則#6「技名を出すと快感が倍化」）**: 大技が決まった敵の頭上に実況風の技名を表示して浮かせフェード（`GameManager.show_callout()`）
