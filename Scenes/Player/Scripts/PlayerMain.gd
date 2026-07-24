@@ -79,8 +79,9 @@ const BODY_KNOCKBACK_TWEEN_DURATION_HALFCAR := 0.1
 const PUSH_PLAYER_KNOCKBACK_HALFCAR := 6.0
 ## 正面／半キャラの境：ずれが32未満＝正面、32以上＝半キャラ or かすり
 const HALF_OVERLAP_DIST := 32.0
-## 半キャラずらしの上限：ずれ 32〜52 未満＝半キャラ（左右接近のみ）、52以上64未満＝かすり
-const SEMI_CAR_MAX := 52.0
+## 半キャラずらしの上限：ずれ 32〜58 未満＝半キャラ、58以上64未満＝かすり
+## （旧52→58。かすり帯12pxを半分の6pxにし、その分を半キャラへ。上下も半キャラ可）
+const SEMI_CAR_MAX := 58.0
 ## ずれ64以上＝当たってない（体当たり処理しない）
 const BODY_CONTACT_MAX_ALIGNMENT := 64.0
 ## かすり時：斜めにすっ飛ばす距離（X,Y両方ずれて離れる方向・まあまあ大きく）
@@ -509,7 +510,7 @@ func _body_contact(delta: float) -> void:
 		var e_pos: Vector2 = enemy.global_position
 		# 敵方向に上下左右のいずれかを押している場合（ロープ／走行加速中は進行方向で代用）
 		var pressing_toward_ok: bool = _is_pressing_toward_enemy(input_dir, to_enemy)
-		# ずれ：左右接近時はY差、上下接近時はX差。半キャラは左右接近のみ（上下はかすり扱い）
+		# ずれ：左右接近時はY差、上下接近時はX差
 		var horizontal_approach: bool = absf(to_enemy.x) >= absf(to_enemy.y)
 		var alignment_diff: float
 		if horizontal_approach:
@@ -518,8 +519,9 @@ func _body_contact(delta: float) -> void:
 			alignment_diff = absf(p_pos.x - e_pos.x)
 		if alignment_diff >= BODY_CONTACT_MAX_ALIGNMENT:
 			continue
-		var shoulder_ok: bool = horizontal_approach and pressing_toward_ok and alignment_diff >= HALF_OVERLAP_DIST and alignment_diff < SEMI_CAR_MAX
-		var kasuri_ok: bool = pressing_toward_ok and alignment_diff >= (SEMI_CAR_MAX if horizontal_approach else HALF_OVERLAP_DIST) and alignment_diff < BODY_CONTACT_MAX_ALIGNMENT
+		# 半キャラ: 上下左右とも 32〜58。かすり帯は端の6pxのみ（旧は左右のみ半キャラ・上下は全部かすりで出やすすぎた）
+		var shoulder_ok: bool = pressing_toward_ok and alignment_diff >= HALF_OVERLAP_DIST and alignment_diff < SEMI_CAR_MAX
+		var kasuri_ok: bool = pressing_toward_ok and alignment_diff >= SEMI_CAR_MAX and alignment_diff < BODY_CONTACT_MAX_ALIGNMENT
 		# 敵状態の参照（Angry=強い: 半キャラ・正面とも弾かれる / Weak=弱り: 正面で吹き飛ばし）
 		var enemy_angry: bool = enemy is EnemyMain and (enemy as EnemyMain).is_shoulder_immune()
 		var enemy_weak: bool = enemy is EnemyMain and (enemy as EnemyMain).is_weak_state()
