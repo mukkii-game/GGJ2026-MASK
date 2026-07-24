@@ -102,6 +102,10 @@ var _yota_move_left: float = 0.0
 var _yota_pause_left: float = 0.0
 ## 怒り湯気
 var _steam_particles: GPUParticles2D = null
+## 怒り中ヘッドラベル「ウガー！」
+var _angry_label: Label = null
+const ANGRY_LABEL_TEXT := "ウガー！"
+const ANGRY_LABEL_COLOR := Color(1.0, 0.12, 0.08, 1.0)
 ## 取り巻き周回: 対象ボス（StageControllerが設定。ボス存命＆ザコ残少で周回移動）
 var orbit_boss: EnemyMain = null
 var _orbit_angle: float = 0.0
@@ -167,6 +171,7 @@ func _process(delta: float) -> void:
 				_anger_cycle_timer = 0.0
 				set_angry_for(BOSS_ANGER_DURATION)
 	_update_steam_effect()
+	_update_angry_label()
 	# ボスのロープ走行: 時間切れで停止（直角カウンターでも停止する）
 	if rope_running and not is_dead:
 		_rope_run_remaining -= delta
@@ -497,6 +502,38 @@ func _update_steam_effect() -> void:
 		_steam_particles.emitting = true
 	elif _steam_particles and is_instance_valid(_steam_particles):
 		_steam_particles.emitting = false
+
+## 怒り中は頭上に赤字「ウガー！」を常時表示
+func _update_angry_label() -> void:
+	var want: bool = enemy_state == EnemyState.Angry and not is_dead and not is_in_down_state() and not is_perched
+	if want:
+		if _angry_label == null or not is_instance_valid(_angry_label):
+			_angry_label = Label.new()
+			_angry_label.name = "AngryUgaaLabel"
+			_angry_label.text = ANGRY_LABEL_TEXT
+			_angry_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_angry_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			_angry_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			_angry_label.add_theme_font_size_override("font_size", 30)
+			_angry_label.add_theme_color_override("font_color", ANGRY_LABEL_COLOR)
+			_angry_label.add_theme_color_override("font_outline_color", Color(0.05, 0.0, 0.0, 1.0))
+			_angry_label.add_theme_constant_override("outline_size", 6)
+			_angry_label.custom_minimum_size = Vector2(140, 36)
+			_angry_label.size = Vector2(140, 36)
+			_angry_label.z_as_relative = true
+			_angry_label.z_index = 8
+			add_child(_angry_label)
+		_angry_label.visible = true
+		_angry_label.text = ANGRY_LABEL_TEXT
+		_angry_label.add_theme_color_override("font_color", ANGRY_LABEL_COLOR)
+		# HPバーより上。ジャンプ見た目オフセットに追従
+		var sprite_off := Vector2.ZERO
+		if sprite and is_instance_valid(sprite):
+			sprite_off = sprite.position
+		var bob := sin(Time.get_ticks_msec() * 0.012) * 3.0
+		_angry_label.position = sprite_off + Vector2(-70.0, -96.0 + bob)
+	elif _angry_label and is_instance_valid(_angry_label):
+		_angry_label.visible = false
 
 ## 弱り正面ブラスト／吹き飛ばし→ダウン
 const BLAST_DOWN_TWEEN_DURATION := 0.45
