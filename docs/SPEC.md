@@ -772,8 +772,9 @@ Enemy は以下の状態（Status）を持つ。
   - エンディング: `Ending.mp3`（なければ `MainTheme.mp3`）  
   - MainFloor 内 `BGMFromOffset` は互換ノードのみ（再生しない）
 - **タイトル画面（現行）**: `Scenes/Misc/TitleScreen.tscn` + `Scripts/TitleScreen.gd`
-  - 1P / 2P / テストを上下で選択し、選択中は強調表示。
-  - ESCで終了確認（はい/いいえ）を表示。
+  - 1P / 2P / ステージ1〜4 / Ending などを上下で選択し、選択中は強調表示。ステージ直接選択は `single_stage_mode`（クリア後タイトルへ）。
+  - キーボード決定は Enter / ui_accept / Punch / Kick。**マウス左右クリック（Punch2/Kick2）ではハイライト項目を起動しない**（ボタンの `pressed` のみ）。以前はクリックと同時に選択中の1Pが二重起動し、Ending等もステージ1開始になっていた。
+  - ESCで終了確認（はい/いいえ）を表示。確認ダイアログもマウスクリックはボタン自身に任せ、キー決定のみ `_input` で処理。
 - **ポーズ（現行）**: `Scenes/Levels/GameWrapper.tscn` に `Scripts/GameWrapperPause.gd` を付与
   - ESCでポーズし、縦4択（バトルに戻る / ステージ開始から / タイトルから / やめる）。
 
