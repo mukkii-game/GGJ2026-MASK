@@ -46,17 +46,17 @@ func _get_stage_data(stage: int) -> Dictionary:
 		2:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title2.png",
-				"speech": "つかまえるもんか〜！"
+				"speech": "メロンパンの魅力を知りな！"
 			}
 		3:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title3.png",
-				"speech": "正面から来るなよ…"
+				"speech": "うに帝仮面はバージョン７よ！"
 			}
 		4:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title4.png",
-				"speech": "異論あるかァ！？"
+				"speech": "イーロン反論オブジェクション！"
 			}
 		_:
 			return {
@@ -79,11 +79,12 @@ func _setup_speech_bubble(line: String) -> void:
 		style.content_margin_top = 14
 		style.content_margin_bottom = 14
 		bubble.add_theme_stylebox_override("panel", style)
-		bubble.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-		bubble.anchor_left = 0.55
-		bubble.anchor_right = 0.96
-		bubble.anchor_top = 0.42
-		bubble.anchor_bottom = 0.62
+		# 画面右上（背景の書き文字をできるだけ隠さない）
+		bubble.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+		bubble.anchor_left = 0.58
+		bubble.anchor_right = 0.98
+		bubble.anchor_top = 0.04
+		bubble.anchor_bottom = 0.22
 		bubble.offset_left = 0
 		bubble.offset_right = 0
 		bubble.offset_top = 0
@@ -94,9 +95,19 @@ func _setup_speech_bubble(line: String) -> void:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 42)
+		label.add_theme_font_size_override("font_size", 36)
 		label.add_theme_color_override("font_color", Color(0.08, 0.08, 0.1, 1))
 		bubble.add_child(label)
+	else:
+		# 既存ノードでも位置を右上へ寄せる
+		bubble.anchor_left = 0.58
+		bubble.anchor_right = 0.98
+		bubble.anchor_top = 0.04
+		bubble.anchor_bottom = 0.22
+		bubble.offset_left = 0
+		bubble.offset_right = 0
+		bubble.offset_top = 0
+		bubble.offset_bottom = 0
 	bubble.visible = true
 	var speech_label := bubble.get_node_or_null("SpeechText") as Label
 	if speech_label:

@@ -32,8 +32,9 @@ var _motion_tweens: Array[Tween] = []
 ## 描画順: キャラスプライト下部（足元）のYのみ。画面上側＝奥（低いz）。トップロープ滞空のみ例外で前面
 ## ※ Godot の z_index は概ね ±4096。範囲外代入はエラーで無視されるため、帯をこの中に収める。
 const DRAW_Z_TOP_ROPE_BONUS := 2500
-## ダウン中は立ちキャラ帯（足元Y≒100〜700）より常に低い固定帯へ
-const DRAW_Z_DOWNED_BASE := -2800
+## ダウン中は立ちキャラ帯（足元Y≒138〜614）より奥、かつ ArenaMat(z=-200) より手前
+## ※ -2800 だとマットの下に描画されて「消えた」ように見える
+const DRAW_Z_DOWNED_BASE := -180
 ## トップロープ滞空中（最前面）
 var is_top_rope_aerial: bool = false
 ## トップロープ擬似高さ（マット平面座標は global_position、見た目はスプライトYオフセット）

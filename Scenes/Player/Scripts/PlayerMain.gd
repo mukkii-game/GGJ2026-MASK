@@ -426,7 +426,8 @@ func flash_aerial_hit(enemy: CharacterBase) -> void:
 func _flash_white_body_contact() -> void:
 	_flash_modulate(sprite if sprite else self, Color(2.0, 2.0, 2.0, 1.0))
 
-## 体当たり用：指定色でフラッシュ。hold_at_peak でその色のまま維持する秒数（0で従来どおり）。約1秒で必ず白に戻す
+## 体当たり用：指定色でフラッシュ。hold_at_peak でその色のまま維持する秒数（0で従来どおり）。
+## 終了色は target の所有者に応じて復元（ダウン中の敵を真っ白にしない）
 func _flash_modulate(target: CanvasItem, flash_color: Color, hold_at_peak: float = 0.0) -> void:
 	if not target or not is_instance_valid(target):
 		return
@@ -435,11 +436,24 @@ func _flash_modulate(target: CanvasItem, flash_color: Color, hold_at_peak: float
 	tween.tween_property(target, "modulate", flash_color, 0.12)
 	if hold_at_peak > 0.0:
 		tween.tween_interval(hold_at_peak)
-	tween.tween_property(target, "modulate", Color.WHITE, 0.8)
+	var restore := _flash_restore_modulate_for(target)
+	tween.tween_property(target, "modulate", restore, 0.35)
 	tween.tween_callback(func() -> void:
 		if target and is_instance_valid(target):
-			target.modulate = Color.WHITE
+			target.modulate = _flash_restore_modulate_for(target)
 	)
+
+func _flash_restore_modulate_for(target: CanvasItem) -> Color:
+	var owner_n := target.get_parent()
+	while owner_n and not (owner_n is CharacterBase):
+		owner_n = owner_n.get_parent()
+	if owner_n is EnemyMain:
+		var em := owner_n as EnemyMain
+		if em.is_in_down_state():
+			return Color(1.4, 0.4, 0.4, 1.0)
+		if "body_tint" in em:
+			return em.body_tint
+	return Color.WHITE
 
 ## 体当たり：敵と触れたら必ずダメージ＋ノックバック。正方形コリジョン（PC-88風）。半キャラずらし＝敵方向に上下左右で移動＋接している部分が幅の半分以下のときは敵だけノックバック＆ダメージ
 func _body_contact(delta: float) -> void:

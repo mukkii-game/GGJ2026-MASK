@@ -199,12 +199,15 @@ func _process(delta: float) -> void:
 		_push_apart_from_other_enemies()
 	# 状態に応じた色。半キャラずらしヒット中は敵の絵自体を白く（modulate で毎フレーム上書き）
 	var now := Time.get_ticks_msec() / 1000.0
-	if sprite and now < halfcar_white_until:
+	if sprite and now < halfcar_white_until and not in_down:
 		sprite.modulate = Color(2.0, 2.0, 2.0, 1.0)
+	elif sprite and in_down:
+		# ダウン中は赤めを維持（かすり黄フラッシュの「白に戻す」Tweenで消えて見えないのを防ぐ）
+		sprite.modulate = Color(1.4, 0.4, 0.4, 1.0)
 	elif sprite and is_perched:
 		# 高みの見物: 赤／青にならない通常色
 		sprite.modulate = body_tint
-	elif sprite and not invincible and not in_down and knockback_stun_remaining <= 0.0:
+	elif sprite and not invincible and knockback_stun_remaining <= 0.0:
 		sprite.modulate = _get_state_modulate()
 	# アニメ速度：ポスト上は超ゆっくり／飛んでいるとき4倍速／接触直後2倍速
 	if sprite:

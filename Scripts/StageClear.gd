@@ -64,8 +64,9 @@ func _add_bottom_peel_label(text: String) -> void:
 	label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	label.offset_left = 24.0
 	label.offset_right = -24.0
-	label.offset_top = -110.0
-	label.offset_bottom = -36.0
+	# 画面下端寄り（一枚絵の書き文字と被りにくく）
+	label.offset_top = -72.0
+	label.offset_bottom = -10.0
 	add_child(label)
 
 func _on_advance_allowed() -> void:
