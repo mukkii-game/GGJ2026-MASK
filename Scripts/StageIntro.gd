@@ -51,7 +51,7 @@ func _get_stage_data(stage: int) -> Dictionary:
 		3:
 			return {
 				"boss_texture": "res://Art/Sprites/iron_mask_title3.png",
-				"speech": "うに帝仮面はバージョン７よ！"
+				"speech": "今のアタシは\nバージョン７よ！"
 			}
 		4:
 			return {

@@ -766,7 +766,7 @@ Enemy は以下の状態（Status）を持つ。
 - **BGM（2026-07-13）**: `AudioManager` の専用 `BGMPlayer` で管理（Autoload・シーン外）。  
   - タイトル: `MainThemeNew.mp3` ループ（`_ready` 即再生）  
   - ステージIntro: `Intro.mp3`（非ループ）→ 終了でゴング SE（1回）
-  - 登場画面: 攻略テキストパネルは非表示。キャラごとに **吹き出し一言**（画面右上・`StageIntro.gd`）。S2「メロンパンの魅力を知りな！」／S3「うに帝仮面はバージョン７よ！」／S4「イーロン反論オブジェクション！」
+  - 登場画面: 攻略テキストパネルは非表示。キャラごとに **吹き出し一言**（画面右上・`StageIntro.gd`）。S2「メロンパンの魅力を知りな！」／S3「今のアタシは／バージョン７よ！」（改行）／S4「イーロン反論オブジェクション！」
   - バトル: `MainThemeNew.mp3` ループ（`StageController._ready` 先頭で即再生）＋開始ゴング1回（カーン）
   - エンディング: `Ending.mp3`（なければ `MainTheme.mp3`）  
   - MainFloor 内 `BGMFromOffset` は互換ノードのみ（再生しない）
