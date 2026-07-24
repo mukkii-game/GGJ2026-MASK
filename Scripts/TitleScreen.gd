@@ -128,7 +128,9 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if _confirm_visible:
-		# ダイアログ中: 上下で はい/いいえ、Enter で決定
+		# ダイアログ中: 上下で はい/いいえ、キーで決定（マウスクリックはボタン自身に任せる）
+		if event is InputEventMouseButton:
+			return
 		var go_up := event.is_action_pressed("MoveUp") or event.is_action_pressed("Move2Up")
 		var go_down := event.is_action_pressed("MoveDown") or event.is_action_pressed("Move2Down")
 		if go_up or go_down:
@@ -137,7 +139,7 @@ func _input(event: InputEvent) -> void:
 			if vp:
 				vp.set_input_as_handled()
 			return
-		if event.is_action_pressed("Enter") or event.is_action_pressed("ui_accept") or event.is_action_pressed("Punch") or event.is_action_pressed("Kick") or event.is_action_pressed("Punch2") or event.is_action_pressed("Kick2"):
+		if event.is_action_pressed("Enter") or event.is_action_pressed("ui_accept") or event.is_action_pressed("Punch") or event.is_action_pressed("Kick"):
 			if _confirm_index == 0:
 				_on_confirm_yes()
 			else:
@@ -161,8 +163,12 @@ func _input(event: InputEvent) -> void:
 		_highlight_selection()
 		if vp:
 			vp.set_input_as_handled()
-	# 決定: Enter / N(Punch) / M(Kick) / マウス左(Punch2) / マウス右(Kick2)
-	var confirm := event.is_action_pressed("Enter") or event.is_action_pressed("Punch") or event.is_action_pressed("Kick") or event.is_action_pressed("Punch2") or event.is_action_pressed("Kick2")
+	# 決定: キーボード／パッドのみ（Enter / N / M）。
+	# ※マウス左右は Punch2/Kick2 に割当済み。ここで拾うと「クリックしたボタン」と
+	# 「現在ハイライトの1P」が二重起動し、どれを選んでもステージ1開始になる。
+	if event is InputEventMouseButton:
+		return
+	var confirm := event.is_action_pressed("Enter") or event.is_action_pressed("ui_accept") or event.is_action_pressed("Punch") or event.is_action_pressed("Kick")
 	if confirm:
 		_activate_selected()
 		if vp:
