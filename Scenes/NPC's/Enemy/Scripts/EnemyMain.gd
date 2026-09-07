@@ -114,6 +114,9 @@ const ORBIT_ANGULAR_SPEED := 1.6
 ## ポスト上待機（S2ボス）: 実際の青ポールの上に立ち、降りてくるまで当たり判定なし
 var is_perched: bool = false
 var _perch_pos := Vector2.ZERO
+## トップロープ攻撃シーケンス中（接近〜落下まで）はマットクランプを止める。
+## 接近先のポスト位置がマット範囲外（Y座標がMAT_TOP未満）にあるため、クランプがあると永久にたどり着けない
+var top_rope_sequence_active: bool = false
 ## ボスのロープ走行（S4）: この間は強い扱い＋直角カウンター対象
 var rope_running: bool = false
 ## ロープ走行の軸（true=左右往復）。直角カウンター判定に使う
@@ -229,8 +232,8 @@ func _process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		global_position = _perch_pos
 		return
-	# 敵が絶対にロープ外に出ないようにクランプ（リングイン・空中ノックバック・ダウン・ノックバック中はスキップ）
-	if not in_ring_in and not _aerial_knockback_animating and not in_down and not in_knockback_stun:
+	# 敵が絶対にロープ外に出ないようにクランプ（リングイン・空中ノックバック・ダウン・ノックバック中・トップロープ攻撃中はスキップ）
+	if not in_ring_in and not _aerial_knockback_animating and not in_down and not in_knockback_stun and not top_rope_sequence_active:
 		global_position.x = clampf(global_position.x, MAT_LEFT, MAT_RIGHT)
 		global_position.y = clampf(global_position.y, MAT_TOP, MAT_BOTTOM)
 

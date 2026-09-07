@@ -16,8 +16,8 @@
 3. **`HANDOFF.md`** — AI間短縮引き継ぎ
 3. **`NON_NEGOTIABLES.md`** — 絶対に変えてはいけないゲームの核
 4. **`GAME_SPEC.md`** — ゲーム仕様の概要（SPECの要約ではなく、遊びの意図）
-5. **`CURRENT_IMPLEMENTATION.md`** — 今どこまで動いているか（コードとの照合用）
-6. **`PAST_DESIGN_DECISIONS.md`** — 過去の検討経緯と没案（復活候補あり）
+4b. **`PLAYTEST_GUIDE.md`** — プレイテスター向けの操作・流れ・ヒント（配布用）
+5. **`CURRENT_IMPLEMENTATION.md`** — 今どこまで動いているか（コードとの照合用）6. **`PAST_DESIGN_DECISIONS.md`** — 過去の検討経緯と没案（復活候補あり）
 7. **`KNOWN_ISSUES.md`** — 既知のバグ・不具合
 8. **`TECHNICAL_DEBT.md`** — 技術的負債・仮実装
 9. **`OPEN_QUESTIONS.md`** — 未決定事項

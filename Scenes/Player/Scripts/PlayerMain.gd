@@ -526,46 +526,6 @@ func _body_contact(delta: float) -> void:
 		var enemy_angry: bool = enemy is EnemyMain and (enemy as EnemyMain).is_shoulder_immune()
 		var enemy_weak: bool = enemy is EnemyMain and (enemy as EnemyMain).is_weak_state()
 		var em := enemy as EnemyMain
-		# ボスのロープ走行中（強い状態・確定仕様）: どんな接触でも一方的にやられる。
-		# 唯一の対抗手段＝直角カウンター: 走行軸と直角方向から敵へ押しながら当てると弾き飛ばしダウン＋強化解除
-		if em and em.rope_running:
-			var perpendicular_approach: bool = (horizontal_approach != em.rope_run_horizontal)
-			if perpendicular_approach and pressing_toward_ok:
-				# 直角カウンター成功（マタドール）
-				if GameManager.training_mode:
-					GameManager.body_contact_type_text = "直角カウンター！"
-					GameManager.body_contact_type_timer = 1.5
-				AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
-				GameManager.show_callout(em, "カウンター！", Color(0.4, 1.0, 0.5, 1.0))
-				em.stop_rope_run()
-				em._take_damage(int(BODY_DAMAGE_DEALT * 1.5))
-				flash_aerial_hit(em)
-				if not em.is_dead and em.health > 0:
-					em.blast_to_down(to_enemy)
-				set_invincible_for(0.5)
-				body_contact_cooldown = BODY_CONTACT_INTERVAL
-			elif body_contact_cooldown <= 0:
-				# 轢かれた: 一方的被弾＋大きく弾かれる
-				if GameManager.training_mode:
-					GameManager.body_contact_type_text = "轢かれた！(走行ボス)"
-					GameManager.body_contact_type_timer = 1.5
-				take_damage_from_enemy(12)
-				_flash_white_body_contact()
-				var away_run: Vector2 = _axis_knockback(-to_enemy, STRONG_FRONTAL_KNOCKBACK)
-				var run_hit_pos := global_position + away_run
-				set_invincible_for(BODY_KNOCKBACK_TWEEN_DURATION + 0.3)
-				if _is_outside_mat(run_hit_pos):
-					set_invincible_for(1.5)
-					trigger_rope_launch()
-				else:
-					var tw_hit := create_tween()
-					tw_hit.tween_property(self, "global_position", run_hit_pos, BODY_KNOCKBACK_TWEEN_DURATION)
-					tw_hit.tween_callback(func() -> void:
-						global_position = Vector2(clampf(global_position.x, MAT_LEFT, MAT_RIGHT), clampf(global_position.y, MAT_TOP, MAT_BOTTOM))
-					)
-					register_motion_tween(tw_hit)
-				body_contact_cooldown = BODY_CONTACT_INTERVAL
-			break
 		if shoulder_ok:
 			# 怒り中は後ろ半キャラのみ有効。それ以外の半キャラは逆に被ダメ
 			if enemy_angry and em and not em.is_rear_approach_from(p_pos):

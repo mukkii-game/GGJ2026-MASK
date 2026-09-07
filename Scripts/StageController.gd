@@ -53,15 +53,6 @@ const TOP_ROPE_SHADOW_RY := 56.0
 ## トップロープ空振り時のダウン秒数（通常ダウンより短い）
 const TOP_ROPE_MISS_DOWN_SEC := 1.0
 var _next_pack_id: int = 1
-## S4ボスギミック（号令とロープ走行を交互）
-var _gimmick_timer: float = 0.0
-var _gimmick_toggle: bool = false
-var _shout_pending: float = -1.0
-const S4_GIMMICK_INTERVAL := 12.0
-const S4_SHOUT_TELEGRAPH := 1.0
-const S4_SHOUT_ANGRY_SEC := 4.0
-const S4_ROPE_RUN_SPEED := 280.0
-const S4_ROPE_RUN_SEC := 6.0
 ## S2ボスのポスト上待機（青ポールの上に立つ。実背景のポール位置に合わせて調整可）
 const PERCH_POS_LEFT := Vector2(296.0, 52.0)
 const PERCH_POS_RIGHT := Vector2(984.0, 52.0)
@@ -229,7 +220,7 @@ func _setup_normal_params() -> void:
 				"enemy_hp": 25,
 				"behavior": 3  # RandomRange
 			}
-		4:  # 異論マスク（ボス＋初期ザコ2体: 号令・取り巻き周回が序盤から機能する）
+		4:  # 異論マスク（ボス＋初期ザコ2体: 取り巻き周回が序盤から機能する）
 			stage_params = {
 				"initial_count": 3,
 				"max_count": 4,
@@ -269,10 +260,6 @@ func _process(delta: float) -> void:
 			spawn_timer = 0.0
 			_spawn_reinforcement()
 
-	# S4ボスギミック
-	if GameManager.current_stage == 4:
-		_update_stage4_boss_gimmicks(delta)
-
 	# S2〜S4ボス: ポスト上待機→降臨
 	if GameManager.current_stage >= 2:
 		_update_stage2_perch(delta)
@@ -286,47 +273,6 @@ func _process(delta: float) -> void:
 
 	# クリア判定
 	_check_stage_clear()
-
-## S4ボス: 12秒ごとに「号令（予告1秒→全ザコ4秒強化）」と「ロープ走行（強い状態・直角カウンターの的）」を交互に
-func _update_stage4_boss_gimmicks(delta: float) -> void:
-	var boss := _find_alive_boss()
-	if not boss or current_qte_boss != null:
-		return
-	# 号令の予告中: 時間が来たら発動
-	if _shout_pending >= 0.0:
-		_shout_pending -= delta
-		if _shout_pending < 0.0:
-			_do_shout()
-		return
-	if boss.is_in_down_state():
-		return
-	_gimmick_timer += delta
-	if _gimmick_timer >= S4_GIMMICK_INTERVAL:
-		_gimmick_timer = 0.0
-		_gimmick_toggle = not _gimmick_toggle
-		if _gimmick_toggle:
-			_start_shout_telegraph(boss)
-		elif not boss.rope_running:
-			boss.start_rope_run(randi() % 2 == 0, S4_ROPE_RUN_SPEED, S4_ROPE_RUN_SEC)
-			AudioManager.play_sound(AudioManager.PLAYER_ATTACK_SWING, 0, 3)
-
-## 号令の予告: ボスが黄色く光り、警告SE。1秒後に全ザコ強化
-func _start_shout_telegraph(boss: EnemyMain) -> void:
-	_shout_pending = S4_SHOUT_TELEGRAPH
-	if boss.sprite:
-		var tw := boss.create_tween()
-		tw.tween_property(boss.sprite, "modulate", Color(2.2, 2.0, 0.4, 1.0), 0.15)
-		tw.tween_property(boss.sprite, "modulate", Color.WHITE, 0.6)
-	AudioManager.play_sound(AudioManager.MASK_WARNING, 0, 2)
-
-func _do_shout() -> void:
-	var npcs = _get_npcs_node()
-	if not npcs:
-		return
-	for child in npcs.get_children():
-		var em := child as EnemyMain
-		if em and not em.is_dead and not em.is_boss:
-			em.set_angry_for(S4_SHOUT_ANGRY_SEC)
 
 ## S2: ポスト上のボスを監視。ザコ全滅（最低4秒待機後）or 20秒で山なりジャンプ降臨
 func _update_stage2_perch(delta: float) -> void:
@@ -730,6 +676,7 @@ func _start_top_rope_attack(boss: EnemyMain) -> void:
 	_top_rope_phase = TopRopePhase.APPROACH
 	_top_rope_boss = boss
 	_top_rope_count += 1
+	boss.top_rope_sequence_active = true
 	# 近い方のトップロープ・ポストへ高速移動（ワープしない）
 	var d_left := boss.global_position.distance_to(PERCH_POS_LEFT)
 	var d_right := boss.global_position.distance_to(PERCH_POS_RIGHT)
@@ -908,6 +855,7 @@ func _abort_top_rope_attack() -> void:
 	_top_rope_boss = null
 	if is_instance_valid(boss):
 		boss.is_perched = false
+		boss.top_rope_sequence_active = false
 		boss.end_top_rope_flight()
 
 func _finish_top_rope_attack() -> void:
@@ -922,6 +870,7 @@ func _finish_top_rope_attack() -> void:
 		return
 	boss.end_top_rope_flight()
 	boss.is_perched = false
+	boss.top_rope_sequence_active = false
 	boss.global_position = land_pos
 	boss.velocity = Vector2.ZERO
 	boss.update_draw_priority()

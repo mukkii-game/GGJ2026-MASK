@@ -1,7 +1,7 @@
 extends Node
-## 開発用・headless戦闘シミュレーション（確定仕様v1.0の自動テスト）
+## 開発用・headless戦闘シミュレーション（v0.5新戦闘方針の自動テスト。GAMEPLAY_DECISION_BRIEF.md参照）
 ## 起動: godot --headless --path . -- stage=1 sim=combat   （S1で基本メカニクス）
-##       godot --headless --path . -- stage=4 sim=boss     （S4ボスのロープ走行・直角カウンター）
+##       godot --headless --path . -- stage=2 sim=boss     （ボス共通トップロープ攻撃）
 ## 本番プレイでは絶対にロードされない（GameManagerがコマンドライン引数を見たときだけ生成）
 
 var mode: String = "combat"
@@ -333,14 +333,14 @@ func _find_qte() -> Node:
 			return c
 	return null
 
-## ============ S4: ボスギミック ============
+## ============ ボス: トップロープ攻撃（v0.5共通ギミック） ============
 func _run_boss_tests() -> void:
 	var player := _find_player()
 	_check("プレイヤー取得", player != null)
 	if not player:
 		return
 	var boss_found := await _wait_until(func() -> bool: return _find_boss() != null, 10.0)
-	_check("S4ボス出現", boss_found)
+	_check("ボス出現", boss_found)
 	if not boss_found:
 		return
 	var boss := _find_boss()
@@ -355,30 +355,6 @@ func _run_boss_tests() -> void:
 			_check("降臨後ボス生存", false)
 			return
 
-	# --- TEST B1: ロープ走行開始（強い扱い） ---
-	boss.start_rope_run(false, 280.0, 12.0)  # 左右往復
-	await get_tree().create_timer(0.3).timeout
-	_check("ボスがロープ走行中", boss.rope_running)
-	_check("走行中は強い状態", boss.is_shoulder_immune())
-
-	# --- TEST B2: 直角カウンター: 走行軸と直角に押し当てる→ダウン＋強化解除 ---
-	_release_all()
-	var countered := false
-	for _attempt in range(80):  # 最大4秒間、毎フレーム位置を合わせて上入力
-		if boss.is_in_down_state():
-			countered = true
-			break
-		player.global_position = Vector2(boss.global_position.x, boss.global_position.y + 50.0)
-		player.facing_dir = Vector2.UP
-		Input.action_press("MoveUp")
-		await get_tree().create_timer(0.05).timeout
-	Input.action_release("MoveUp")
-	_check("直角カウンター: ボスがダウン", countered or boss.is_in_down_state())
-	_check("直角カウンター: ロープ走行停止", not boss.rope_running)
-	if boss.is_in_down_state():
-		_check("直角カウンター: 強化解除", not boss.is_shoulder_immune() or boss.is_weak_state())
-
-	# --- TEST B3: 号令: 全ザコが一時強化される ---
 	var sc := get_tree().current_scene.get_node_or_null("StageController")
 	if sc == null:
 		# GameWrapper構成でのStageController探索
@@ -386,17 +362,18 @@ func _run_boss_tests() -> void:
 			if c.get_script() != null and String(c.get_script().resource_path).ends_with("StageController.gd"):
 				sc = c
 				break
-	if sc:
-		var zakos := _find_zakos([])
-		if zakos.size() > 0:
-			sc.call("_do_shout")
-			await get_tree().create_timer(0.2).timeout
-			var all_angry := true
-			for z in _find_zakos([]):
-				if z.enemy_type != EnemyMain.EnemyType.Gaburi and not z.is_shoulder_immune():
-					all_angry = false
-			_check("号令: ザコ全体が強化", all_angry)
-		else:
-			results.append("SKIP: 号令テスト（ザコ不在）")
-	else:
-		results.append("SKIP: 号令テスト（StageController未発見）")
+	_check("StageController取得", sc != null)
+	if not sc:
+		return
+
+	# --- TEST: HP50%以下でトップロープ攻撃が発動する（GAMEPLAY_DECISION_BRIEF.md準拠） ---
+	boss.health = int(boss.max_health * 0.5)
+	var mounted: bool = await _wait_until(func() -> bool: return bool(sc.get("_top_rope_active")), 5.0)
+	_check("トップロープ: 攻撃シーケンス開始", mounted)
+
+	var aerial: bool = await _wait_until(func() -> bool: return boss.is_top_rope_aerial, 5.0)
+	_check("トップロープ: 空中追尾開始", aerial)
+
+	var landed: bool = await _wait_until(func() -> bool: return not bool(sc.get("_top_rope_active")), 6.0)
+	_check("トップロープ: 一連の演出が終了", landed)
+	_check("トップロープ: 発動回数カウント", int(sc.get("_top_rope_count")) >= 1)
