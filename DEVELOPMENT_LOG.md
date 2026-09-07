@@ -4,6 +4,28 @@
 
 ---
 
+## 2026-09-07 — 完成化仕上げ（タイトル操作説明・UI整理、無音解消、QTE操作ガイド＆ボス絵配線、Fleeアニメ名修正）
+
+- **変更内容**:
+  1. **TitleScreen操作説明の修正 ＆ UI整理**:
+     - タイトル画面および操作パネルで `1P: N ジャンプ / M 走り` と正反対に誤記されていた説明を、実際の実装（`1P: WASD 移動 / Space・M・左クリック ジャンプ / N 走り`、`2P: 矢印 移動 / 右クリック ジャンプ / 左クリック 走り`）に修正。
+     - ボタン表示テキストを「1P ゲーム開始」「2P 対戦モード」「トレーニングモード」等へ整頓し、ボタン探索順も整理。
+  2. **タイトル・クリア画面の無音解消**:
+     - `AudioManager.gd` に `play_title_bgm()`（`MainTheme.mp3`）、`play_clear_bgm()`（`corridorsOgg.ogg`）を追加。
+     - `TitleScreen.gd` および `StageClear.gd` の `stop_bgm()` を各専用BGM呼び出しに置き換え、ゲーム起動時やクリア時の不自然な完全無音を解消。
+  3. **QTEの操作ガイド表示 ＆ ボス固有イラスト配線**:
+     - `Scenes/qte_main_with_anim.gd`: QTEバー上部に「緑のゾーンでタイミングよく [SPACE / クリック] を押せ！」という操作ガイドを表示し、初見での時間切れ失敗を防止。
+     - プロジェクト内に存在しながら未使用だったボスイラスト（S3: `gtq_unity_mask.png`、S4: `gtq_elon_mask.png`）をステージ番号に応じて動的に切り替えるよう配線（S2は従来の `gtq_melon_mask.png`）。
+  4. **`EnemyFleeState.gd` のアニメーション名エラー修正**:
+     - 小文字で `play("idle")` / `play("walk")` と呼ばれ、毎フレーム「アニメーションが存在しない」エラーが数千行スパムされていたのを大文字 `play("Idle")` / `play("Walk")` に修正。
+  5. **テスト・ガイド整合**:
+     - `PLAYTEST_GUIDE.md` のS4旧仕様（号令・直角カウンター）記述を最新仕様に更新。
+     - `CombatSim.gd` TEST 3（かすりダウン）でheadless特有の入力フレーム飛びによる偶発的フレーク対策を追加。
+- **影響範囲**: `Scenes/Misc/TitleScreen.tscn`, `Scripts/TitleScreen.gd`, `Scripts/StageClear.gd`, `Scripts/Managers/AudioManager.gd`, `Scenes/qte_main_with_anim.gd`, `Scenes/NPC's/Enemy/Scripts/States/EnemyFleeState.gd`, `PLAYTEST_GUIDE.md`, `Scripts/Dev/CombatSim.gd`, `docs/SPEC.md`
+- **テスト**: `sim=combat` (13/13), `sim=boss` (S2/S3/S4 各7/7), `sim=clear` (S1/S2/S3/S4 全PASS), `sim=pause` (2/2) 全PASS確認済み。
+
+---
+
 ## 2026-09-07 — S4「号令・直角カウンター」削除（v0.4残骸とv0.5設計の矛盾解消）＋トップロープ接近バグ修正
 
 - **変更内容**:

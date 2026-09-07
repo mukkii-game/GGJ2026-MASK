@@ -21,6 +21,8 @@ const BGM_BATTLE := preload("res://Art/Audio/MainThemeNew.mp3")
 const BGM_INTRO := preload("res://Art/Audio/Intro.mp3")
 const BGM_ENDING_PATH := "res://Art/Audio/Ending.mp3"
 const BGM_FALLBACK_PATH := "res://Art/Audio/MainTheme.mp3"
+const BGM_TITLE_PATH := "res://Art/Audio/MainTheme.mp3"
+const BGM_CLEAR_PATH := "res://Art/Audio/corridorsOgg.ogg"
 #endregion
 
 var audio_players = []
@@ -71,6 +73,24 @@ func play_ending_bgm() -> void:
 		stream = load(BGM_FALLBACK_PATH) as AudioStream
 	if stream:
 		play_bgm(stream, 0.0, true, 0.0)
+
+func play_title_bgm() -> void:
+	var stream: AudioStream = null
+	if ResourceLoader.exists(BGM_TITLE_PATH):
+		stream = load(BGM_TITLE_PATH) as AudioStream
+	elif ResourceLoader.exists(BGM_FALLBACK_PATH):
+		stream = load(BGM_FALLBACK_PATH) as AudioStream
+	if stream:
+		play_bgm(stream, -6.0, true, 0.0)
+
+func play_clear_bgm() -> void:
+	var stream: AudioStream = null
+	if ResourceLoader.exists(BGM_CLEAR_PATH):
+		stream = load(BGM_CLEAR_PATH) as AudioStream
+	if stream:
+		play_bgm(stream, -6.0, true, 0.0)
+	else:
+		play_intro_bgm()
 
 func stop_bgm() -> void:
 	_bgm_player.stop()

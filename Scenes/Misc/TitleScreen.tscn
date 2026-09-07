@@ -68,10 +68,10 @@ theme_override_constants/separation = 4
 [node name="OperationLabel" type="Label" parent="ButtonsContainer" unique_id=495364201]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 10
-text = "1P: WASD 移動 / N ジャンプ / M 走り
-2P: 矢印 移動 / 左クリック N相当 / 右クリック M相当
-上下で選択 / Enter or N or M or クリックで決定"
+theme_override_font_sizes/font_size = 11
+text = "1P: WASD 移動 / Space・M・左クリック ジャンプ / N 走り
+2P: 矢印 移動 / 右クリック ジャンプ / 左クリック 走り
+上下キーで選択 / Enter または クリックで決定"
 
 [node name="Btn1P" type="Button" parent="ButtonsContainer" unique_id=1439503816]
 layout_mode = 2
@@ -80,23 +80,15 @@ theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "1P"
+text = "1P ゲーム開始"
 
 [node name="Btn2P" type="Button" parent="ButtonsContainer" unique_id=876139740]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "2P"
-
-[node name="BtnTest" type="Button" parent="ButtonsContainer" unique_id=1483916229]
-layout_mode = 2
-theme_override_font_sizes/font_size = 28
-theme_override_styles/normal = SubResource("StyleBoxFlat_start")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
-theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "テスト"
+text = "2P 対戦モード"
 
 [node name="BtnTraining" type="Button" parent="ButtonsContainer" unique_id=3000006]
 layout_mode = 2
@@ -112,7 +104,7 @@ theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "ステージ1"
+text = "ステージ1 (S1)"
 
 [node name="BtnStage2" type="Button" parent="ButtonsContainer" unique_id=3000002]
 layout_mode = 2
@@ -120,7 +112,7 @@ theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "ステージ2"
+text = "ステージ2 (S2)"
 
 [node name="BtnStage3" type="Button" parent="ButtonsContainer" unique_id=3000003]
 layout_mode = 2
@@ -128,7 +120,7 @@ theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "ステージ3"
+text = "ステージ3 (S3)"
 
 [node name="BtnStage4" type="Button" parent="ButtonsContainer" unique_id=3000004]
 layout_mode = 2
@@ -136,7 +128,7 @@ theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
-text = "ステージ4"
+text = "ステージ4 (S4)"
 
 [node name="BtnEnding" type="Button" parent="ButtonsContainer" unique_id=3000005]
 layout_mode = 2
@@ -145,6 +137,14 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_start")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
 theme_override_styles/hover = SubResource("StyleBoxFlat_start")
 text = "エンディング"
+
+[node name="BtnTest" type="Button" parent="ButtonsContainer" unique_id=1483916229]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start")
+text = "テスト"
 
 [node name="ConfirmReturnPanel" type="PanelContainer" parent="." unique_id=1538102839]
 visible = false
@@ -212,10 +212,10 @@ theme_override_constants/separation = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 14
-text = "1P: WASD 移動 / 2P: 矢印キー移動"
+text = "1P: WASD 移動 / Space・M・左クリック ジャンプ / N 走り"
 
 [node name="Op2" type="Label" parent="OperationPanel" unique_id=198340905]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 14
-text = "1P: N ジャンプ / M 走り　2P: 左クリック N相当 / 右クリック M相当"
+text = "2P: 矢印キー移動 / 右クリック ジャンプ / 左クリック 走り"

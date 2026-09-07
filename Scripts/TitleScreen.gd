@@ -14,8 +14,7 @@ var _confirm_visible := false
 var _confirm_index := 0  # 0=はい 1=いいえ
 
 func _ready() -> void:
-	# タイトルは一旦無音（専用曲は後日用意）。ゲームから戻ってきたときの戦闘BGMも止める
-	AudioManager.stop_bgm()
+	AudioManager.play_title_bgm()
 	# 選択中ボタン用スタイル（目立つ色）
 	_style_selected = StyleBoxFlat.new()
 	_style_selected.bg_color = Color(0.95, 0.75, 0.15, 1)
@@ -41,8 +40,8 @@ func _ready() -> void:
 	if container:
 		container.visible = true
 	var btn_names := [
-		"Btn1P", "Btn2P", "BtnTest", "BtnTraining",
-		"BtnStage1", "BtnStage2", "BtnStage3", "BtnStage4", "BtnEnding",
+		"Btn1P", "Btn2P", "BtnTraining",
+		"BtnStage1", "BtnStage2", "BtnStage3", "BtnStage4", "BtnEnding", "BtnTest",
 	]
 	for i in btn_names.size():
 		var btn := get_node_or_null("ButtonsContainer/" + btn_names[i]) as Button

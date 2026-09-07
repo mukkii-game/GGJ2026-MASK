@@ -12,7 +12,7 @@ var owner_node: EnemyMain
 func Enter():
 	owner_node = owner as EnemyMain
 	if owner_node and owner_node.sprite:
-		owner_node.sprite.play("walk")
+		owner_node.sprite.play("Walk")
 
 func Update(_delta: float):
 	if not owner_node or owner_node.is_dead:
@@ -20,7 +20,7 @@ func Update(_delta: float):
 	if GameManager.enemies_frozen:
 		owner_node.velocity = Vector2.ZERO
 		if owner_node.sprite:
-			owner_node.sprite.play("idle")
+			owner_node.sprite.play("Idle")
 		return
 	
 	var player: CharacterBase = _find_player()
@@ -32,7 +32,7 @@ func Update(_delta: float):
 	if "is_jumping" in player and player.is_jumping:
 		owner_node.velocity = Vector2.ZERO
 		if owner_node.sprite:
-			owner_node.sprite.play("idle")
+			owner_node.sprite.play("Idle")
 		return
 	
 	var to_player := player.global_position - owner_node.global_position
@@ -47,12 +47,12 @@ func Update(_delta: float):
 		var flee_dir := -to_player.normalized()
 		owner_node.velocity = flee_dir * speed
 		if owner_node.sprite:
-			owner_node.sprite.play("walk")
+			owner_node.sprite.play("Walk")
 			owner_node.sprite.flip_h = flee_dir.x < 0
 	else:
 		owner_node.velocity = Vector2.ZERO
 		if owner_node.sprite:
-			owner_node.sprite.play("idle")
+			owner_node.sprite.play("Idle")
 	
 	if owner_node.velocity.length() > 0:
 		owner_node.move_and_slide()

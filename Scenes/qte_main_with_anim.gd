@@ -27,6 +27,7 @@ const PATTERN_INTERVAL := 0.12
 var player_start_pos: Vector2
 ## 親がスタートを制御する場合は true（ゲーム内ボス撃破QTE用）
 var wait_for_start: bool = false
+var _guide_label: Label = null
 
 
 func _ready():
@@ -40,9 +41,7 @@ func _ready():
 	if not _tex_l2:
 		_tex_l2 = _tex_l1
 
-	# 接触イベント（シグナル）は使用しない（_processで直接重なり判定を行う）
-	# target_zone.area_entered.connect(_on_area_entered)
-	# target_zone.area_exited.connect(_on_area_exited)
+	_setup_guide_label()
 	result_label.text = ""
 
 	# 単体実行時は即スタート、ゲーム内から呼ばれた場合は start_qte() を待つ
@@ -50,7 +49,38 @@ func _ready():
 		start_qte()
 
 
+func _setup_guide_label() -> void:
+	if _guide_label == null:
+		_guide_label = Label.new()
+		_guide_label.name = "QTEGuideLabel"
+		_guide_label.text = "緑のゾーンでタイミングよく [SPACE / クリック] を押せ！"
+		_guide_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_guide_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_guide_label.add_theme_font_size_override("font_size", 26)
+		_guide_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.4, 1.0))
+		_guide_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		_guide_label.add_theme_constant_override("outline_size", 6)
+		_guide_label.position = Vector2(0, 560)
+		_guide_label.size = Vector2(1280, 40)
+		_guide_label.visible = false
+		add_child(_guide_label)
+
+
 func start_qte():
+	# ボスごとのイラスト設定（S2: メロン, S3: うに, S4: 異論）
+	var boss_tex_path := "res://Art/Sprites/gtq_melon_mask.png"
+	match GameManager.current_stage:
+		3:
+			boss_tex_path = "res://Art/Sprites/gtq_unity_mask.png"
+		4:
+			boss_tex_path = "res://Art/Sprites/gtq_elon_mask.png"
+		_:
+			boss_tex_path = "res://Art/Sprites/gtq_melon_mask.png"
+	if ResourceLoader.exists(boss_tex_path):
+		var enemy_sprite := get_node_or_null("QTE_enemy") as Sprite2D
+		if enemy_sprite:
+			enemy_sprite.texture = load(boss_tex_path) as Texture2D
+
 	# IntroUIがあれば3秒表示
 	if intro_ui:
 		if qt_in:
@@ -60,12 +90,16 @@ func start_qte():
 		if target_zone: target_zone.visible = false
 		if bar_bg: bar_bg.visible = false
 		if attack_hand: attack_hand.visible = false
+		if _guide_label: _guide_label.visible = false
 		await get_tree().create_timer(1.0).timeout
 		if intro_ui: intro_ui.visible = false
 		if player_point: player_point.visible = true
 		if target_zone: target_zone.visible = true
 		if bar_bg: bar_bg.visible = true
 		if attack_hand: attack_hand.visible = true
+
+	if _guide_label:
+		_guide_label.visible = true
 
 	# PlayerPointを開始位置に戻す
 	player_point.position = player_start_pos
@@ -141,6 +175,8 @@ func _process(delta):
 
 func success_game():
 	is_active = false
+	if _guide_label:
+		_guide_label.visible = false
 	if hit_hip:
 		hit_hip.play()
 	anim.stop()
@@ -151,6 +187,8 @@ func success_game():
 
 func fail_game():
 	is_active = false
+	if _guide_label:
+		_guide_label.visible = false
 	anim.stop()
 	_show_result("FAIL...", false)
 	qte_failed.emit()
