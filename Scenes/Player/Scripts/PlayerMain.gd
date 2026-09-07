@@ -34,6 +34,10 @@ var rope_bounce_running := false
 var rope_bounce_direction := Vector2.ZERO
 ## ロープタッチ自動移動の目標位置
 var rope_bounce_target := Vector2.ZERO
+## ロープバウンド回数（1往復＝2回の跳ね返りで停止）
+var rope_bounce_count: int = 0
+## 無敵モードトグルキー（Iキー）の前フレーム入力状態
+var _key_i_pressed_prev: bool = false
 ## 方向キー＋Punchでダッシュ（0.5秒3倍速、連打で延長）
 var dash_timer := 0.0
 const DASH_DURATION := 0.5
@@ -282,8 +286,18 @@ func _process(delta: float):
 			if Input.is_action_just_pressed(jump_act) and rope_bounce_direction.length() > 0.1:
 				pending_headbutt_dir = Vector2.ZERO
 			rope_bounce_running = false
+			rope_bounce_count = 0
 			rope_bounce_direction = Vector2.ZERO
 	
+	# Iキーで無敵モードトグル（1Pのみ）
+	if not is_player_two:
+		var key_i_down: bool = Input.is_key_pressed(KEY_I)
+		if key_i_down and not _key_i_pressed_prev:
+			GameManager.player_invincible_mode = !GameManager.player_invincible_mode
+			var status_str: String = "無敵モード: ON" if GameManager.player_invincible_mode else "無敵モード: OFF"
+			GameManager.show_callout(self, status_str, Color(1.0, 0.9, 0.2, 1.0) if GameManager.player_invincible_mode else Color(0.8, 0.8, 0.8, 1.0))
+		_key_i_pressed_prev = key_i_down
+
 	# カメラ完全固定（スクロール一切なし）
 	if cam:
 		cam.global_position = CAM_CENTER
@@ -327,25 +341,55 @@ func _physics_process(delta: float) -> void:
 	if rope_bounce_running:
 		var base_speed := 480.0 * 2.0 / 1.2
 		var move_speed := maxf(base_speed, 480.0 * power_bait_speed_mult * 2.2)
+		velocity = rope_bounce_direction * move_speed
 		p += rope_bounce_direction * move_speed * delta
+		var reached := false
 		if rope_bounce_direction.x > 0 and p.x >= rope_bounce_target.x:
 			p.x = rope_bounce_target.x
-			rope_bounce_running = false
+			reached = true
 		elif rope_bounce_direction.x < 0 and p.x <= rope_bounce_target.x:
 			p.x = rope_bounce_target.x
-			rope_bounce_running = false
+			reached = true
 		elif rope_bounce_direction.y > 0 and p.y >= rope_bounce_target.y:
 			p.y = rope_bounce_target.y
-			rope_bounce_running = false
+			reached = true
 		elif rope_bounce_direction.y < 0 and p.y <= rope_bounce_target.y:
 			p.y = rope_bounce_target.y
+			reached = true
+
+		if reached:
 			rope_bounce_running = false
+			# 1往復制限: 往路（1回目）なら反対側ロープで跳ね返して復路へ、復路（2回目）完了で停止
+			if rope_bounce_count < 2:
+				rope_bounce_count += 1
+				rope_bounce_running = true
+				rope_bounce_direction = -rope_bounce_direction
+				facing_dir = rope_bounce_direction
+				if rope_bounce_direction.x > 0:
+					rope_bounce_target = Vector2(MAT_RIGHT, p.y)
+					_notify_rope_bounce("left")
+				else:
+					rope_bounce_target = Vector2(MAT_LEFT, p.y)
+					_notify_rope_bounce("right")
+				_face_horizontal(rope_bounce_direction.x)
+			else:
+				# 1往復（往路＋復路）完了 -> 停止して通常操作に戻る
+				rope_bounce_count = 0
+				if p.x >= MAT_RIGHT:
+					p.x = MAT_RIGHT - 4.0
+				elif p.x <= MAT_LEFT:
+					p.x = MAT_LEFT + 4.0
+				velocity = Vector2.ZERO
+
+		if rope_bounce_running:
+			_face_horizontal(rope_bounce_direction.x)
 		global_position = p
 		_body_contact(delta)
 		return
 	# 通常時：ロープ接触チェック（プレイヤーは左右のみ。上下はクランプ）
 	if p.x <= MAT_LEFT:
 		rope_bounce_running = true
+		rope_bounce_count = 1  # 1往復目の往路開始
 		rope_bounce_direction = Vector2.RIGHT
 		rope_bounce_target = Vector2(MAT_RIGHT, p.y)
 		facing_dir = rope_bounce_direction
@@ -353,6 +397,7 @@ func _physics_process(delta: float) -> void:
 		_notify_rope_bounce("left")
 	elif p.x >= MAT_RIGHT:
 		rope_bounce_running = true
+		rope_bounce_count = 1  # 1往復目の往路開始
 		rope_bounce_direction = Vector2.LEFT
 		rope_bounce_target = Vector2(MAT_LEFT, p.y)
 		facing_dir = rope_bounce_direction

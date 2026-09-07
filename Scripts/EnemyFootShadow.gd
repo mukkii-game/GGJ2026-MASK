@@ -12,10 +12,14 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	# 横長楕円の影を描画（黒、半透明）適度なサイズ
-	var shadow_width := 33.0  # 横幅（元の2/3）
-	var shadow_height := 11.0  # 縦幅（元の2/3）
-	var y_offset := 28.0  # キャラの1/4くらい下
+	var parent := get_parent() as CharacterBase
+	var is_downed: bool = parent != null and parent.has_method("is_in_down_state") and parent.is_in_down_state()
+
+	# 横長楕円の影を描画（黒、半透明）
+	# ダウン中は倒れた身体に合わせて影を横長にして接地感を出す
+	var shadow_width := 44.0 if is_downed else 33.0
+	var shadow_height := 14.0 if is_downed else 11.0
+	var y_offset := 24.0 if is_downed else 28.0
 	
 	# 楕円を描画（複数の円を横に並べて楕円に見せる）
 	for i in range(-int(shadow_width), int(shadow_width) + 1, 2):

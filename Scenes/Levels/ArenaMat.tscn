@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cloyqi35fkamw" path="res://Scripts/ArenaMat.gd" id="1_arenamat"]
 [ext_resource type="Texture2D" uid="uid://0kvdqjhle6kb" path="res://Art/Sprites/ring_bg.png" id="2_uqtev"]
+[ext_resource type="Texture2D" uid="uid://clth8esnwhjx" path="res://Art/Sprites/ring_ropes_front.png" id="3_ropes_front"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_top"]
 size = Vector2(1280, 100)
@@ -57,6 +58,13 @@ offset_bottom = 648.0
 position = Vector2(635.7999, 155.74994)
 scale = Vector2(1.6556249, 1.6556249)
 texture = ExtResource("2_uqtev")
+
+[node name="RopesForeground" type="Sprite2D" parent="." unique_id=329767199]
+z_index = 650
+z_as_relative = false
+position = Vector2(635.7999, 155.74994)
+scale = Vector2(1.6556249, 1.6556249)
+texture = ExtResource("3_ropes_front")
 
 [node name="CornerPosts" type="Node2D" parent="." unique_id=1644197187]
 z_index = 155

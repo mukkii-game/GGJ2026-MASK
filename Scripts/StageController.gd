@@ -874,8 +874,6 @@ func _finish_top_rope_attack() -> void:
 	boss.global_position = land_pos
 	boss.velocity = Vector2.ZERO
 	boss.update_draw_priority()
-	if boss.fsm:
-		boss.fsm.force_change_state("enemy_idle_state")
 	# 影楕円＝衝撃波。プレイヤー＋ザコ（ボス本人以外）が被弾
 	var hit_player := false
 	var hit_zako := false
@@ -907,6 +905,8 @@ func _finish_top_rope_attack() -> void:
 		GameManager.show_callout(boss, "巻き込み！！", Color(1.0, 0.55, 0.15, 1.0))
 	if hit_player:
 		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -1)
+		if boss.fsm:
+			boss.fsm.force_change_state("enemy_idle_state")
 	elif not hit_zako:
 		GameManager.show_callout(boss, "空振り！", Color(0.5, 1.0, 0.5, 1.0))
 		boss.enter_down(TOP_ROPE_MISS_DOWN_SEC)
@@ -914,6 +914,8 @@ func _finish_top_rope_attack() -> void:
 	else:
 		# プレイヤーは回避・ザコのみ巻き込み → ボスは空振りダウンしない（成功気味）
 		AudioManager.play_sound(AudioManager.BLOODY_HIT, 0, -4)
+		if boss.fsm:
+			boss.fsm.force_change_state("enemy_idle_state")
 
 ## ザコ種類ごとのスプライト（マスク色で差別化。小型同一顔は廃止）
 func _get_zako_texture_path(type: EnemyMain.EnemyType) -> String:

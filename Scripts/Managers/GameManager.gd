@@ -45,6 +45,8 @@ var test_mode: bool = false
 var training_mode: bool = false
 ## タイトルのステージ直接選択で開始したか（true=そのステージクリア後はタイトルへ戻る）
 var single_stage_mode: bool = false
+## プレイヤー無敵モード（タイトル画面でON/OFFトグル、ゲーム中は被ダメ0）
+var player_invincible_mode: bool = false
 ## トレーニング用：体当たり種別表示（正面/半キャラ/かすり）。表示秒数>0の間ラベルに出す
 var body_contact_type_text: String = ""
 var body_contact_type_timer: float = 0.0

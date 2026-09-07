@@ -151,6 +151,15 @@ func Turn():
 	#This ternary lets us flip a sprite if its drawn the wrong way
 	var direction = -1 if flipped_horizontal == true else 1
 	
+	# ロープバウンド自動走行中はバウンド方向を絶対優先（古いvelocity入力による後ろ向き走りを防ぐ）
+	if "rope_bounce_running" in self and self.rope_bounce_running:
+		var r_dir: Vector2 = self.rope_bounce_direction
+		if r_dir.x < -0.1:
+			sprite.scale.x = -direction * absf(sprite.scale.x)
+		elif r_dir.x > 0.1:
+			sprite.scale.x = direction * absf(sprite.scale.x)
+		return
+
 	# 移動方向に合わせて向きを変える（velocity.xの符号で判定）
 	if velocity.x < -0.1:
 		sprite.scale.x = -direction * absf(sprite.scale.x)
@@ -197,6 +206,8 @@ func after_damage_iframes():
 func _take_damage(amount):
 	if(invincible == true || is_dead == true):
 		return
+	if is_in_group("Player") and GameManager.player_invincible_mode:
+		return
 		
 	health -= amount
 	if healthbar:
@@ -220,6 +231,8 @@ func _take_damage(amount):
 ## 半キャラ連打など：damage_effects（長い無敵＋BLOODY_HIT）を使わず、短い無敵だけで tick ダメージ
 func apply_repeat_contact_damage(amount: int, invincible_sec: float) -> bool:
 	if invincible or is_dead:
+		return false
+	if is_in_group("Player") and GameManager.player_invincible_mode:
 		return false
 	health -= amount
 	if healthbar:
